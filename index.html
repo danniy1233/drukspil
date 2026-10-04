@@ -796,7 +796,43 @@ button{cursor:pointer}
   padding:14px 8px;border:1px solid var(--line);border-radius:16px;background:#111a27;text-align:center
 }
 .poker-hand{
-  display:flex;justify-content:center;gap:8px;flex-wrap:wrap;min-height:170px;align-items:center;margin:15px auto
+  display:flex;justify-content:center;gap:10px;flex-wrap:wrap;min-height:170px;align-items:center;margin:15px auto
+}
+.poker-card-wrap{
+  display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;user-select:none;
+}
+.poker-card-wrap .mini-card{
+  transition:transform .18s,border-color .18s,box-shadow .18s;
+}
+.poker-card-wrap:hover .mini-card{
+  transform:translateY(-4px);
+}
+.poker-card-wrap.held .mini-card{
+  transform:translateY(-12px);
+  border-color:var(--gold)!important;
+  box-shadow:0 0 16px rgba(255,200,87,.7)!important;
+}
+.hold-badge{
+  padding:3px 8px;border-radius:6px;font-size:10px;font-weight:900;
+  background:#1e2a3c;border:1px solid #33445b;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.05em;
+}
+.poker-card-wrap.held .hold-badge{
+  background:var(--gold);color:#111;border-color:#ffe294;box-shadow:0 0 10px rgba(255,200,87,.4);
+}
+.cashout-btn{
+  background:linear-gradient(135deg,#ffc857,#f59e0b)!important;
+  color:#111!important;font-weight:1000!important;border:none!important;
+  box-shadow:0 6px 20px rgba(255,200,87,.38)!important;transition:transform .14s,filter .14s;
+}
+.cashout-btn:hover{filter:brightness(1.1);transform:translateY(-2px)}
+.war-banner{
+  background:linear-gradient(90deg,rgba(255,100,117,.25),rgba(255,200,87,.25));
+  border:1px solid #ff6475;padding:8px 14px;border-radius:12px;margin:10px auto;
+  font-weight:1000;color:#ff8a98;text-align:center;
+}
+.war-burn{
+  display:inline-block;margin:0 4px;font-size:20px;letter-spacing:2px;opacity:.7;vertical-align:middle;
 }
 .cups-stage{
   display:flex;justify-content:center;gap:18px;align-items:flex-end;min-height:270px;perspective:900px
@@ -1823,7 +1859,7 @@ button{cursor:pointer}
 
   function renderDice(a){
     a.innerHTML=`
-      ${titleBlock("🎲 Dice Risk","1 til 3 giver indsatsen ekstra. 4 eller 5 fjerner cirka halvdelen. 6 er jackpot og fjerner hele indsatsen.")}
+      ${titleBlock("🎲 Dice Risk","Slå 4 eller 5 for at fjerne indsatsen. 6 er JACKPOT og fjerner 2× indsatsen! 2 eller 3 koster kun en halv indsats, mens 1 koster hele indsatsen.")}
       <div class="dice-stage"><div class="die" id="die">⚄</div></div>
       <button class="big-button" id="diceBtn">KAST TERNINGEN</button>
       <div id="gameResult"></div>`;
@@ -1841,11 +1877,31 @@ button{cursor:pointer}
     let i=0;
     const id=setInterval(()=>{die.textContent=faces[Math.floor(Math.random()*6)];beep(330+(i++%4)*45,.022,.012)},95);
     await sleep(1350);clearInterval(id);die.textContent=faces[d-1];beep(750,.1,.035);
-    const delta=d===6?-w:d>=4?-Math.max(1,Math.ceil(w/2)):w;
+    
+    let delta=0, title="", type="";
+    if(d===6){
+      delta = -2 * w;
+      title = "🔥 6 · SUPER JACKPOT!";
+      type = "good";
+      confetti();
+    }else if(d>=4){
+      delta = -w;
+      title = `✅ DU SLOG ${d} · SEJR`;
+      type = "good";
+    }else if(d>=2){
+      delta = Math.max(1, Math.ceil(w/2));
+      title = `LAVT KAST · ${d}`;
+      type = "bad";
+    }else{
+      delta = w;
+      title = "💀 1 · SNAKE EYES";
+      type = "bad";
+    }
+
     const actual=updateBalance(delta,`Dice Risk: du slog ${d}.`);
-    showResult(`Du slog ${d}`,
-      actual<0?`${Math.abs(actual)} point forsvandt.`:`${actual} point blev lagt oveni.`,
-      actual<0?"good":"bad");
+    showResult(title,
+      actual<0?`${Math.abs(actual)} point forsvandt fra puljen!`:`${actual} point blev lagt oveni.`,
+      type);
     setBusy(false);
   }
 
@@ -1854,12 +1910,22 @@ button{cursor:pointer}
   }
   function cardText(v){return v===14?"A":v===13?"K":v===12?"Q":v===11?"J":String(v)}
 
+  function higherCashoutAmount(streak, w){
+    if(streak===1) return Math.max(1, Math.round(w * 0.4));
+    if(streak===2) return w;
+    return 2 * w;
+  }
+
   function renderHigher(a){
     const pips=[0,1,2].map(i=>`<i class="streak-pip ${i<higherStreak?"active":""}"></i>`).join("");
+    const w=getWager();
+    const canCashout = higherStreak > 0;
+    const cashVal = canCashout ? higherCashoutAmount(higherStreak, w) : 0;
+    
     a.innerHTML=`
-      ${titleBlock("🃏 Higher / Lower","Du skal ramme 3 korrekte gæt i træk. Først ved 3 i streg vinder du indsatsen. Ét forkert gæt nulstiller streaken og giver tab.")}
+      ${titleBlock("🃏 Higher / Lower","Gæt om næste kort er højere eller lavere. Du kan cashe ud undervejs, eller gå efter 3 i streg for 2× JACKPOT!")}
       <div class="streak-wrap">
-        <div class="streak-label">3 I STREG</div>
+        <div class="streak-label">STREAK</div>
         <div class="streak-pips">${pips}</div>
         <div class="streak-text">${higherStreak}/3 rigtige i træk</div>
       </div>
@@ -1867,12 +1933,32 @@ button{cursor:pointer}
         <div class="play-card"><div class="front">${cardText(higherCard)}</div><div class="back"></div></div>
         <div class="play-card face-down" id="nextCard"><div class="front">?</div><div class="back"></div></div>
       </div>
-      <div style="display:flex;gap:8px;justify-content:center">
+      <div style="display:flex;gap:8px;justify-content:center;margin-bottom:8px">
         <button class="btn primary hlBtn" data-choice="higher">Højere</button>
         <button class="btn primary hlBtn" data-choice="lower">Lavere</button>
       </div>
+      ${canCashout?`
+      <div style="display:flex;gap:8px;justify-content:center;margin-top:6px">
+        <button class="btn cashout-btn" id="hlCashoutBtn">💰 CASH UD NU (-${cashVal} POINT)</button>
+      </div>`:""}
       <div id="gameResult"></div>`;
     $$(".hlBtn").forEach(b=>b.onclick=()=>playHigher(b.dataset.choice));
+    if(canCashout){
+      $("#hlCashoutBtn").onclick=cashoutHigher;
+    }
+  }
+
+  function cashoutHigher(){
+    if(busy||balance<=0||higherStreak<=0)return;
+    const w=getWager();
+    const cashVal=higherCashoutAmount(higherStreak, w);
+    const actual=updateBalance(-cashVal, `Higher / Lower: cashede ud med ${higherStreak} rigtige i træk.`);
+    showResult(`💰 CASH OUT · ${higherStreak} I STREG`,
+      `Du tog gevinsten! ${Math.abs(actual)} point forsvandt fra puljen.`,
+      "good");
+    higherStreak=0;
+    higherCard=randomCard();
+    renderHigher($("#arena"));
   }
 
   async function playHigher(choice){
@@ -1895,27 +1981,31 @@ button{cursor:pointer}
     if(correct){
       higherStreak++;
       if(higherStreak>=3){
-        const actual=updateBalance(-w,`Higher / Lower: 3 rigtige i træk.`);
+        const actual=updateBalance(-2 * w,`Higher / Lower: 3 rigtige i træk! Jackpot.`);
         higherStreak=0;
-        showResult("🔥 3 I STREG",
-          `${cardText(previous)} → ${cardText(next)} var korrekt. ${Math.abs(actual)} point forsvandt fra puljen.`,
+        showResult("🔥 3 I STREG JACKPOT!",
+          `${cardText(previous)} → ${cardText(next)} var korrekt! 2× indsats fjernet: ${Math.abs(actual)} point forsvandt!`,
           "good");
+        confetti();
       }else{
+        const cashVal=higherCashoutAmount(higherStreak, w);
         $("#lastAction").textContent=`Higher / Lower: ${higherStreak}/3 rigtige i træk.`;
         showResult(`✅ KORREKT · ${higherStreak}/3`,
-          `${cardText(previous)} → ${cardText(next)}. Du mangler ${3-higherStreak} korrekt${3-higherStreak===1?"":"e"} i træk. Puljen ændres ikke endnu.`,
-          "special");
+          `${cardText(previous)} → ${cardText(next)}. Du kan nu cashe ud (-${cashVal} point) eller fortsætte for større gevinst!`,
+          "good");
       }
     }else{
+      const penalty = higherStreak === 0 ? Math.max(1, Math.ceil(w/2)) : w;
+      const prevStreak = higherStreak;
       higherStreak=0;
-      const actual=updateBalance(w,`Higher / Lower: forkert gæt. Streak nulstillet.`);
-      showResult("❌ FORKERT · STREAK NULSTILLET",
-        `${cardText(previous)} → ${cardText(next)} gik den anden vej. ${actual} point blev lagt oveni.`,
+      const actual=updateBalance(penalty,`Higher / Lower: forkert gæt.`);
+      showResult("❌ FORKERT GÆT",
+        `${cardText(previous)} → ${cardText(next)} gik den anden vej. ${actual} point blev lagt oveni.${prevStreak>0?" Streak nulstillet.":""}`,
         "bad");
     }
 
     setBusy(false);
-    await sleep(650);
+    await sleep(500);
     if(game==="higher"&&!busy)renderHigher($("#arena"));
   }
 
@@ -2863,11 +2953,12 @@ button{cursor:pointer}
 
   function renderWar(a){
     a.innerHTML=`
-      ${titleBlock("⚔️ War","Du og huset trækker ét kort. Højeste rank vinder. Es er højt.")}
+      ${titleBlock("⚔️ War","Du og huset trækker ét kort. Højeste rank vinder. Ved uafgjort opstår KRIG om 2× indsatsen!")}
       <div class="war-stage">
         <div class="war-side"><div class="hand-label">DIG</div><div id="warPlayer" class="hand"><div class="muted">?</div></div></div>
         <div class="war-side"><div class="hand-label">HUSET</div><div id="warDealer" class="hand"><div class="muted">?</div></div></div>
       </div>
+      <div id="warExtra"></div>
       <button class="big-button" id="warBtn">TRÆK KORT</button>
       <div id="gameResult"></div>`;
     $("#warBtn").onclick=playWar;
@@ -2877,22 +2968,53 @@ button{cursor:pointer}
     if(busy||balance<=0)return;
     const w=getWager(),p=casinoCard(),d=casinoCard();
     setBusy(true);
+    $("#warExtra").innerHTML="";
     $("#warPlayer").innerHTML=cardHtml(p);
     beep(560,.05,.02);await sleep(420);
     $("#warDealer").innerHTML=cardHtml(d);
     beep(620,.05,.02);await sleep(480);
-    let delta=0,title="Uafgjort",type="";
     const pWar=p.rank===1?14:p.rank;
     const dWar=d.rank===1?14:d.rank;
-    if(pWar>dWar){delta=-w;title="Du vinder";type="good"}
-    else if(pWar<dWar){delta=w;title="Huset vinder";type="bad"}
-    const actual=updateBalance(delta,`War: ${p.label} mod ${d.label}.`);
-    showResult(title,
-      `${p.label}${p.suit} mod ${d.label}${d.suit}. ${actual<0?Math.abs(actual)+" point forsvandt.":actual>0?actual+" point blev lagt oveni.":"Ingen ændring."}`,
-      type);
+
+    if(pWar===dWar){
+      beep(780,.15,.04);
+      $("#warExtra").innerHTML=`<div class="war-banner">⚔️ KRIG ER ERKLÆRET! (WAR) · 2× INDSATS I PULJEN</div>`;
+      showResult("⚔️ KRIG ER ERKLÆRET!", "Lige kort! Begge spillere brænder 3 kort og trækker et afgørende krigskort!", "special");
+      await sleep(1100);
+
+      const pWarCard=casinoCard(), dWarCard=casinoCard();
+      $("#warPlayer").innerHTML+=`<span class="war-burn">🂠🂠🂠</span>` + cardHtml(pWarCard);
+      beep(590,.05,.02); await sleep(450);
+      $("#warDealer").innerHTML+=`<span class="war-burn">🂠🂠🂠</span>` + cardHtml(dWarCard);
+      beep(650,.05,.02); await sleep(500);
+
+      const pw2=pWarCard.rank===1?14:pWarCard.rank;
+      const dw2=dWarCard.rank===1?14:dWarCard.rank;
+      if(pw2>=dw2){
+        const actual=updateBalance(-2 * w, `War: Sejr i krig med ${pWarCard.label} mod ${dWarCard.label}!`);
+        showResult("🔥 SEJR I KRIG!",
+          `Dit krigskort ${pWarCard.label}${pWarCard.suit} slog husets ${dWarCard.label}${dWarCard.suit}! 2× indsats fjernet: ${Math.abs(actual)} point forsvandt!`,
+          "good");
+        confetti();
+      }else{
+        const actual=updateBalance(2 * w, `War: Tab i krig med ${pWarCard.label} mod ${dWarCard.label}!`);
+        showResult("💥 TAB I KRIG!",
+          `Husets krigskort ${dWarCard.label}${dWarCard.suit} slog dit ${pWarCard.label}${pWarCard.suit}! 2× indsats lagt til: ${actual} point oveni.`,
+          "bad");
+      }
+      setBusy(false);
+      return;
+    }
+
+    const win=pWar>dWar;
+    const actual=updateBalance(win?-w:w,`War: ${p.label} mod ${d.label}.`);
+    showResult(win?"DU VINDER":"HUSET VINDER",
+      `${p.label}${p.suit} mod ${d.label}${d.suit}. ${actual<0?Math.abs(actual)+" point forsvandt.":actual+" point blev lagt oveni."}`,
+      win?"good":"bad");
     setBusy(false);
   }
 
+  let plinkoDrop="mid";
   function renderPlinko(a){
     let pegs="";
     for(let r=0;r<6;r++){
@@ -2904,7 +3026,12 @@ button{cursor:pointer}
       }
     }
     a.innerHTML=`
-      ${titleBlock("🔻 Plinko","Slip chippen. Den hopper gennem brættet og lander i en multiplikator.")}
+      ${titleBlock("🔻 Plinko","Vælg hvor chippen droppes fra. Den bouncer gennem pindene og lander i en multiplikator.")}
+      <div class="bet-picks" style="margin-bottom:12px">
+        <button class="btn bet-pick plinkoPick" data-drop="left">⬅️ VENSTRE</button>
+        <button class="btn bet-pick plinkoPick active" data-drop="mid">⏺️ MIDTE</button>
+        <button class="btn bet-pick plinkoPick" data-drop="right">➡️ HØJRE</button>
+      </div>
       <div class="plinko-board" id="plinkoBoard">
         ${pegs}
         <div class="plinko-chip" id="plinkoChip"></div>
@@ -2914,6 +3041,10 @@ button{cursor:pointer}
       </div>
       <button class="big-button" id="plinkoBtn">DROP CHIP</button>
       <div id="gameResult"></div>`;
+    $$(".plinkoPick").forEach(b=>b.onclick=()=>{
+      plinkoDrop=b.dataset.drop;
+      $$(".plinkoPick").forEach(x=>x.classList.toggle("active",x===b));
+    });
     $("#plinkoBtn").onclick=playPlinko;
   }
 
@@ -2922,72 +3053,178 @@ button{cursor:pointer}
     const w=getWager();
     setBusy(true);
     const outcomes=[
-      {label:"0x",delta:-w},{label:"½x",delta:-Math.max(1,Math.floor(w/2))},
-      {label:"1x",delta:0},{label:"1½x",delta:Math.max(1,Math.ceil(w/2))},{label:"2x",delta:w}
+      {label:"0x (Fuld gevinst)",delta:-w},
+      {label:"½x (Halv gevinst)",delta:-Math.max(1,Math.round(w*0.5))},
+      {label:"1x (Push)",delta:0},
+      {label:"1½x (Lille straf)",delta:Math.max(1,Math.round(w*0.5))},
+      {label:"2x (Fuld straf)",delta:w}
     ];
-    const weights=[12,22,32,22,12];
+
+    let weights = [15, 25, 25, 23, 12];
+    if(plinkoDrop==="left") weights=[28, 30, 22, 14, 6];
+    if(plinkoDrop==="right") weights=[6, 14, 22, 30, 28];
+
     let r=Math.random()*100,idx=2;
     for(let i=0;i<weights.length;i++){r-=weights[i];if(r<=0){idx=i;break}}
+
     const chip=$("#plinkoChip");
-    let x=50;
-    for(let row=0;row<7;row++){
-      const desired=20+idx*15;
-      x += (desired-x)*0.35 + (Math.random()*10-5);
-      chip.style.left=`${clamp(x,8,92)}%`;
-      chip.style.top=`${35+row*36}px`;
-      beep(410+row*36,.02,.012);
-      await sleep(190);
+    let startX = plinkoDrop==="left" ? 28 : plinkoDrop==="right" ? 72 : 50;
+    chip.style.left=`${startX}%`;
+    chip.style.top="8%";
+    chip.style.opacity="1";
+
+    let curX=startX;
+    for(let row=0;row<6;row++){
+      const targetSlotX = 10 + idx * 20;
+      curX += (targetSlotX - curX) * 0.38 + (Math.random() * 8 - 4);
+      chip.style.left=`${clamp(curX, 10, 90)}%`;
+      chip.style.top=`${18 + row * 11.5}%`;
+      beep(380+row*40,.02,.012);
+      await sleep(170);
     }
+
     chip.style.left=`${10+idx*20}%`;
-    chip.style.top="286px";
-    await sleep(260);
+    chip.style.top="86%";
+    await sleep(240);
+
     const out=outcomes[idx];
     const actual=updateBalance(out.delta,`Plinko: ${out.label}.`);
-    showResult(`Plinko ${out.label}`,
-      actual<0?`${Math.abs(actual)} point forsvandt.`:actual>0?`${actual} point blev lagt oveni.`:"Ingen ændring.",
-      actual<0?"good":actual>0?"bad":"");
+    showResult(`Plinko: ${out.label}`,
+      actual<0?`${Math.abs(actual)} point forsvandt.`:`${actual} point blev lagt oveni.`,
+      actual<0?"good":actual>0?"bad":"special");
     setBusy(false);
   }
 
+  let boxState=null;
+
+  function boxMakeRound(){
+    const bombSet=new Set();
+    while(bombSet.size<2) bombSet.add(Math.floor(Math.random()*5));
+    return {
+      bombSet,
+      opened:new Set(),
+      safeCount:0,
+      active:false,
+      finished:false,
+      wager:null
+    };
+  }
+
+  function boxRewardAmount(safeCount, w){
+    if(safeCount===1) return Math.max(1, Math.round(w * 0.5));
+    if(safeCount===2) return Math.max(1, Math.round(w * 1.3));
+    return Math.max(1, Math.round(w * 2.5));
+  }
+
   function renderBoxes(a){
+    boxState=boxMakeRound();
     a.innerHTML=`
-      ${titleBlock("💣 Safe Boxes","Der er fem bokse og to bomber. En sikker boks fjerner cirka 2/3 af indsatsen. En bombe giver indsatsen ekstra.")}
+      ${titleBlock("💣 Safe Boxes","5 bokse: 3 sikre diamanter og 2 skjulte bomber. Åbn bokse én ad gangen og cash ud, eller gå efter alle 3 for JACKPOT!")}
       <div class="box-grid" id="boxGrid">
         ${Array.from({length:5},(_,i)=>`<button class="safe-box" data-box="${i}">?</button>`).join("")}
+      </div>
+      <div id="boxActionArea" style="text-align:center;min-height:48px;display:flex;justify-content:center;align-items:center;margin-top:10px">
+        <span class="muted" style="font-size:13px">Vælg din første boks</span>
       </div>
       <div id="gameResult"></div>`;
     $$(".safe-box").forEach(b=>b.onclick=()=>playBox(+b.dataset.box));
   }
 
-  async function playBox(choice){
-    if(busy||balance<=0)return;
-    const w=getWager();
-    setBusy(true);
+  function cashoutBoxes(){
+    if(!boxState || boxState.finished || boxState.safeCount<=0)return;
+    const w=boxState.wager;
+    const reward=boxRewardAmount(boxState.safeCount, w);
+    boxState.finished=true;
 
-    const bombSet=new Set();
-    while(bombSet.size<2) bombSet.add(Math.floor(Math.random()*5));
-
-    const boxes=$$(".safe-box");
-    await sleep(250);
-    boxes.forEach((b,i)=>{
-      const isBomb=bombSet.has(i);
-      b.classList.add("open",isBomb?"bomb":"safe");
-      b.textContent=isBomb?"💣":"✅";
+    // Afslør alle resterende bokse
+    $$(".safe-box").forEach((b,i)=>{
       b.disabled=true;
+      if(!boxState.opened.has(i)){
+        const isBomb=boxState.bombSet.has(i);
+        b.classList.add("open",isBomb?"bomb":"safe");
+        b.textContent=isBomb?"💣":"💎";
+      }
     });
 
-    const win=!bombSet.has(choice);
-    beep(win?780:220,.14,.04);
+    const actual=updateBalance(-reward, `Safe Boxes: cashede ud med ${boxState.safeCount} sikre diamanter.`);
+    showResult(`💰 CASH OUT · ${boxState.safeCount}/3 SIKRE`,
+      `Du tog gevinsten i tide! ${Math.abs(actual)} point forsvandt fra puljen.`,
+      "good");
+    $("#boxActionArea").innerHTML=`<button class="big-button" onclick="renderBoxes($('#arena'))">SPIL IGEN</button>`;
+  }
 
-    const safeReward=Math.max(1,Math.round(w*2/3));
-    const actual=updateBalance(win?-safeReward:w,`Safe Boxes: ${win?"safe":"bomb"}.`);
+  async function playBox(choice){
+    if(busy||balance<=0||!boxState||boxState.finished||boxState.opened.has(choice))return;
 
-    showResult(win?"✅ SAFE":"💣 BOMBE",
-      win
-        ? `${Math.abs(actual)} point forsvandt. Der var 2 bomber blandt 5 bokse.`
-        : `${actual} point blev lagt oveni.`,
-      win?"good":"bad");
-    setBusy(false);
+    if(!boxState.active){
+      boxState.wager=getWager();
+      boxState.active=true;
+    }
+    const w=boxState.wager;
+    boxState.opened.add(choice);
+
+    const btn=document.querySelector(`.safe-box[data-box="${choice}"]`);
+    btn.disabled=true;
+
+    if(boxState.bombSet.has(choice)){
+      // Bombe ramt!
+      boxState.finished=true;
+      btn.classList.add("open","bomb");
+      btn.textContent="💣";
+      beep(200,.2,.05);
+      vibrate([100,50,150]);
+
+      // Afslør resten
+      $$(".safe-box").forEach((b,i)=>{
+        b.disabled=true;
+        if(i!==choice){
+          const isBomb=boxState.bombSet.has(i);
+          b.classList.add("open",isBomb?"bomb":"safe");
+          b.textContent=isBomb?"💣":"💎";
+        }
+      });
+
+      const actual=updateBalance(w,`Safe Boxes: ramte en bombe.`);
+      showResult("💣 BOOM · BOMBE RAMT!",
+        `Du ramte en bombe! Fuld indsats lagt til: ${actual} point kom oveni puljen.`,
+        "bad");
+      $("#boxActionArea").innerHTML=`<button class="big-button" onclick="renderBoxes($('#arena'))">PRØV IGEN</button>`;
+      return;
+    }
+
+    // Sikker boks!
+    boxState.safeCount++;
+    btn.classList.add("open","safe");
+    btn.textContent="💎";
+    beep(680+boxState.safeCount*60,.09,.03);
+
+    if(boxState.safeCount>=3){
+      // Alle 3 sikre fundet! Jackpot!
+      boxState.finished=true;
+      $$(".safe-box").forEach((b,i)=>{
+        b.disabled=true;
+        if(!boxState.opened.has(i)){
+          b.classList.add("open","bomb");
+          b.textContent="💣";
+        }
+      });
+      const reward=boxRewardAmount(3, w);
+      const actual=updateBalance(-reward,`Safe Boxes: fandt alle 3 diamanter! Jackpot.`);
+      showResult("💎💎💎 ALL CLEAR JACKPOT!",
+        `Du fandt alle 3 diamanter uden at ramme en bombe! ${Math.abs(actual)} point forsvandt fra puljen!`,
+        "good");
+      confetti();
+      $("#boxActionArea").innerHTML=`<button class="big-button" onclick="renderBoxes($('#arena'))">SPIL IGEN</button>`;
+      return;
+    }
+
+    const curReward=boxRewardAmount(boxState.safeCount, w);
+    $("#boxActionArea").innerHTML=`
+      <div style="display:flex;gap:10px;justify-content:center;align-items:center;flex-wrap:wrap">
+        <button class="btn cashout-btn" id="boxCashoutBtn">💰 CASH UD NU (-${curReward} POINT)</button>
+        <span class="muted" style="font-size:12px">eller åbn en boks mere (${boxState.safeCount}/3)</span>
+      </div>`;
+    $("#boxCashoutBtn").onclick=cashoutBoxes;
   }
 
 
@@ -2995,7 +3232,7 @@ button{cursor:pointer}
 
   function renderLucky7(a){
     a.innerHTML=`
-      ${titleBlock("7️⃣ Lucky 7","Præcis 7 fjerner hele indsatsen. Sum 6 eller 8 giver en halv gevinst. Andre summer giver kun cirka en halv indsats ekstra.")}
+      ${titleBlock("7️⃣ Lucky 7","Præcis 7 er JACKPOT og fjerner 2.5× indsatsen! Sum 6 eller 8 fjerner fuld indsats. Andre summer koster kun en halv indsats.")}
       <div class="dice-pair"><div class="mini-die" id="l7d1">⚅</div><div class="mini-die" id="l7d2">⚀</div></div>
       <button class="big-button" id="lucky7Btn">ROLL FOR 7</button>
       <div id="gameResult"></div>`;
@@ -3017,12 +3254,13 @@ button{cursor:pointer}
     els[0].textContent=dieFace(d1);els[1].textContent=dieFace(d2);
     const sum=d1+d2;
     if(sum===7){
-      const actual=updateBalance(-w,`Lucky 7: ${d1}+${d2}=7.`);
-      showResult("🎉 LUCKY 7",`${Math.abs(actual)} point forsvandt.`,"good");
+      const actual=updateBalance(-Math.max(1, Math.round(w * 2.5)),`Lucky 7: ${d1}+${d2}=7. Jackpot!`);
+      showResult("🎉 LUCKY 7 JACKPOT!",`${Math.abs(actual)} point forsvandt! (2.5× indsats fjernet)`,"good");
+      confetti();
     }else if(sum===6||sum===8){
-      const amount=Math.max(1,Math.ceil(w/2));
+      const amount=w;
       const actual=updateBalance(-amount,`Lucky 7: near hit ${sum}.`);
-      showResult(`✨ NEAR HIT · ${sum}`,`${Math.abs(actual)} point forsvandt.`,"good");
+      showResult(`✨ NEAR HIT · ${sum}`,`${Math.abs(actual)} point forsvandt (fuld indsats).`,"good");
     }else{
       const amount=Math.max(1,Math.ceil(w/2));
       const actual=updateBalance(amount,`Lucky 7: sum ${sum}.`);
@@ -3034,11 +3272,11 @@ button{cursor:pointer}
   let overUnderPick="over";
   function renderOverUnder(a){
     a.innerHTML=`
-      ${titleBlock("↕️ Over / Under 7","UNDER og OVER er næsten 50/50 med 7 som push. PRÆCIS 7 er sværere, men et miss giver derfor kun en lille straf.")}
+      ${titleBlock("↕️ Over / Under 7","UNDER og OVER er 50/50 med 7 som push. PRÆCIS 7 er sværere, men rammer du, er det JACKPOT med 3× indsatsen fjernet!")}
       <div class="dice-pair"><div class="mini-die" id="oud1">⚂</div><div class="mini-die" id="oud2">⚃</div></div>
       <div class="bet-picks">
         <button class="btn bet-pick ouPick" data-ou="under">UNDER 7</button>
-        <button class="btn bet-pick ouPick" data-ou="seven">PRÆCIS 7</button>
+        <button class="btn bet-pick ouPick" data-ou="seven">🎯 PRÆCIS 7 (3×)</button>
         <button class="btn bet-pick ouPick active" data-ou="over">OVER 7</button>
       </div>
       <button class="big-button" id="ouBtn">ROLL</button>
@@ -3062,12 +3300,13 @@ button{cursor:pointer}
 
     if(overUnderPick==="seven"){
       if(actualKind==="seven"){
-        const actual=updateBalance(-w,`Over / Under: præcis 7.`);
-        showResult("🎯 PRÆCIS 7",`${Math.abs(actual)} point forsvandt.`,"good");
+        const actual=updateBalance(-3 * w,`Over / Under: præcis 7 jackpot!`);
+        showResult("🎯 PRÆCIS 7 JACKPOT!",`${Math.abs(actual)} point forsvandt! (3× indsats fjernet)`,"good");
+        confetti();
       }else{
-        const penalty=Math.max(1,Math.ceil(w/5));
+        const penalty=Math.max(1,Math.ceil(w/3));
         const actual=updateBalance(penalty,`Over / Under: miss på præcis 7.`);
-        showResult(`SUM ${sum}`,`${actual} point blev lagt oveni. Den svære 7-bet har lavere tab.`,"bad");
+        showResult(`SUM ${sum}`,`${actual} point blev lagt oveni. Svært sats har lav straf.`,"bad");
       }
     }else if(actualKind==="seven"){
       updateBalance(0,`Over / Under: sum 7, push.`);
@@ -3196,66 +3435,243 @@ button{cursor:pointer}
     return {name:"High Card",mult:-1};
   }
 
+  let pokerState=null;
+
   function renderPoker(a){
+    pokerState=null;
     a.innerHTML=`
-      ${titleBlock("🃏 Poker Draw","Der deles 5 kort. Et par eller bedre vinder. Stærkere hænder fjerner mere af puljen.")}
-      <div class="poker-hand" id="pokerHand">${Array.from({length:5},()=>`<div class="mini-card hidden-card">?</div>`).join("")}</div>
-      <button class="big-button" id="pokerBtn">DEAL 5 CARDS</button>
+      ${titleBlock("🃏 Poker Draw","Klassisk Video Poker! Få 5 kort, tryk på de kort du vil BEHOLDE (Hold), og træk nye kort for at vinde!")}
+      <div class="poker-hand" id="pokerHand">
+        ${Array.from({length:5},()=>`<div class="poker-card-wrap"><div class="mini-card hidden-card">?</div></div>`).join("")}
+      </div>
+      <div id="pokerPrompt" style="text-align:center;font-weight:900;color:var(--muted);font-size:13px;margin:8px auto">
+        Tryk på knappen for at deale 5 kort.
+      </div>
+      <button class="big-button" id="pokerBtn">DEAL 5 KORT</button>
       <div id="gameResult"></div>`;
-    $("#pokerBtn").onclick=playPoker;
+    $("#pokerBtn").onclick=startPokerDeal;
   }
 
-  async function playPoker(){
+  async function startPokerDeal(){
     if(busy||balance<=0)return;
-    const w=getWager(),deck=freshDeck(),cards=deck.slice(0,5);
+    const w=getWager(), deck=freshDeck(), cards=deck.slice(0,5);
     setBusy(true);
-    const hand=$("#pokerHand");hand.innerHTML="";
-    for(const c of cards){hand.innerHTML+=cardHtml(c);beep(500+Math.random()*130,.04,.016);await sleep(180)}
-    const rank=pokerRank(cards);
-    const delta=rank.mult<0?w:-rank.mult*w;
-    const actual=updateBalance(delta,`Poker Draw: ${rank.name}.`);
-    showResult(rank.name,
-      actual<0?`${Math.abs(actual)} point forsvandt.`:`${actual} point blev lagt oveni.`,
-      actual<0?"good":"bad");
+    pokerState={
+      deck,
+      cards,
+      held:[false,false,false,false,false],
+      phase:"hold",
+      wager:w
+    };
+
+    const hand=$("#pokerHand");
+    hand.innerHTML="";
+    for(let i=0;i<5;i++){
+      const c=cards[i];
+      hand.innerHTML+=`
+        <div class="poker-card-wrap" data-idx="${i}">
+          ${cardHtml(c)}
+          <span class="hold-badge" id="holdBadge-${i}">SKIFT</span>
+        </div>`;
+      beep(500+i*35,.035,.015);
+      await sleep(140);
+    }
+
+    // Auto-detect pairs og pre-hold dem for hurtig og god oplevelse
+    const rankCounts={};
+    cards.forEach(c=>rankCounts[c.rank]=(rankCounts[c.rank]||0)+1);
+    cards.forEach((c,i)=>{
+      if(rankCounts[c.rank]>1){
+        pokerState.held[i]=true;
+      }
+    });
+    updatePokerHeldUI();
+
+    $$(".poker-card-wrap").forEach(wrap=>{
+      wrap.onclick=()=>{
+        if(pokerState && pokerState.phase==="hold" && !busy){
+          const idx=+wrap.dataset.idx;
+          pokerState.held[idx]=!pokerState.held[idx];
+          updatePokerHeldUI();
+          beep(600+idx*40,.03,.01);
+        }
+      };
+    });
+
+    $("#pokerPrompt").textContent="Klik på de kort du vil BEHOLDE, og tryk derefter TRÆK NYE KORT:";
+    const btn=$("#pokerBtn");
+    btn.textContent="TRÆK NYE KORT 🔄";
+    btn.onclick=drawPoker;
     setBusy(false);
   }
 
-  function renderCups(a){
-    a.innerHTML=`
-      ${titleBlock("🥤 Three Cups","En bold gemmes under én af tre kopper. Rigtigt valg fjerner hele indsatsen. Forkert valg giver kun en halv indsats ekstra.")}
-      <div class="cups-stage">
-        ${[0,1,2].map(i=>`<button class="cup" data-cup="${i}">${i+1}<i class="ball"></i></button>`).join("")}
-      </div>
-      <div class="muted" style="text-align:center">Vælg en kop</div>
-      <div id="gameResult"></div>`;
-    $$(".cup").forEach(c=>c.onclick=()=>playCups(+c.dataset.cup));
+  function updatePokerHeldUI(){
+    if(!pokerState)return;
+    pokerState.held.forEach((isHeld,i)=>{
+      const wrap=document.querySelector(`.poker-card-wrap[data-idx="${i}"]`);
+      const badge=$(`#holdBadge-${i}`);
+      if(wrap && badge){
+        wrap.classList.toggle("held",isHeld);
+        badge.textContent=isHeld?"BEHOLD":"SKIFT";
+      }
+    });
   }
 
-  async function playCups(choice){
-    if(busy||balance<=0)return;
-    const w=getWager(),ball=Math.floor(Math.random()*3),cups=$$(".cup");
+  async function drawPoker(){
+    if(busy||balance<=0||!pokerState||pokerState.phase!=="hold")return;
     setBusy(true);
-    for(let round=0;round<3;round++){
-      cups.forEach(c=>{c.classList.remove("shuffle");void c.offsetWidth;c.classList.add("shuffle")});
-      beep(430+round*70,.05,.018);await sleep(720);
+    pokerState.phase="done";
+    const w=pokerState.wager;
+
+    // Udskift unheld kort fra bunken
+    let nextDeckIdx=5;
+    for(let i=0;i<5;i++){
+      if(!pokerState.held[i]){
+        const newCard=pokerState.deck[nextDeckIdx++];
+        pokerState.cards[i]=newCard;
+        const wrap=document.querySelector(`.poker-card-wrap[data-idx="${i}"]`);
+        if(wrap){
+          wrap.innerHTML=`${cardHtml(newCard)}<span class="hold-badge">NYT</span>`;
+          beep(580+i*30,.035,.014);
+          await sleep(150);
+        }
+      }
     }
-    cups[ball].classList.add("has-ball");
+
+    const rank=pokerRank(pokerState.cards);
+    let delta=w, title="", type="";
+
+    if(rank.name==="High Card"){
+      delta = w;
+      title = "HIGH CARD · TAB";
+      type = "bad";
+    }else if(rank.name==="One Pair"){
+      delta = -Math.max(1, Math.round(w * 0.75));
+      title = "✅ ET PAR";
+      type = "good";
+    }else if(rank.name==="Two Pair"){
+      delta = -Math.max(1, Math.round(w * 1.5));
+      title = "✨ TO PAR";
+      type = "good";
+      confetti();
+    }else if(rank.name==="Three of a Kind"){
+      delta = -2 * w;
+      title = "🔥 TRE ENS!";
+      type = "good";
+      confetti();
+    }else if(rank.name==="Straight"||rank.name==="Flush"||rank.name==="Full House"){
+      delta = -3 * w;
+      title = `🏆 ${rank.name.toUpperCase()}!`;
+      type = "good";
+      confetti();
+    }else{
+      delta = -4 * w;
+      title = `👑 ${rank.name.toUpperCase()} · MEGA JACKPOT!`;
+      type = "good";
+      confetti();
+    }
+
+    const actual=updateBalance(delta,`Poker Draw: ${rank.name}.`);
+    showResult(title,
+      actual<0?`${Math.abs(actual)} point forsvandt fra puljen!`:`${actual} point blev lagt oveni.`,
+      type);
+
+    $("#pokerPrompt").textContent=`Resultat: ${rank.name}.`;
+    const btn=$("#pokerBtn");
+    btn.textContent="DEAL IGEN";
+    btn.onclick=()=>renderPoker($("#arena"));
+    setBusy(false);
+  }
+
+  let cupsState={phase:"idle",ball:1};
+
+  function renderCups(a){
+    cupsState={phase:"ready",ball:Math.floor(Math.random()*3)};
+    a.innerHTML=`
+      ${titleBlock("🥤 Three Cups","Hold øje med koppen! Se hvor bolden starter, tryk start for at blande, og gæt den rigtige kop.")}
+      <div class="cups-stage" id="cupsStage">
+        ${[0,1,2].map(i=>`
+          <button class="cup ${i===cupsState.ball?"has-ball lift":""}" id="cup-${i}" data-cup="${i}">
+            ${i+1}<i class="ball"></i>
+          </button>`).join("")}
+      </div>
+      <div id="cupsPrompt" style="text-align:center;font-weight:900;margin:12px auto;color:var(--gold)">
+        Bolden er under kop ${cupsState.ball+1}! Tryk for at blande kopperne.
+      </div>
+      <button class="big-button" id="cupsBtn">BLAND KOPPERNE</button>
+      <div id="gameResult"></div>`;
+    $("#cupsBtn").onclick=startCupsShuffle;
+  }
+
+  async function startCupsShuffle(){
+    if(busy||balance<=0)return;
+    setBusy(true);
+    $("#cupsBtn").disabled=true;
+    $("#cupsPrompt").textContent="Kopperne lukkes og blandes...";
+
+    // Sænk koppen
+    const oldCup=$(`#cup-${cupsState.ball}`);
+    if(oldCup) oldCup.classList.remove("lift");
+    await sleep(400);
+
+    const cups=$$(".cup");
+    cups.forEach(c=>c.classList.remove("has-ball"));
+
+    // Bland kopperne
+    for(let r=0;r<3;r++){
+      cups.forEach(c=>{c.classList.remove("shuffle");void c.offsetWidth;c.classList.add("shuffle")});
+      beep(420+r*60,.04,.016);
+      await sleep(650);
+    }
+
+    // Vælg ny tilfældig placering for bolden
+    cupsState.ball=Math.floor(Math.random()*3);
+    cupsState.phase="pick";
+    $("#cupsPrompt").textContent="Hvor er bolden? Vælg en kop!";
+    $("#cupsBtn").classList.add("hidden");
+
+    cups.forEach(c=>{
+      c.onclick=()=>chooseCup(+c.dataset.cup);
+    });
+    setBusy(false);
+  }
+
+  async function chooseCup(choice){
+    if(busy||balance<=0||cupsState.phase!=="pick")return;
+    const w=getWager();
+    setBusy(true);
+    cupsState.phase="done";
+
+    const cups=$$(".cup");
+    cups[cupsState.ball].classList.add("has-ball");
     cups[choice].classList.add("lift");
-    if(choice!==ball) setTimeout(()=>cups[ball].classList.add("lift"),300);
-    await sleep(720);
-    const win=choice===ball;
-    const missPenalty=Math.max(1,Math.ceil(w/2));
-    const actual=updateBalance(win?-w:missPenalty,`Three Cups: bolden var under kop ${ball+1}.`);
-    showResult(win?"🎉 DU FANDT BOLDEN":`BOLDEN VAR UNDER ${ball+1}`,
-      win?`${Math.abs(actual)} point forsvandt.`:`${actual} point blev lagt oveni.`,
+
+    const win=choice===cupsState.ball;
+    if(!win){
+      await sleep(350);
+      cups[cupsState.ball].classList.add("lift");
+    }
+
+    beep(win?790:230,.12,.035);
+    const actual=updateBalance(win?-w:Math.max(1,Math.ceil(w/2)),`Three Cups: bolden var under ${cupsState.ball+1}.`);
+    showResult(win?"🎉 DU FANDT BOLDEN!":`BOLDEN VAR UNDER KOP ${cupsState.ball+1}`,
+      win?`${Math.abs(actual)} point forsvandt fra puljen!`:`${actual} point blev lagt oveni.`,
       win?"good":"bad");
+    if(win) confetti();
+
+    $("#cupsPrompt").textContent=win?"Flot set!":"Bedre held næste gang!";
+    const btn=$("#cupsBtn");
+    btn.classList.remove("hidden");
+    btn.disabled=false;
+    btn.textContent="SPIL IGEN";
+    btn.onclick=()=>renderCups($("#arena"));
     setBusy(false);
   }
 
   let pickedNumber=6;
   function renderPickNumber(a){
     a.innerHTML=`
-      ${titleBlock("🔢 Pick a Number","Vælg 1 til 6. Præcist hit fjerner hele indsatsen. Et nabotal giver delvis gevinst. Et almindeligt miss giver kun cirka en halv indsats ekstra.")}
+      ${titleBlock("🔢 Pick a Number","Vælg 1 til 6. Direkte hit er JACKPOT og fjerner 3.5× indsatsen! Nabotal fjerner fuld indsats. Miss koster kun en halv indsats.")}
       <div class="big-number" id="numberReveal">?</div>
       <div class="number-picks">${[1,2,3,4,5,6].map(n=>`<button class="number-pick ${n===pickedNumber?"active":""}" data-num="${n}">${n}</button>`).join("")}</div>
       <button class="big-button" id="numberBtn">DRAW NUMBER</button>
@@ -3281,13 +3697,13 @@ button{cursor:pointer}
 
     if(exact){
       beep(850,.12,.04);
-      const actual=updateBalance(-w,`Pick a Number: direkte hit ${n}.`);
-      showResult(`🎯 DIREKTE HIT · ${n}`,`${Math.abs(actual)} point forsvandt.`,"good");
+      const actual=updateBalance(-Math.max(1, Math.round(w * 3.5)),`Pick a Number: direkte hit ${n}. Jackpot!`);
+      showResult(`🎯 DIREKTE HIT JACKPOT · ${n}`,`${Math.abs(actual)} point forsvandt! (3.5× indsats fjernet)`,"good");
+      confetti();
     }else if(near){
       beep(680,.12,.035);
-      const reward=Math.max(1,Math.ceil(w/3));
-      const actual=updateBalance(-reward,`Pick a Number: nabotal ${n}.`);
-      showResult(`✨ NABOTAL · ${n}`,`${Math.abs(actual)} point forsvandt. Dit valg var ${pickedNumber}.`,"good");
+      const actual=updateBalance(-w,`Pick a Number: nabotal ${n}.`);
+      showResult(`✨ NABOTAL · ${n}`,`${Math.abs(actual)} point forsvandt (fuld indsats). Dit valg var ${pickedNumber}.`,"good");
     }else{
       beep(250,.12,.04);
       const penalty=Math.max(1,Math.ceil(w/2));
@@ -3328,7 +3744,7 @@ button{cursor:pointer}
     y.classList.add("shake");
     h.classList.add("shake");
 
-    await sleep(1250);
+    await sleep(650);
     y.classList.remove("shake");
     h.classList.remove("shake");
     y.textContent=rpsMap[choice];
@@ -3347,12 +3763,12 @@ button{cursor:pointer}
   function renderCrash(a){
     crashRunning=false;crashCashoutRequested=false;
     a.innerHTML=`
-      ${titleBlock("📈 Crash","Crash kører nu markant langsommere og viser 3 decimaler. CASH OUT låses ved 1.350x. Sjældne runder kan komme over 10x.")}
+      ${titleBlock("📈 Crash","Raketten stiger og multiplikatoren vokser! Du kan cashe ud fra 1.10x før raketten crasher. Jo højere tal, jo flere point forsvinder!")}
       <div class="crash-stage">
         <div class="crash-grid"></div>
         <div class="crash-line" id="crashLine"></div>
         <div class="crash-mult" id="crashMult">1.000x</div>
-        <div class="crash-note" id="crashNote">Cash out låses ved 1.350x</div>
+        <div class="crash-note" id="crashNote">Cash out er klar fra 1.10x</div>
       </div>
       <button class="big-button" id="crashBtn">START CRASH</button>
       <div id="gameResult"></div>`;
@@ -3367,22 +3783,19 @@ button{cursor:pointer}
 
   function randomCrashPoint(){
     const r=Math.random();
-    if(r<0.18) return 1.02+Math.random()*0.33;      // 18% before 1.35
-    if(r<0.43) return 1.35+Math.random()*0.65;      // 25% between 1.35 and 2.00
-    if(r<0.68) return 2.00+Math.random()*1.50;      // 25% between 2.00 and 3.50
-    if(r<0.86) return 3.50+Math.random()*2.50;      // 18% between 3.50 and 6.00
-    if(r<0.96) return 6.00+Math.random()*4.00;      // 10% between 6.00 and 10.00
-    return 10.00+Math.random()*5.00;                // 4% between 10.00 and 15.00
+    if(r<0.05) return 1.05+Math.random()*0.10;      // 5% instant crash 1.05 - 1.15
+    if(r<0.35) return 1.15+Math.random()*0.85;      // 30% between 1.15 and 2.00
+    if(r<0.70) return 2.00+Math.random()*2.00;      // 35% between 2.00 and 4.00
+    if(r<0.90) return 4.00+Math.random()*4.00;      // 20% between 4.00 and 8.00
+    return 8.00+Math.random()*12.00;                // 10% between 8.00 and 20.00
   }
 
   function crashRewardFraction(mult){
-    if(mult<1.50) return 0.30;
-    if(mult<2.00) return 0.50;
-    if(mult<3.00) return 0.75;
-    if(mult<5.00) return 1.00;
-    if(mult<8.00) return 1.25;
-    if(mult<10.00) return 1.50;
-    return 2.00;
+    if(mult<1.50) return 0.60;
+    if(mult<2.00) return 1.00; // 1x full wager!
+    if(mult<3.00) return 1.60;
+    if(mult<5.00) return 2.20;
+    return 3.00; // 3x jackpot!
   }
 
   async function playCrash(){
@@ -3394,8 +3807,8 @@ button{cursor:pointer}
     const crashAt=randomCrashPoint();
 
     btn.disabled=true;
-    btn.textContent="LÅST TIL 1.35x";
-    note.textContent="Cash out er låst";
+    btn.textContent="STARTER...";
+    note.textContent="Gør dig klar...";
     multEl.classList.remove("crashed");
 
     let mult=1.000;
@@ -3403,31 +3816,30 @@ button{cursor:pointer}
     let tick=0;
 
     while(mult<crashAt){
-      // Langsom vækst: ca. 10-14 sekunder til omkring 2x,
-      // og væsentligt længere ved høje multiplikatorer.
-      mult+=0.0065+mult*.00125;
+      // Snappier, exciting growth
+      mult+=0.012+mult*0.0022;
       multEl.textContent=mult.toFixed(3)+"x";
 
-      if(mult>=1.350 && btn.disabled){
+      if(mult>=1.100 && btn.disabled){
         btn.disabled=false;
-        btn.textContent="CASH OUT";
-        note.textContent="Cash out er åben";
-        beep(720,.07,.022);
+        btn.textContent="💰 CASH OUT";
+        note.textContent="Cash out er åben!";
+        beep(720,.05,.02);
       }
 
-      if(crashCashoutRequested && mult>=1.350){
+      if(crashCashoutRequested && mult>=1.100){
         cashed=true;
         break;
       }
 
-      const progress=clamp(Math.log(mult)/Math.log(15),0,1);
+      const progress=clamp(Math.log(mult)/Math.log(18),0,1);
       dot.style.left=`${4+progress*88}%`;
       dot.style.bottom=`${20+progress*220}px`;
 
-      if(tick++ % 4===0){
-        beep(285+progress*450,.014,.004);
+      if(tick++ % 3===0){
+        beep(285+progress*450,.012,.004);
       }
-      await sleep(95);
+      await sleep(55);
     }
 
     crashRunning=false;
@@ -3437,17 +3849,18 @@ button{cursor:pointer}
       const fraction=crashRewardFraction(mult);
       const remove=Math.max(1,Math.round(w*fraction));
       const actual=updateBalance(-remove,`Crash: cashed ud ved ${mult.toFixed(3)}x.`);
-      showResult(`💰 CASH OUT ${mult.toFixed(3)}x`,
-        `${Math.abs(actual)} point forsvandt. Risikoen stiger markant jo længere du venter.`,
+      showResult(`💰 CASH OUT ${mult.toFixed(3)}x!`,
+        `${Math.abs(actual)} point forsvandt fra puljen!`,
         "good");
+      if(fraction>=1.5) confetti();
     }else{
       multEl.textContent="CRASH";
       multEl.classList.add("crashed");
       beep(180,.18,.05);vibrate(100);
 
       const actual=updateBalance(w,`Crash: crashede ved ${crashAt.toFixed(3)}x.`);
-      showResult(`💥 CRASH ${crashAt.toFixed(3)}x`,
-        `${actual} point blev lagt oveni.`,
+      showResult(`💥 CRASH VED ${crashAt.toFixed(3)}x`,
+        `Raketten eksploderede! ${actual} point blev lagt oveni puljen.`,
         "bad");
     }
 
@@ -3455,7 +3868,7 @@ button{cursor:pointer}
     if(game==="crash"){
       $("#crashBtn").disabled=false;
       $("#crashBtn").textContent="START IGEN";
-      $("#crashNote").textContent="Cash out låses ved 1.350x";
+      $("#crashNote").textContent="Cash out er klar fra 1.10x";
     }
   }
 
@@ -3541,7 +3954,6 @@ button{cursor:pointer}
   let rabbitState=null;
 
   function rabbitMakeRound(){
-    // Five jumps. Each row has exactly one hidden trap.
     return {
       step:1,
       traps:Array.from({length:5},()=>Math.floor(Math.random()*3)),
@@ -3550,6 +3962,14 @@ button{cursor:pointer}
       animating:false,
       wager:null
     };
+  }
+
+  function rabbitRewardAmount(survivedHops, w){
+    if(survivedHops===1) return Math.max(1, Math.round(w * 0.4));
+    if(survivedHops===2) return Math.max(1, Math.round(w * 0.8));
+    if(survivedHops===3) return Math.max(1, Math.round(w * 1.4));
+    if(survivedHops===4) return Math.max(1, Math.round(w * 2.0));
+    return Math.max(1, Math.round(w * 3.0));
   }
 
   function rabbitProgressHtml(step){
@@ -3575,14 +3995,14 @@ button{cursor:pointer}
       </div>`).join("");
 
     a.innerHTML=`
-      ${titleBlock("🐇 Rabbit Adventure","Vælg indsats før første hop. Den låses til hele eventyret. Rammer du en fælde, lægges hele indsatsen oveni. Klarer du alle 5 hop, kan op til 2× indsatsen fjernes.")}
+      ${titleBlock("🐇 Rabbit Adventure","Hop fremad! Hver række har 2 sikre plader og 1 fælde. Du kan CASHE UD efter hvert hop eller gå efter alle 5 for 3× JACKPOT!")}
       <div class="rabbit-status">
         <strong id="rabbitStepText">Hop 1 af 5</strong>
         <div class="rabbit-progress" id="rabbitProgress">${rabbitProgressHtml(1)}</div>
         <span class="muted" id="rabbitStakeText" style="font-size:11px">Indsats låses ved første hop</span>
       </div>
       <div class="rabbit-board" id="rabbitBoard">
-        <div class="rabbit-goal">🏁 MÅL</div>
+        <div class="rabbit-goal">🏁 MÅL (3× JACKPOT)</div>
         ${rows}
         <div class="rabbit-start">START</div>
         <div class="rabbit-token" id="rabbitToken" aria-label="Kanin">🐇</div>
@@ -3611,6 +4031,37 @@ button{cursor:pointer}
       btn.classList.remove("hidden");
       btn.disabled=false;
     }
+  }
+
+  function rabbitCashout(){
+    if(!rabbitState || rabbitState.finished || !rabbitState.active) return;
+    const w = rabbitState.wager;
+    const survivedHops = rabbitState.step - 1;
+    if(survivedHops < 1) return;
+    const reward = rabbitRewardAmount(survivedHops, w);
+    rabbitState.finished = true;
+
+    // Kaninen fejrer
+    const rabbit = $("#rabbitToken");
+    if(rabbit) rabbit.classList.add("goal");
+    beep(780,.12,.03);
+    confetti();
+
+    // Afslør alle fælder på resten af rækkerne
+    for(let s=1; s<=5; s++){
+      const trap = rabbitState.traps[s-1];
+      rabbitRevealRow(s, -1, trap);
+    }
+
+    const actual = updateBalance(-reward, `Rabbit Adventure: cashede ud efter hop ${survivedHops}.`);
+    $("#rabbitInstruction").textContent = "Kaninen tog gulerødderne og stak sikkert af med gevinsten!";
+    showResult(`💰 CASH OUT · HOP ${survivedHops} KLARET`,
+      `Du tog gevinsten i tide! ${Math.abs(actual)} point forsvandt fra puljen.`,
+      "good");
+
+    rabbitState.animating = false;
+    setBusy(false);
+    showRabbitRestart();
   }
 
   function rabbitSetRowEnabled(step,enabled){
@@ -3688,7 +4139,6 @@ button{cursor:pointer}
       rabbitState.wager=getWager();
       rabbitState.active=true;
       setBusy(true);
-      // Indsatsen låses én gang ved første hop og bruges gennem alle 5 hop.
       rabbitSetRowEnabled(step,true);
       const stakeText=$("#rabbitStakeText");
       if(stakeText) stakeText.textContent=`Låst indsats: ${rabbitState.wager}`;
@@ -3711,12 +4161,17 @@ button{cursor:pointer}
       beep(180,.2,.05);
       vibrate([90,60,120]);
 
+      // Afslør alle fælder på resten af banen
+      for(let s=1; s<=5; s++){
+        rabbitRevealRow(s, -1, rabbitState.traps[s-1]);
+      }
+
       const penalty=w;
       const actual=updateBalance(penalty,`Rabbit Adventure: faldt på hop ${step}. Indsats ${w}.`);
 
       $("#rabbitInstruction").textContent=`Fælden var plade ${trap+1}. Kaninen faldt på hop ${step}.`;
       showResult(`🐇💥 FALDT PÅ HOP ${step}`,
-        `${actual} point blev lagt oveni. Det svarer til hele den låste indsats på ${w}.`,
+        `${actual} point blev lagt oveni. Fuld indsats på ${w} point tabt.`,
         "bad");
 
       rabbitState.animating=false;
@@ -3726,7 +4181,6 @@ button{cursor:pointer}
     }
 
     beep(760,.08,.025);
-    $("#rabbitInstruction").textContent=`Sikker plade. ${step===5?"Målet er lige foran!":"Vælg næste række."}`;
 
     if(step>=5){
       rabbitState.finished=true;
@@ -3737,13 +4191,13 @@ button{cursor:pointer}
       await rabbitMoveToGoal();
       confetti();
 
-      // Survival chance is (2/3)^5 ≈ 13.2%, so the reward remains up to 2x the locked wager.
-      const actual=updateBalance(-2*w,`Rabbit Adventure: alle 5 hop klaret. Låst indsats ${w}.`);
-      showResult("🏁🐇 MÅL NÅET!",
-        `${Math.abs(actual)} point forsvandt. Gevinsten var op til 2× den låste indsats på ${w}.`,
+      const reward=rabbitRewardAmount(5, w);
+      const actual=updateBalance(-reward,`Rabbit Adventure: alle 5 hop klaret. 3× indsats!`);
+      showResult("🏁🐇 MÅL NÅET · 3× JACKPOT!",
+        `Fantastisk! Alle 5 hop klaret! ${Math.abs(actual)} point forsvandt fra puljen!`,
         "good");
 
-      $("#rabbitInstruction").textContent="Kaninen nåede sikkert i mål.";
+      $("#rabbitInstruction").textContent="Kaninen nåede sikkert i mål med den store jackpot!";
       rabbitState.animating=false;
       setBusy(false);
       showRabbitRestart();
@@ -3751,9 +4205,20 @@ button{cursor:pointer}
     }
 
     rabbitState.step++;
-    $("#rabbitStepText").textContent=`Hop ${rabbitState.step} af 5`;
-    $("#rabbitProgress").innerHTML=rabbitProgressHtml(rabbitState.step);
-    rabbitSetRowEnabled(rabbitState.step,true);
+    const nextStep=rabbitState.step;
+    const curReward=rabbitRewardAmount(step, w);
+
+    $("#rabbitStepText").textContent=`Hop ${nextStep} af 5`;
+    $("#rabbitProgress").innerHTML=rabbitProgressHtml(nextStep);
+    rabbitSetRowEnabled(nextStep,true);
+
+    $("#rabbitInstruction").innerHTML=`
+      <div style="display:flex;gap:10px;justify-content:center;align-items:center;flex-wrap:wrap">
+        <button class="btn cashout-btn" id="rabbitCashoutBtn">💰 CASH UD NU (-${curReward} POINT)</button>
+        <span class="muted" style="font-size:12px">eller vælg en plade på række ${nextStep}</span>
+      </div>`;
+    $("#rabbitCashoutBtn").onclick=rabbitCashout;
+
     rabbitState.animating=false;
   }
 
