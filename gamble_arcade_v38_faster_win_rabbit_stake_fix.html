@@ -1,0 +1,3790 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Penalty Gamble Arcade</title>
+<style>
+:root{
+  --bg:#080b10;
+  --panel:#111722;
+  --panel2:#17202d;
+  --line:#2b3748;
+  --text:#f6f8fb;
+  --muted:#96a3b5;
+  --gold:#ffc857;
+  --green:#45d483;
+  --red:#ff6475;
+  --blue:#5ea1ff;
+  --purple:#a578ff;
+  --pink:#eb63cf;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif}
+body{
+  background:
+    radial-gradient(circle at 50% -10%,rgba(255,200,87,.15),transparent 32rem),
+    radial-gradient(circle at 100% 30%,rgba(94,161,255,.10),transparent 24rem),
+    #080b10;
+  overflow-x:hidden;
+}
+button,input{font:inherit}
+button{cursor:pointer}
+.hidden{display:none!important}
+.app{width:min(1080px,100%);margin:auto;padding:18px 14px 60px}
+.top{
+  display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px
+}
+.logo h1{font-size:clamp(23px,5vw,36px);margin:0;font-weight:950;letter-spacing:-.04em}
+.logo p{margin:5px 0 0;color:var(--muted);font-size:13px}
+.badge{
+  border:1px solid var(--line);background:rgba(255,255,255,.035);padding:8px 11px;border-radius:999px;
+  color:var(--muted);font-size:12px;white-space:nowrap
+}
+.card{
+  background:linear-gradient(180deg,rgba(255,255,255,.025),rgba(255,255,255,.008)),var(--panel);
+  border:1px solid var(--line);border-radius:22px;box-shadow:0 20px 70px rgba(0,0,0,.3)
+}
+.start{
+  min-height:540px;display:grid;place-items:center;padding:30px 18px;text-align:center;overflow:hidden;position:relative
+}
+.start:before{
+  content:"";position:absolute;width:430px;height:430px;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,200,87,.13),transparent 68%);
+  animation:breathe 3.6s ease-in-out infinite
+}
+@keyframes breathe{50%{transform:scale(1.14);opacity:.6}}
+.start-inner{position:relative;z-index:2;width:min(520px,100%)}
+.start-icon{font-size:76px;filter:drop-shadow(0 0 24px rgba(255,200,87,.35));animation:float 2.5s ease-in-out infinite}
+@keyframes float{50%{transform:translateY(-9px) rotate(3deg)}}
+.start h2{font-size:clamp(28px,7vw,48px);margin:9px 0 7px;line-height:1}
+.start p{color:var(--muted);margin:0 auto 22px;max-width:460px}
+.start-input-row{display:flex;gap:8px;justify-content:center}
+.start-input-row input{
+  width:150px;text-align:center;font-size:26px;font-weight:950;padding:13px;border-radius:14px;
+  color:var(--text);background:#0b111a;border:1px solid var(--line);outline:none
+}
+.btn{
+  border:1px solid var(--line);background:#1b2635;color:var(--text);font-weight:850;
+  border-radius:13px;padding:11px 14px;transition:transform .13s,filter .13s,background .13s
+}
+.btn:active{transform:scale(.96)}
+.btn:hover{filter:brightness(1.08)}
+.btn.primary{background:var(--gold);color:#1a1305;border-color:transparent}
+.btn.good{background:rgba(69,212,131,.14);border-color:rgba(69,212,131,.35);color:#a7f2c4}
+.btn.bad{background:rgba(255,100,117,.13);border-color:rgba(255,100,117,.35);color:#ffaab3}
+.btn.small{padding:7px 9px;font-size:12px}
+.hub{display:grid;grid-template-columns:250px 1fr;gap:14px}
+@media(max-width:760px){.hub{grid-template-columns:1fr}}
+.side{padding:14px;height:max-content;position:sticky;top:12px}
+@media(max-width:760px){.side{position:static}}
+.balance-box{
+  padding:18px;border:1px solid var(--line);border-radius:18px;background:#0c121b;text-align:center;position:relative;overflow:hidden
+}
+.balance-label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.11em}
+.balance{font-size:58px;font-weight:1000;letter-spacing:-.06em;line-height:1;margin:8px 0}
+.balance-sub{font-size:13px;color:var(--muted)}
+.balance-change{
+  position:absolute;left:50%;top:40%;font-size:32px;font-weight:1000;pointer-events:none;opacity:0
+}
+.balance-change.fly{
+  animation:balanceFly .9s ease forwards
+}
+@keyframes balanceFly{
+  0%{transform:translate(-50%,10px) scale(.7);opacity:0}
+  20%{opacity:1}
+  100%{transform:translate(-50%,-62px) scale(1.2);opacity:0}
+}
+.side-title{font-size:12px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin:16px 3px 8px}
+.wager-row{display:grid;grid-template-columns:1fr auto;gap:7px}
+.wager-row input{
+  width:100%;text-align:center;background:#0b111a;color:#fff;border:1px solid var(--line);
+  border-radius:12px;padding:11px;font-weight:900
+}
+.side-actions{display:grid;gap:8px;margin-top:12px}
+.main{padding:14px;overflow:hidden}
+.games{
+  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:12px;
+  max-height:285px;overflow-y:auto;padding:2px 5px 8px 2px;scrollbar-width:thin
+}
+@media(max-width:920px){.games{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:560px){.games{grid-template-columns:repeat(2,minmax(0,1fr));max-height:255px}}
+.game-tab{
+  min-height:80px;text-align:left;padding:10px;border-radius:14px;border:1px solid var(--line);
+  background:#151e2a;color:var(--text);transition:.18s
+}
+.game-tab:hover{transform:translateY(-2px);background:#1b2635}
+.game-tab.active{outline:2px solid rgba(255,200,87,.68);background:#1d2734}
+.game-tab .ico{font-size:23px}
+.game-tab strong{display:block;font-size:13px;margin-top:5px}
+.game-tab span{display:block;color:var(--muted);font-size:10px;margin-top:2px}
+.arena{
+  min-height:520px;border:1px solid var(--line);border-radius:19px;background:
+  radial-gradient(circle at 50% 0%,rgba(255,255,255,.035),transparent 20rem),#0b1119;
+  padding:16px;position:relative;overflow:hidden
+}
+.arena-title{text-align:center;margin-bottom:12px}
+.arena-title h2{margin:0;font-size:23px}
+.arena-title p{margin:5px auto 0;color:var(--muted);font-size:12px;max-width:620px}
+.center{display:grid;place-items:center}
+.result{
+  width:min(560px,100%);margin:14px auto 0;padding:14px;border-radius:15px;border:1px solid var(--line);
+  background:#141d29;text-align:center;opacity:0;transform:translateY(10px) scale(.97)
+}
+.result.show{animation:resultIn .35s ease forwards}
+.result.good{border-color:rgba(69,212,131,.5);box-shadow:0 0 40px rgba(69,212,131,.07)}
+.result.bad{border-color:rgba(255,100,117,.5);box-shadow:0 0 40px rgba(255,100,117,.07)}
+.result.special{border-color:rgba(255,200,87,.58);box-shadow:0 0 42px rgba(255,200,87,.09);background:linear-gradient(180deg,rgba(255,200,87,.08),rgba(255,255,255,.01)),#141d29}
+.result strong{font-size:20px}
+.result p{margin:4px 0 0;color:var(--muted);font-size:13px}
+@keyframes resultIn{to{opacity:1;transform:none}}
+
+.result-hud{
+  position:fixed;
+  left:50%;
+  bottom:max(16px,env(safe-area-inset-bottom));
+  z-index:88;
+  width:min(560px,calc(100vw - 24px));
+  padding:15px 16px;
+  border-radius:17px;
+  border:1px solid var(--line);
+  background:rgba(20,29,41,.97);
+  backdrop-filter:blur(12px);
+  text-align:center;
+  box-shadow:0 18px 55px rgba(0,0,0,.48);
+  opacity:0;
+  pointer-events:none;
+  transform:translate(-50%,24px) scale(.96);
+  transition:opacity .22s ease,transform .22s ease;
+}
+.result-hud.show{
+  opacity:1;
+  pointer-events:auto;
+  transform:translate(-50%,0) scale(1);
+}
+.result-hud.good{
+  border-color:rgba(69,212,131,.72);
+  box-shadow:0 18px 55px rgba(0,0,0,.48),0 0 34px rgba(69,212,131,.12);
+}
+.result-hud.bad{
+  border-color:rgba(255,100,117,.72);
+  box-shadow:0 18px 55px rgba(0,0,0,.48),0 0 34px rgba(255,100,117,.12);
+}
+.result-hud.special{
+  border-color:rgba(255,200,87,.76);
+  box-shadow:0 18px 55px rgba(0,0,0,.48),0 0 34px rgba(255,200,87,.13);
+}
+.result-hud strong{display:block;font-size:20px}
+.result-hud p{margin:5px 0 0;color:#b9c4d2;font-size:13px;line-height:1.35}
+.result-hud .hud-close{
+  position:absolute;right:8px;top:7px;border:0;background:transparent;color:#8997aa;
+  width:30px;height:30px;border-radius:50%;font-size:18px
+}
+
+.streak-wrap{
+  width:min(360px,100%);
+  margin:8px auto 14px;
+  padding:11px 12px;
+  border-radius:14px;
+  background:#111925;
+  border:1px solid var(--line);
+  text-align:center
+}
+.streak-label{
+  color:var(--muted);
+  font-size:11px;
+  font-weight:900;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  margin-bottom:8px
+}
+.streak-pips{display:flex;justify-content:center;gap:9px}
+.streak-pip{
+  width:52px;height:9px;border-radius:999px;background:#273446;border:1px solid #34445a;
+  overflow:hidden
+}
+.streak-pip.active{
+  background:var(--gold);
+  border-color:#ffe19a;
+  box-shadow:0 0 14px rgba(255,200,87,.3)
+}
+.streak-text{margin-top:8px;font-size:12px;color:#c1ccda;font-weight:800}
+
+.big-button{
+  display:block;width:min(420px,100%);margin:16px auto 0;border:0;border-radius:15px;
+  background:var(--gold);color:#181004;padding:14px 16px;font-weight:1000;font-size:16px;
+  box-shadow:0 8px 26px rgba(255,200,87,.13);transition:.15s
+}
+.big-button:active{transform:scale(.97)}
+.big-button:disabled{opacity:.5;cursor:not-allowed}
+.flash{
+  position:fixed;inset:0;pointer-events:none;z-index:60;opacity:0
+}
+.flash.good.go{animation:flashGood .45s ease}
+.flash.bad.go{animation:flashBad .45s ease}
+@keyframes flashGood{0%,100%{opacity:0}35%{opacity:.18;background:var(--green)}}
+@keyframes flashBad{0%,100%{opacity:0}35%{opacity:.14;background:var(--red)}}
+.shake{animation:shake .35s linear}
+@keyframes shake{20%{transform:translateX(-5px)}40%{transform:translateX(5px)}60%{transform:translateX(-3px)}80%{transform:translateX(3px)}}
+.particle{
+  position:fixed;z-index:70;width:9px;height:9px;border-radius:2px;pointer-events:none;
+  animation:particle 1.05s ease-out forwards
+}
+@keyframes particle{to{transform:translate(var(--x),var(--y)) rotate(520deg);opacity:0}}
+.overlay{
+  position:fixed;inset:0;z-index:90;background:rgba(5,8,12,.88);backdrop-filter:blur(9px);
+  display:grid;place-items:center;padding:18px;opacity:0;pointer-events:none;transition:.25s
+}
+.overlay.show{opacity:1;pointer-events:auto}
+.overlay-card{
+  width:min(480px,100%);text-align:center;background:#111824;border:1px solid var(--line);
+  border-radius:24px;padding:28px;transform:scale(.85);transition:.3s
+}
+.overlay.show .overlay-card{transform:scale(1)}
+.overlay .emoji{font-size:76px}
+.overlay h2{font-size:36px;margin:8px 0}
+.overlay p{color:var(--muted)}
+.footer-note{color:var(--muted);font-size:11px;line-height:1.45;margin-top:12px}
+
+/* WHEEL */
+.wheel-stage{min-height:350px;display:grid;place-items:center;position:relative;margin-top:8px}
+.wheel-shell{position:relative;width:min(360px,86vw);aspect-ratio:1}
+.wheel-pointer{
+  position:absolute;z-index:10;left:50%;top:-9px;transform:translateX(-50%);
+  width:0;height:0;border-left:15px solid transparent;border-right:15px solid transparent;
+  border-top:28px solid var(--gold);filter:drop-shadow(0 3px 7px rgba(0,0,0,.8))
+}
+.wheel{
+  position:absolute;inset:0;border-radius:50%;
+  background:conic-gradient(
+    from -22.5deg,
+    #273547 0deg 45deg,
+    #315585 45deg 90deg,
+    #5f4592 90deg 135deg,
+    #923c7f 135deg 180deg,
+    #2f7b61 180deg 225deg,
+    #8a5b27 225deg 270deg,
+    #7a3448 270deg 315deg,
+    #9d7028 315deg 360deg
+  );
+  border:9px solid #202a37;box-shadow:0 0 0 3px #425067,inset 0 0 45px rgba(0,0,0,.42),0 22px 55px rgba(0,0,0,.45);
+  transform:rotate(0deg);will-change:transform
+}
+.wheel:after{
+  content:"";position:absolute;left:50%;top:50%;width:56px;height:56px;transform:translate(-50%,-50%);
+  border-radius:50%;background:#111824;border:6px solid var(--gold);box-shadow:0 0 20px rgba(255,200,87,.28)
+}
+.wheel-label{
+  position:absolute;left:50%;top:50%;width:58px;margin-left:-29px;margin-top:-10px;text-align:center;
+  font-size:9.5px;font-weight:1000;text-shadow:0 2px 5px rgba(0,0,0,.9);line-height:1.02
+}
+.wheel-ticks{position:absolute;inset:-5px;border-radius:50%;pointer-events:none}
+.tick{
+  position:absolute;left:50%;top:50%;width:3px;height:11px;background:#dbe4f0;transform-origin:50% 175px;
+  opacity:.65
+}
+@media(max-width:440px){.tick{transform-origin:50% 148px}.wheel-label{font-size:8.5px;width:52px;margin-left:-26px}}
+
+/* COIN */
+.coin-stage{height:290px;display:grid;place-items:center;perspective:900px}
+.coin3d{
+  width:150px;height:150px;position:relative;
+  transform-style:preserve-3d;
+  -webkit-transform-style:preserve-3d;
+  filter:drop-shadow(0 22px 24px rgba(0,0,0,.45))
+}
+.coin-face{
+  position:absolute;inset:0;border-radius:50%;display:grid;place-items:center;
+  backface-visibility:hidden;
+  -webkit-backface-visibility:hidden;
+  font-size:55px;font-weight:1000;
+  box-shadow:inset 0 0 25px rgba(0,0,0,.24)
+}
+.coin-face.front{
+  transform:rotateY(0deg) translateZ(1px);
+  -webkit-transform:rotateY(0deg) translateZ(1px);
+  border:9px solid #e4a92c;
+  background:radial-gradient(circle at 35% 30%,#ffe99a,#ffc857 42%,#c4871e);
+  color:#4a3004
+}
+.coin-face.back{
+  transform:rotateY(180deg) translateZ(1px);
+  -webkit-transform:rotateY(180deg) translateZ(1px);
+  border:9px solid #a8b3c6;
+  background:radial-gradient(circle at 35% 30%,#f2f6ff,#aebbd0 44%,#66758c);
+  color:#162132
+}
+.coin-face small{
+  display:block;margin-top:2px;font-size:14px;font-weight:1000;letter-spacing:.12em
+}
+.coin3d.final-tails{
+  transform:none!important;
+  -webkit-transform:none!important;
+}
+.coin3d.final-tails .coin-face.front{display:none}
+.coin3d.final-tails .coin-face.back{
+  transform:rotateY(0deg) translateZ(1px);
+  -webkit-transform:rotateY(0deg) translateZ(1px)
+}
+.coin3d.final-heads{
+  transform:none!important;
+  -webkit-transform:none!important;
+}
+.coin3d.final-heads .coin-face.back{display:none}
+.coin3d.flip-heads{animation:coinHeads 1.7s cubic-bezier(.18,.8,.25,1) forwards}
+.coin3d.flip-tails{animation:coinTails 1.7s cubic-bezier(.18,.8,.25,1) forwards}
+@keyframes coinHeads{to{transform:rotateY(1800deg) rotateX(360deg)}}
+@keyframes coinTails{to{transform:rotateY(1980deg) rotateX(360deg)}}
+
+/* DICE */
+.dice-stage{height:290px;display:grid;place-items:center;perspective:900px}
+.die{
+  width:120px;height:120px;border-radius:24px;background:linear-gradient(145deg,#f8fafc,#cbd5e1);
+  color:#111827;display:grid;place-items:center;font-size:78px;box-shadow:0 25px 40px rgba(0,0,0,.38);
+  transform-style:preserve-3d
+}
+.die.roll{animation:dieRoll 1.35s cubic-bezier(.18,.75,.2,1)}
+@keyframes dieRoll{
+  0%{transform:rotateX(0) rotateY(0) scale(.9)}
+  40%{transform:rotateX(590deg) rotateY(380deg) translateY(-28px) scale(1.08)}
+  75%{transform:rotateX(920deg) rotateY(700deg) translateY(8px)}
+  100%{transform:rotateX(1080deg) rotateY(720deg) translateY(0)}
+}
+
+/* CARDS */
+.card-stage{min-height:270px;display:flex;align-items:center;justify-content:center;gap:14px;perspective:900px;flex-wrap:wrap}
+.play-card{
+  width:112px;height:158px;position:relative;transform-style:preserve-3d
+}
+.play-card .front,.play-card .back{
+  position:absolute;inset:0;border-radius:14px;backface-visibility:hidden;border:1px solid #cdd4dd;
+  display:grid;place-items:center;font-size:42px;font-weight:1000;box-shadow:0 18px 35px rgba(0,0,0,.35)
+}
+.play-card .front{background:#f7f8fa;color:#101318}
+.play-card .back{
+  transform:rotateY(180deg);background:
+    repeating-linear-gradient(45deg,#25334a,#25334a 8px,#182437 8px,#182437 16px);
+  border:5px solid #e4e9ef
+}
+.play-card.face-down{transform:rotateY(180deg)}
+.play-card.flip{animation:cardFlip .65s ease forwards}
+.play-card.deal{animation:deal .55s cubic-bezier(.2,.8,.2,1)}
+@keyframes cardFlip{to{transform:rotateY(0)}}
+@keyframes deal{from{transform:translateY(-160px) rotate(18deg) scale(.6);opacity:0}to{transform:none;opacity:1}}
+
+/* SLOTS */
+.slot-machine{
+  width:min(470px,100%);margin:30px auto 10px;padding:18px;border-radius:24px;
+  border:1px solid #495669;background:linear-gradient(#263247,#131b28);
+  box-shadow:inset 0 0 35px rgba(0,0,0,.4),0 25px 50px rgba(0,0,0,.35)
+}
+.slot-window{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.reel-window{
+  height:120px;overflow:hidden;border-radius:14px;background:#eef2f6;border:5px solid #9aa8b9;position:relative
+}
+.reel-strip{
+  position:absolute;left:0;right:0;top:0;display:flex;flex-direction:column;align-items:center;
+  transition:transform 1.6s cubic-bezier(.1,.65,.12,1)
+}
+.reel-symbol{height:110px;display:grid;place-items:center;font-size:57px;width:100%}
+
+/* CASE */
+.case-box{
+  margin:18px auto;width:min(720px,100%);overflow:hidden;border:1px solid var(--line);border-radius:17px;
+  background:#080d14;position:relative;box-shadow:inset 0 0 30px rgba(0,0,0,.6)
+}
+.case-box:before,.case-box:after{
+  content:"";position:absolute;z-index:4;top:0;bottom:0;width:70px;pointer-events:none
+}
+.case-box:before{left:0;background:linear-gradient(90deg,#080d14,transparent)}
+.case-box:after{right:0;background:linear-gradient(-90deg,#080d14,transparent)}
+.case-pointer{position:absolute;z-index:8;left:50%;top:0;bottom:0;width:2px;background:var(--gold);box-shadow:0 0 18px rgba(255,200,87,1)}
+.case-pointer:before{content:"";position:absolute;left:-8px;top:0;border-left:9px solid transparent;border-right:9px solid transparent;border-top:13px solid var(--gold)}
+.case-track{display:flex;gap:8px;padding:20px 12px;will-change:transform}
+.loot{
+  flex:0 0 124px;height:118px;border-radius:13px;border:1px solid #2e3b4d;background:#141d28;
+  padding:10px;display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden
+}
+.loot:before{
+  content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.08),transparent 38%,transparent);
+  opacity:.45;pointer-events:none
+}
+.loot:after{content:"";position:absolute;left:0;right:0;bottom:0;height:6px;background:var(--rar)}
+.loot .tier{
+  display:inline-block;align-self:flex-start;padding:4px 7px;border-radius:999px;
+  font-size:9px;font-weight:1000;letter-spacing:.12em;text-transform:uppercase;
+  border:1px solid rgba(255,255,255,.18);background:rgba(0,0,0,.28);color:#f6f8fb
+}
+.loot .e{font-size:28px}
+.loot .n{font-size:12px;font-weight:900}
+.loot .m{font-size:11px;color:var(--muted)}
+.loot.common{--rar:#aeb8c5;background:linear-gradient(180deg,rgba(174,184,197,.12),rgba(20,29,40,.96))}
+.loot.blue{--rar:#5ea1ff;background:linear-gradient(180deg,rgba(94,161,255,.16),rgba(20,29,40,.96))}
+.loot.purple{--rar:#a578ff;background:linear-gradient(180deg,rgba(165,120,255,.18),rgba(20,29,40,.96))}
+.loot.pink{--rar:#eb63cf;background:linear-gradient(180deg,rgba(235,99,207,.18),rgba(20,29,40,.96))}
+.loot.gold{--rar:#ffc857;background:linear-gradient(180deg,rgba(255,200,87,.2),rgba(20,29,40,.96))}
+.loot.winner{animation:lootWinner .7s ease infinite alternate}
+@keyframes lootWinner{to{transform:scale(1.08);box-shadow:0 0 30px var(--rar)}}
+
+.case-legend{
+  width:min(720px,100%);margin:12px auto 0;display:grid;gap:8px
+}
+.case-legend-row{
+  display:grid;grid-template-columns:auto 1fr auto auto;gap:10px;align-items:center;
+  padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:#111824
+}
+.case-dot{width:12px;height:12px;border-radius:50%;display:inline-block}
+.case-legend-row strong{font-size:13px}
+.case-legend-row span{font-size:12px;color:var(--muted)}
+.case-legend-row .chance{
+  font-size:12px;font-weight:900;padding:4px 8px;border-radius:999px;background:rgba(255,255,255,.05)
+}
+.case-legend-row .quality{
+  font-size:11px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)
+}
+
+.case-reveal{
+  text-align:center;opacity:0;transform:scale(.65);margin-top:12px
+}
+.case-reveal.show{animation:reveal .55s cubic-bezier(.15,.8,.2,1) forwards}
+.case-reveal-card{
+  width:min(430px,100%);margin:0 auto;padding:18px;border-radius:18px;border:2px solid var(--rar);
+  background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.01)),#111824;
+  box-shadow:0 0 32px color-mix(in srgb, var(--rar) 28%, transparent)
+}
+.case-reveal-card .tier-line{
+  display:inline-block;padding:5px 10px;border-radius:999px;background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.14);font-size:11px;font-weight:1000;letter-spacing:.12em;text-transform:uppercase
+}
+.case-reveal-card .chance-line{
+  margin-top:8px;color:var(--muted);font-size:12px
+}
+.case-reveal-card .quality-line{
+  margin-top:6px;font-size:12px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:var(--rar)
+}
+@keyframes reveal{to{opacity:1;transform:scale(1)}}
+
+/* DOUBLE */
+.double-stage{display:grid;place-items:center;min-height:300px}
+.double-orb{
+  width:190px;height:190px;border-radius:50%;display:grid;place-items:center;font-size:48px;font-weight:1000;
+  background:radial-gradient(circle at 35% 30%,#384963,#172131 65%,#0b1119);
+  border:2px solid #53637b;box-shadow:0 0 60px rgba(94,161,255,.12),inset 0 0 40px rgba(0,0,0,.45)
+}
+.double-orb.spin{animation:orbSpin 1.5s cubic-bezier(.2,.75,.2,1)}
+
+@keyframes orbSpin{50%{transform:scale(1.18) rotate(540deg);filter:brightness(1.7)}100%{transform:rotate(1080deg)}}
+
+/* EXTRA GAMES */
+.casino-table{
+  width:min(650px,100%);margin:18px auto;padding:18px;border-radius:20px;
+  background:radial-gradient(circle at 50% 10%,rgba(69,212,131,.11),transparent 20rem),#0e211b;
+  border:1px solid rgba(69,212,131,.25);box-shadow:inset 0 0 35px rgba(0,0,0,.35)
+}
+.hand-label{text-align:center;color:var(--muted);font-size:12px;margin:8px 0}
+.hand{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;min-height:120px}
+.mini-card{
+  width:76px;height:108px;border-radius:11px;background:#f6f7f9;color:#11151b;
+  display:grid;place-items:center;font-size:27px;font-weight:1000;
+  border:1px solid #d5dbe3;box-shadow:0 12px 25px rgba(0,0,0,.3);
+  animation:deal .42s cubic-bezier(.2,.8,.2,1)
+}
+.mini-card.red{color:#c6293b}
+.mini-card.hidden-card{
+  color:transparent;background:
+    repeating-linear-gradient(45deg,#20304a,#20304a 7px,#17243a 7px,#17243a 14px);
+  border:4px solid #e6ebf1
+}
+.mini-card.bj-hole-card{
+  position:relative;padding:0;background:transparent;border:0;box-shadow:none;
+  perspective:700px;overflow:visible
+}
+.bj-hole-inner{
+  position:absolute;inset:0;transform-style:preserve-3d;
+  transform:rotateY(0deg)
+}
+.bj-hole-card.revealed .bj-hole-inner{
+  animation:bjHoleFlip .56s cubic-bezier(.2,.72,.18,1) forwards
+}
+.bj-hole-face{
+  position:absolute;inset:0;border-radius:11px;display:grid;place-items:center;
+  backface-visibility:hidden;-webkit-backface-visibility:hidden;
+  font-size:27px;font-weight:1000;border:1px solid #d5dbe3;
+  box-shadow:0 12px 25px rgba(0,0,0,.3)
+}
+.bj-hole-back{
+  background:repeating-linear-gradient(45deg,#20304a,#20304a 7px,#17243a 7px,#17243a 14px);
+  border:4px solid #e6ebf1
+}
+.bj-hole-front{
+  transform:rotateY(180deg);background:#f6f7f9;color:#11151b
+}
+.bj-hole-front.red{color:#c6293b}
+.mini-card.bj-dealer-new{animation:bjDealerDeal .52s cubic-bezier(.16,.82,.25,1)}
+@keyframes bjHoleFlip{
+  0%{transform:rotateY(0deg)}
+  100%{transform:rotateY(180deg)}
+}
+@keyframes bjDealerDeal{
+  0%{opacity:0;transform:translateY(-24px) translateX(18px) rotate(7deg) scale(.88)}
+  68%{opacity:1;transform:translateY(3px) translateX(-2px) rotate(-1deg) scale(1.03)}
+  100%{opacity:1;transform:none}
+}
+.score-bubble{
+  display:inline-block;margin:4px auto 8px;padding:5px 9px;border-radius:999px;
+  background:rgba(255,255,255,.06);color:#dce5ef;font-size:12px;font-weight:900
+}
+
+.roulette-stage{min-height:370px;display:grid;place-items:center;position:relative}
+.roulette-shell{
+  position:relative;width:min(328px,82vw);aspect-ratio:1;
+  filter:drop-shadow(0 30px 40px rgba(0,0,0,.38))
+}
+.roulette-disc{
+  position:absolute;inset:0;border-radius:50%;
+  border:14px solid #7a5a2c;
+  box-shadow:
+    0 0 0 4px #b99049,
+    0 0 0 8px #2a313c,
+    inset 0 0 55px rgba(0,0,0,.5),
+    inset 0 0 0 10px rgba(255,255,255,.05),
+    0 24px 50px rgba(0,0,0,.4);
+  will-change:transform;
+  overflow:hidden
+}
+.roulette-disc:before{
+  content:"";position:absolute;inset:35.5%;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,#21412e,#13211a 66%);
+  border:6px solid #d1ab62;box-shadow:inset 0 0 22px rgba(0,0,0,.55);z-index:2
+}
+.roulette-disc:after{
+  content:"";position:absolute;inset:46.5%;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,#1d3325,#0b120f 70%);
+  border:4px solid #c79c52;z-index:3;
+  box-shadow:0 0 14px rgba(0,0,0,.35)
+}
+.roulette-pointer{
+  position:absolute;left:50%;top:-10px;transform:translateX(-50%);
+  width:0;height:0;z-index:9;
+  border-left:14px solid transparent;
+  border-right:14px solid transparent;
+  border-top:0;
+  border-bottom:26px solid #ffe7a8;
+  filter:drop-shadow(0 2px 4px rgba(0,0,0,.4))
+}
+.roulette-pocket-label{
+  position:absolute;left:50%;top:50%;z-index:1;
+  width:28px;height:20px;margin-left:-14px;margin-top:-10px;
+  display:grid;place-items:center;
+  font-size:10px;font-weight:1000;color:#fff;
+  text-shadow:0 1px 3px rgba(0,0,0,.95);
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,.12);
+  box-shadow:0 1px 5px rgba(0,0,0,.22);
+  pointer-events:none
+}
+.roulette-pocket-label.red{background:rgba(194,59,69,.82)}
+.roulette-pocket-label.black{background:rgba(23,29,39,.88)}
+.roulette-pocket-label.green{
+  background:rgba(23,117,72,.95);
+  border-color:rgba(145,255,193,.42);
+  box-shadow:0 0 12px rgba(76,229,144,.28)
+}
+.roulette-pocket-label.zero{
+  width:32px;height:22px;margin-left:-16px;margin-top:-11px;
+  font-size:11px
+}
+.roulette-ball-orbit{
+  position:absolute;inset:0;z-index:6;will-change:transform;
+  pointer-events:none
+}
+.roulette-ball{
+  position:absolute;width:16px;height:16px;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,#fffdf7,#e9e3d4 68%,#cac0ac);
+  left:50%;top:7px;transform:translateX(-50%);
+  box-shadow:0 2px 8px rgba(0,0,0,.8), inset 0 0 4px rgba(255,255,255,.65);
+  transition:top .3s ease
+}
+.roulette-ball-orbit.settle .roulette-ball{top:22px}
+.roulette-result{
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  z-index:8;min-width:94px;height:94px;border-radius:50%;
+  display:grid;place-items:center;
+  font-size:42px;font-weight:1000;text-shadow:0 2px 10px rgba(0,0,0,.8);
+  background:radial-gradient(circle at 35% 30%,rgba(255,255,255,.06),rgba(0,0,0,.16));
+  border:4px solid rgba(214,173,99,.9);
+  box-shadow:inset 0 0 15px rgba(0,0,0,.35)
+}
+.roulette-legend{
+  margin-top:8px;text-align:center;color:var(--muted);font-size:11px;font-weight:900
+}
+.roulette-bet-panel{
+  width:min(620px,100%);margin:14px auto 92px;padding:12px;border-radius:18px;
+  background:#101824;border:1px solid var(--line)
+}
+.roulette-bet-tabs{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px
+}
+.roulette-bet-tab{
+  min-height:44px;border-radius:11px;border:1px solid #334258;background:#172231;
+  color:#b9c5d4;font-size:11px;font-weight:1000;padding:7px
+}
+.roulette-bet-tab.active{
+  background:#26364b;color:#fff;border-color:#d0aa63;
+  box-shadow:inset 0 0 0 1px rgba(255,211,110,.22)
+}
+.roulette-bet-summary{
+  display:grid;grid-template-columns:1fr;gap:4px;
+  padding:10px 12px;margin-bottom:10px;border-radius:13px;background:#0c131d;border:1px solid #2d3a4c
+}
+.roulette-bet-summary strong{font-size:14px;line-height:1.2}
+.roulette-bet-summary span{font-size:9px;color:var(--muted);font-weight:1000;letter-spacing:.08em}
+.roulette-bet-view{display:none}
+.roulette-bet-view.active{display:block}
+.roulette-bet-heading{
+  margin:9px 0 7px;color:#dce5ef;font-size:10px;font-weight:1000;letter-spacing:.08em;text-transform:uppercase
+}
+.roulette-number-grid{
+  display:grid;grid-template-columns:repeat(6,1fr);gap:5px;margin:0 auto
+}
+.roulette-number{
+  min-height:38px;border-radius:9px;border:1px solid rgba(255,255,255,.13);
+  color:#fff;font-size:11px;font-weight:1000;box-shadow:inset 0 -2px 0 rgba(0,0,0,.18)
+}
+.roulette-number.red{background:#9f303a}
+.roulette-number.black{background:#171d27}
+.roulette-number.green{background:#177548}
+.roulette-number.zero{grid-column:1/-1;min-height:42px}
+.roulette-number.active{
+  outline:3px solid #ffd36e;outline-offset:1px;transform:translateY(-1px)
+}
+.roulette-outside-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:6px
+}
+.roulette-outside{
+  min-height:43px;border-radius:10px;border:1px solid #334258;background:#172231;
+  color:#edf2f7;font-size:10px;font-weight:1000;padding:7px 5px
+}
+.roulette-outside.redbet{background:#782832}
+.roulette-outside.blackbet{background:#151b25}
+.roulette-outside.greenbet{
+  background:#177548;
+  border-color:rgba(145,255,193,.36);
+  box-shadow:0 0 0 1px rgba(255,255,255,.04), inset 0 -2px 0 rgba(0,0,0,.18)
+}
+.roulette-outside.active{
+  outline:3px solid #ffd36e;outline-offset:1px
+}
+.roulette-combo-builder{
+  display:grid;grid-template-columns:1fr;gap:8px
+}
+.roulette-combo-builder select{
+  width:100%;min-width:0;min-height:46px;border-radius:10px;border:1px solid #334258;background:#111a26;
+  color:#edf2f7;padding:0 10px;font-size:16px
+}
+.roulette-combo-builder .btn{min-height:46px}
+.roulette-rule-note{
+  margin-top:10px;color:var(--muted);font-size:10px;line-height:1.35
+}
+.roulette-spin-dock{
+  position:sticky;bottom:8px;z-index:18;width:min(620px,calc(100% - 4px));margin:0 auto;
+  padding:10px;border-radius:17px;background:rgba(10,16,24,.96);
+  border:1px solid #3c4b60;box-shadow:0 14px 34px rgba(0,0,0,.46);
+  backdrop-filter:blur(12px)
+}
+.roulette-spin-dock-top{
+  display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:8px
+}
+.roulette-spin-dock-bet{min-width:0}
+.roulette-spin-dock-bet span{
+  display:block;color:var(--muted);font-size:9px;font-weight:1000;letter-spacing:.08em
+}
+.roulette-spin-dock-bet strong{
+  display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px
+}
+.roulette-inline-result{
+  display:none;margin-top:8px;padding:10px 11px;border-radius:12px;
+  border:1px solid #39495e;background:#111a26
+}
+.roulette-inline-result.show{display:block}
+.roulette-inline-result.good{border-color:rgba(69,212,131,.55);background:rgba(26,70,49,.62)}
+.roulette-inline-result.bad{border-color:rgba(255,100,117,.55);background:rgba(78,28,37,.62)}
+.roulette-inline-result.special{border-color:rgba(255,200,87,.55)}
+.roulette-inline-result strong{display:block;font-size:15px}
+.roulette-inline-result span{display:block;margin-top:3px;font-size:10px;color:#c4cfdd;line-height:1.3}
+@media(max-width:520px){
+  .roulette-outside-grid{grid-template-columns:repeat(2,1fr)}
+  .roulette-number-grid{grid-template-columns:repeat(6,1fr)}
+  .roulette-bet-panel{margin-bottom:98px}
+}
+.bet-picks{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.bet-pick.active{outline:2px solid var(--gold)}
+.bet-red{background:#8d2733}.bet-black{background:#141b25}.bet-green{background:#176442}
+
+.quick-card-stage{min-height:260px;display:grid;place-items:center}
+.quick-card{
+  width:140px;height:196px;border-radius:16px;background:#f7f8fa;color:#101318;
+  display:grid;place-items:center;font-size:54px;font-weight:1000;border:2px solid #d8dee7;
+  box-shadow:0 22px 40px rgba(0,0,0,.4);transform-style:preserve-3d
+}
+.quick-card.red{color:#c6293b}
+.quick-card.reveal{animation:quickReveal .75s cubic-bezier(.2,.8,.2,1)}
+@keyframes quickReveal{0%{transform:rotateY(90deg) scale(.75);opacity:.2}100%{transform:none;opacity:1}}
+
+.war-stage{display:grid;grid-template-columns:1fr 1fr;gap:18px;width:min(500px,100%);margin:25px auto}
+@media(max-width:500px){.war-stage{grid-template-columns:1fr}}
+.war-side{text-align:center;padding:14px;border:1px solid var(--line);border-radius:16px;background:#121a25}
+
+.plinko-board{
+  position:relative;width:min(500px,94%);height:340px;margin:16px auto 8px;
+  border-radius:20px;border:1px solid var(--line);background:linear-gradient(180deg,#101a2a,#0b1119);
+  overflow:hidden
+}
+.peg{position:absolute;width:8px;height:8px;border-radius:50%;background:#8da2bd;box-shadow:0 0 8px rgba(141,162,189,.4)}
+.plinko-chip{
+  position:absolute;top:10px;left:50%;width:23px;height:23px;border-radius:50%;background:var(--gold);
+  border:3px solid #ffe8a8;box-shadow:0 0 16px rgba(255,200,87,.5);transform:translateX(-50%);z-index:5;
+  transition:left .19s ease,top .19s ease
+}
+.plinko-slots{
+  position:absolute;left:6px;right:6px;bottom:6px;display:grid;grid-template-columns:repeat(5,1fr);gap:4px
+}
+.plinko-slot{
+  height:42px;border-radius:8px;display:grid;place-items:center;font-size:11px;font-weight:1000;
+  background:#172334;border:1px solid #33435a
+}
+
+.box-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;width:min(620px,100%);margin:28px auto}
+@media(max-width:560px){.box-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.safe-box{
+  aspect-ratio:1;border-radius:16px;border:1px solid #34445b;background:#172231;color:#fff;
+  font-size:36px;font-weight:1000;transition:.22s
+}
+.safe-box:hover{transform:translateY(-4px)}
+.safe-box.open{transform:rotateY(180deg) scale(1.03)}
+.safe-box.bomb{background:#5b1d29}
+.safe-box.safe{background:#173d2b}
+
+.coin-face small{display:block;font-size:13px;letter-spacing:.08em;margin-top:4px}
+
+/* MANY MORE GAMES */
+.dice-pair,.dice-triple{
+  display:flex;justify-content:center;gap:14px;align-items:center;min-height:220px;perspective:900px
+}
+.mini-die{
+  width:92px;height:92px;border-radius:20px;background:linear-gradient(145deg,#f8fafc,#cbd5e1);
+  color:#111827;display:grid;place-items:center;font-size:58px;box-shadow:0 18px 32px rgba(0,0,0,.36)
+}
+.mini-die.roll{animation:dieRoll 1.05s cubic-bezier(.18,.75,.2,1)}
+.number-picks{
+  display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:18px auto;width:min(520px,100%)
+}
+.number-pick{
+  width:52px;height:52px;border-radius:13px;border:1px solid var(--line);background:#182334;
+  color:#fff;font-size:18px;font-weight:1000
+}
+.number-pick.active{outline:2px solid var(--gold);background:#253246}
+.big-number{
+  min-height:240px;display:grid;place-items:center;font-size:110px;font-weight:1000;
+  text-shadow:0 18px 35px rgba(0,0,0,.45)
+}
+.baccarat-board{
+  width:min(620px,100%);margin:18px auto;display:grid;grid-template-columns:1fr 1fr;gap:12px
+}
+@media(max-width:520px){.baccarat-board{grid-template-columns:1fr 1fr;gap:7px}.baccarat-board .mini-card{width:60px;height:88px;font-size:22px}}
+.baccarat-side{
+  padding:14px 8px;border:1px solid var(--line);border-radius:16px;background:#111a27;text-align:center
+}
+.poker-hand{
+  display:flex;justify-content:center;gap:8px;flex-wrap:wrap;min-height:170px;align-items:center;margin:15px auto
+}
+.cups-stage{
+  display:flex;justify-content:center;gap:18px;align-items:flex-end;min-height:270px;perspective:900px
+}
+.cup{
+  width:105px;height:135px;border-radius:18px 18px 42px 42px;border:2px solid #886a35;
+  background:linear-gradient(145deg,#e0b353,#9c6b24);color:#241604;font-size:40px;font-weight:1000;
+  display:grid;place-items:center;position:relative;transition:transform .45s cubic-bezier(.2,.8,.2,1)
+}
+.cup.shuffle{animation:cupShuffle .75s ease}
+.cup.lift{transform:translateY(-76px)}
+.ball{
+  position:absolute;left:50%;bottom:-50px;transform:translateX(-50%);
+  width:34px;height:34px;border-radius:50%;background:#f3f4f6;border:3px solid #bdc6d1;
+  box-shadow:0 8px 15px rgba(0,0,0,.35);display:none
+}
+.cup.has-ball .ball{display:block}
+@keyframes cupShuffle{25%{transform:translateX(18px) rotate(5deg)}50%{transform:translateX(-18px) rotate(-5deg)}75%{transform:translateX(10px) rotate(3deg)}}
+
+.rps-stage{display:flex;justify-content:center;gap:18px;min-height:235px;align-items:center}
+.rps-hand{
+  width:145px;height:145px;border-radius:50%;display:grid;place-items:center;font-size:72px;
+  background:#182334;border:1px solid #35445a;box-shadow:0 18px 35px rgba(0,0,0,.32)
+}
+.rps-hand.shake{animation:rpsShake .6s ease 2;will-change:transform}
+@keyframes rpsShake{50%{transform:translateY(-25px) rotate(12deg)}}
+
+.crash-stage{
+  width:min(620px,100%);height:300px;margin:18px auto;border:1px solid var(--line);border-radius:18px;
+  background:linear-gradient(180deg,#0c1522,#080e16);position:relative;overflow:hidden
+}
+.crash-grid{
+  position:absolute;inset:0;background-image:
+    linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px);
+  background-size:38px 38px
+}
+.crash-line{
+  position:absolute;left:0;bottom:20px;width:8px;height:8px;border-radius:50%;
+  background:var(--gold);box-shadow:0 0 20px rgba(255,200,87,.8);
+  transition:left .1s linear,bottom .1s linear
+}
+.crash-line:after{
+  content:"";position:absolute;right:3px;bottom:3px;width:220px;height:3px;
+  background:linear-gradient(90deg,transparent,var(--gold));transform-origin:right center;
+  transform:rotate(-22deg)
+}
+.crash-mult{
+  position:absolute;inset:0;display:grid;place-items:center;font-size:66px;font-weight:1000;
+  text-shadow:0 10px 28px rgba(0,0,0,.55)
+}
+.crash-mult.crashed{color:var(--red);animation:shake .35s linear}
+.crash-note{position:absolute;left:12px;bottom:9px;color:var(--muted);font-size:11px}
+
+.royal-stage{
+  min-height:300px;position:relative;display:grid;place-items:center;perspective:1100px;margin-top:8px
+}
+.royal-deck{
+  position:absolute;left:50%;top:54%;width:118px;height:166px;transform:translate(-50%,-50%);
+  border-radius:14px;background:repeating-linear-gradient(45deg,#25334a,#25334a 8px,#182437 8px,#182437 16px);
+  border:5px solid #e4e9ef;box-shadow:8px 8px 0 #151d29,14px 14px 0 #0d131c,0 22px 38px rgba(0,0,0,.42)
+}
+.royal-draw-card{
+  position:absolute;left:50%;top:52%;width:128px;height:180px;transform:translate(-50%,20px) rotateY(180deg);
+  transform-style:preserve-3d;opacity:0;z-index:5
+}
+.royal-draw-card.draw{animation:royalDraw 1.55s cubic-bezier(.16,.8,.2,1) forwards}
+.royal-face{
+  position:absolute;inset:0;border-radius:15px;backface-visibility:hidden;display:grid;place-items:center;
+  border:2px solid #d5dce5;box-shadow:0 22px 42px rgba(0,0,0,.42);font-size:46px;font-weight:1000
+}
+.royal-front{background:#f7f8fa;color:#11151b}
+.royal-front.red{color:#c6293b}
+.royal-back{
+  transform:rotateY(180deg);background:repeating-linear-gradient(45deg,#25334a,#25334a 8px,#182437 8px,#182437 16px);
+  border:5px solid #e4e9ef
+}
+@keyframes royalDraw{
+  0%{opacity:0;transform:translate(-50%,42px) rotateY(180deg) rotateZ(-5deg) scale(.82)}
+  35%{opacity:1;transform:translate(-50%,-12px) rotateY(180deg) rotateZ(3deg) scale(1)}
+  100%{opacity:1;transform:translate(-50%,-38px) rotateY(0deg) rotateZ(-2deg) scale(1.06)}
+}
+.royal-odds{
+  width:min(590px,100%);margin:8px auto 0;display:grid;grid-template-columns:repeat(5,1fr);gap:6px
+}
+.royal-odds div{
+  padding:8px 5px;border-radius:10px;background:#121a25;border:1px solid var(--line);text-align:center;font-size:10px;color:var(--muted)
+}
+.royal-odds strong{display:block;color:#fff;font-size:12px;margin-bottom:2px}
+@media(max-width:560px){.royal-odds{grid-template-columns:repeat(3,1fr)}}
+
+.lucky-meter{
+  width:min(520px,100%);margin:18px auto;padding:16px;border-radius:18px;border:1px solid var(--line);
+  background:#111925;text-align:center
+}
+.lucky-meter .huge{font-size:64px;font-weight:1000}
+
+/* RABBIT ADVENTURE */
+.rabbit-status{
+  width:min(560px,100%);margin:8px auto 12px;display:flex;align-items:center;justify-content:space-between;
+  gap:10px;flex-wrap:wrap;padding:10px 12px;border:1px solid var(--line);border-radius:14px;background:#111925
+}
+.rabbit-status strong{font-size:13px}
+.rabbit-hearts{display:flex;gap:5px}
+.rabbit-progress{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.rabbit-progress i{
+  width:28px;height:7px;border-radius:999px;background:#263448;border:1px solid #34445a
+}
+.rabbit-progress i.done{background:var(--green);border-color:#7be7a6}
+.rabbit-progress i.current{background:var(--gold);border-color:#ffe19a;box-shadow:0 0 12px rgba(255,200,87,.28)}
+
+.rabbit-board{
+  position:relative;width:min(620px,100%);height:590px;margin:0 auto 10px;border-radius:22px;overflow:hidden;
+  border:1px solid #294035;
+  background:
+    radial-gradient(circle at 20% 20%,rgba(255,255,255,.035),transparent 16rem),
+    repeating-linear-gradient(0deg,rgba(255,255,255,.018) 0 1px,transparent 1px 38px),
+    linear-gradient(180deg,#13261d,#0d1b15);
+  box-shadow:inset 0 0 42px rgba(0,0,0,.4)
+}
+.rabbit-board:before{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:
+    radial-gradient(circle at 8% 15%,rgba(75,130,83,.24) 0 8px,transparent 9px),
+    radial-gradient(circle at 92% 34%,rgba(75,130,83,.24) 0 10px,transparent 11px),
+    radial-gradient(circle at 13% 72%,rgba(75,130,83,.2) 0 7px,transparent 8px),
+    radial-gradient(circle at 87% 85%,rgba(75,130,83,.22) 0 9px,transparent 10px);
+}
+.rabbit-goal{
+  position:absolute;left:50%;top:18px;transform:translateX(-50%);z-index:3;
+  min-width:150px;padding:9px 13px;border-radius:14px;border:1px solid rgba(255,200,87,.45);
+  background:rgba(255,200,87,.10);text-align:center;font-size:12px;font-weight:1000;color:#ffe4a2
+}
+.rabbit-start{
+  position:absolute;left:50%;bottom:17px;transform:translateX(-50%);z-index:2;
+  width:108px;height:42px;border-radius:50%;background:#203329;border:1px solid #385745;
+  display:grid;place-items:center;color:#a9baaf;font-size:10px;font-weight:900;letter-spacing:.08em
+}
+.rabbit-row{
+  position:absolute;left:7%;right:7%;height:70px;display:grid;grid-template-columns:repeat(3,1fr);gap:8%;
+  align-items:center
+}
+.rabbit-row[data-step="5"]{top:78px}
+.rabbit-row[data-step="4"]{top:170px}
+.rabbit-row[data-step="3"]{top:262px}
+.rabbit-row[data-step="2"]{top:354px}
+.rabbit-row[data-step="1"]{top:446px}
+.rabbit-pad{
+  height:58px;border-radius:16px;border:2px solid #516359;background:
+    linear-gradient(180deg,#66796d,#43564b);
+  color:#e6eee9;font-size:15px;font-weight:1000;position:relative;overflow:hidden;
+  box-shadow:0 8px 14px rgba(0,0,0,.24);transition:transform .15s,filter .15s,opacity .2s
+}
+.rabbit-pad:before{
+  content:"";position:absolute;inset:5px;border-radius:11px;border:1px dashed rgba(255,255,255,.16)
+}
+.rabbit-pad:not(:disabled):active{transform:scale(.95)}
+.rabbit-pad:disabled{cursor:default}
+.rabbit-pad.locked{opacity:.34;filter:saturate(.35)}
+.rabbit-pad.safe{
+  background:linear-gradient(180deg,#2e8055,#1d5739);border-color:#5ee397;opacity:1
+}
+.rabbit-pad.trap{
+  background:linear-gradient(180deg,#8b3441,#5c202b);border-color:#ff7180;opacity:1;
+  animation:trapCrack .45s ease
+}
+.rabbit-pad.chosen-safe{box-shadow:0 0 0 2px #86f1af,0 0 25px rgba(69,212,131,.32)}
+.rabbit-pad.chosen-trap{box-shadow:0 0 0 2px #ff8995,0 0 28px rgba(255,100,117,.32)}
+@keyframes trapCrack{
+  0%{transform:none}30%{transform:rotate(-2deg) translateY(2px)}60%{transform:rotate(2deg) translateY(5px)}100%{transform:none}
+}
+
+.rabbit-token{
+  position:absolute;z-index:10;width:46px;height:46px;border-radius:50%;display:grid;place-items:center;
+  font-size:33px;line-height:1;background:#f4f1e7;border:3px solid #ddd6c5;
+  box-shadow:0 10px 18px rgba(0,0,0,.35);
+  left:50%;bottom:16px;transform:translateX(-50%);
+  transition:left .58s cubic-bezier(.2,.75,.2,1),top .58s cubic-bezier(.2,.75,.2,1),bottom .58s cubic-bezier(.2,.75,.2,1),transform .58s cubic-bezier(.2,.75,.2,1)
+}
+.rabbit-token.hopping{animation:rabbitHop .58s cubic-bezier(.2,.75,.2,1)}
+@keyframes rabbitHop{
+  0%{scale:1}42%{scale:1.18;filter:drop-shadow(0 18px 7px rgba(0,0,0,.24))}100%{scale:1}
+}
+.rabbit-token.falling{
+  transition:none;animation:rabbitFall 1s cubic-bezier(.3,0,.7,1) forwards
+}
+@keyframes rabbitFall{
+  0%{transform:translate(-50%,-50%) scale(1) rotate(0);opacity:1}
+  35%{transform:translate(-50%,-38%) scale(.88) rotate(90deg);opacity:1}
+  100%{transform:translate(-50%,70px) scale(.12) rotate(430deg);opacity:0}
+}
+.rabbit-token.goal{
+  animation:rabbitGoal .8s ease infinite alternate
+}
+@keyframes rabbitGoal{
+  to{transform:translate(-50%,-50%) scale(1.14);filter:drop-shadow(0 0 16px rgba(255,200,87,.55))}
+}
+.rabbit-instruction{
+  text-align:center;color:var(--muted);font-size:12px;margin:8px auto 0;min-height:34px
+}
+@media(max-width:520px){
+  .rabbit-board{height:530px}
+  .rabbit-row[data-step="5"]{top:68px}
+  .rabbit-row[data-step="4"]{top:150px}
+  .rabbit-row[data-step="3"]{top:232px}
+  .rabbit-row[data-step="2"]{top:314px}
+  .rabbit-row[data-step="1"]{top:396px}
+  .rabbit-row{left:5%;right:5%;gap:5%;height:62px}
+  .rabbit-pad{height:53px}
+  .rabbit-start{bottom:14px}
+  .rabbit-token{bottom:13px}
+}
+
+/* ALWAYS VISIBLE DEBT HUD */
+.debt-hud{
+  position:fixed;
+  z-index:86;
+  top:max(10px,env(safe-area-inset-top));
+  right:12px;
+  width:178px;
+  padding:10px 11px;
+  border-radius:15px;
+  border:1px solid #35445a;
+  background:rgba(11,17,25,.94);
+  backdrop-filter:blur(12px);
+  box-shadow:0 12px 34px rgba(0,0,0,.38);
+  transition:border-color .25s,box-shadow .25s,transform .25s,background .25s;
+}
+.debt-hud.hidden{display:none}
+.debt-hud-top{display:flex;align-items:flex-end;justify-content:space-between;gap:8px}
+.debt-hud-label{
+  color:var(--muted);font-size:9px;font-weight:1000;letter-spacing:.12em;text-transform:uppercase
+}
+.debt-hud-number{font-size:30px;font-weight:1000;line-height:.9}
+.debt-hud-limit{font-size:10px;color:var(--muted);white-space:nowrap}
+.debt-meter{
+  height:8px;margin-top:8px;border-radius:999px;overflow:hidden;background:#263142;border:1px solid #34445a
+}
+.debt-meter-fill{
+  height:100%;width:0;border-radius:inherit;background:var(--green);
+  transition:width .35s ease,background .25s
+}
+.debt-hud-message{margin-top:6px;color:#aeb9c8;font-size:10px;font-weight:800;line-height:1.15}
+
+.debt-hud.caution{
+  border-color:rgba(255,200,87,.55);
+  box-shadow:0 12px 34px rgba(0,0,0,.38),0 0 24px rgba(255,200,87,.10)
+}
+.debt-hud.caution .debt-meter-fill{background:var(--gold)}
+.debt-hud.danger{
+  border-color:rgba(255,132,82,.72);
+  background:rgba(36,20,18,.95);
+  box-shadow:0 12px 34px rgba(0,0,0,.42),0 0 28px rgba(255,132,82,.16);
+  animation:debtPulseSlow 1.15s ease-in-out infinite
+}
+.debt-hud.danger .debt-meter-fill{background:#ff8452}
+.debt-hud.critical{
+  border-color:rgba(255,100,117,.9);
+  background:rgba(47,15,21,.96);
+  box-shadow:0 12px 34px rgba(0,0,0,.45),0 0 34px rgba(255,100,117,.25);
+  animation:debtPulseFast .62s ease-in-out infinite
+}
+.debt-hud.critical .debt-meter-fill{background:var(--red)}
+.debt-hud.busted{
+  border-color:var(--red);background:#42131b;
+  animation:debtBustShake .36s linear 2
+}
+.debt-hud.busted .debt-meter-fill{background:var(--red)}
+
+.debt-vignette{
+  position:fixed;inset:0;z-index:54;pointer-events:none;opacity:0;
+  transition:opacity .35s ease;
+  box-shadow:inset 0 0 110px 22px rgba(255,72,86,.0)
+}
+.debt-vignette.caution{
+  opacity:.12;box-shadow:inset 0 0 100px 16px rgba(255,200,87,.34)
+}
+.debt-vignette.danger{
+  opacity:.24;box-shadow:inset 0 0 120px 24px rgba(255,116,74,.46);
+  animation:vignetteBreathe 1.3s ease-in-out infinite
+}
+.debt-vignette.critical{
+  opacity:.36;box-shadow:inset 0 0 135px 34px rgba(255,72,86,.58);
+  animation:vignetteBreathe .66s ease-in-out infinite
+}
+@keyframes debtPulseSlow{50%{transform:scale(1.025)}}
+@keyframes debtPulseFast{50%{transform:scale(1.045)}}
+@keyframes vignetteBreathe{50%{opacity:.48}}
+@keyframes debtBustShake{
+  20%{transform:translateX(-5px)}40%{transform:translateX(5px)}
+  60%{transform:translateX(-3px)}80%{transform:translateX(3px)}
+}
+
+.debt-overlay-card{
+  border-color:rgba(255,100,117,.6)!important;
+  box-shadow:0 0 52px rgba(255,100,117,.13)
+}
+.debt-overlay-card .debt-big{
+  font-size:64px;font-weight:1000;color:#ff8995;line-height:1;margin:8px 0
+}
+
+@media(max-width:760px){
+  .debt-hud{
+    top:max(8px,env(safe-area-inset-top));right:8px;width:150px;padding:8px 9px
+  }
+  .debt-hud-number{font-size:25px}
+  .debt-hud-message{font-size:9px}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .debt-hud.danger,.debt-hud.critical,.debt-vignette.danger,.debt-vignette.critical{animation:none}
+}
+
+#arena.round-ending{
+  pointer-events:none;
+}
+#arena.round-ending button,
+#arena.round-ending input{
+  cursor:not-allowed;
+}
+
+</style>
+</head>
+<body>
+<div class="flash" id="flash"></div>
+<div class="debt-vignette" id="debtVignette"></div>
+<div class="debt-hud hidden" id="debtHud" aria-live="polite">
+  <div class="debt-hud-top">
+    <div>
+      <div class="debt-hud-label">Aktuel gæld</div>
+      <div class="debt-hud-number" id="debtHudNumber">0</div>
+    </div>
+    <div class="debt-hud-limit">11 = TAB</div>
+  </div>
+  <div class="debt-meter"><div class="debt-meter-fill" id="debtMeterFill"></div></div>
+  <div class="debt-hud-message" id="debtHudMessage">Sikker zone</div>
+</div>
+<div class="result-hud" id="resultHud" role="status" aria-live="polite">
+  <button class="hud-close" id="resultHudClose" aria-label="Luk resultat">×</button>
+  <strong id="resultHudTitle"></strong>
+  <p id="resultHudText"></p>
+</div>
+
+<div class="overlay" id="zeroOverlay">
+  <div class="overlay-card">
+    <div class="emoji">🏆</div>
+    <h2>Du gik i 0</h2>
+    <p>Din nuværende pulje er væk. Runden er slut.</p>
+    <button class="btn primary" id="newRoundOverlay">Ny runde</button>
+  </div>
+</div>
+
+<div class="overlay" id="debtOverlay">
+  <div class="overlay-card debt-overlay-card">
+    <div class="emoji">💀</div>
+    <h2>For stor gæld</h2>
+    <div class="debt-big" id="debtBustAmount">11</div>
+    <p>Du kom over gældsgrænsen. Runden er tabt, og puljen skal cashes ud.</p>
+    <button class="btn bad" id="debtCashoutBtn" style="margin-top:16px">Cash ud & start ny runde</button>
+  </div>
+</div>
+
+<div class="app">
+  <div class="top">
+    <div class="logo">
+      <h1>🎰 Penalty Gamble</h1>
+      <p>Én person, én pulje, flere måder at gamble den på</p>
+    </div>
+    <div class="badge">24 spil · én pulje</div>
+  </div>
+
+  <section class="card start" id="startScreen">
+    <div class="start-inner">
+      <div class="start-icon">🎲</div>
+      <h2>Hvad har du modtaget?</h2>
+      <p>Indtast den aktuelle pulje fra 1 til 10. 10 er den højeste startværdi, fordi 11 eller mere betyder automatisk tab.</p>
+      <div class="start-input-row">
+        <input id="startAmount" type="number" min="1" max="10" value="4">
+        <button class="btn primary" id="startBtn">Start</button>
+      </div>
+      <div class="footer-note">Spillet bruger point som neutral standard. Hvis I kobler point til alkohol, så hold mængderne små og undgå at presse nogen til at fortsætte.</div>
+    </div>
+  </section>
+
+  <section class="hub hidden" id="hub">
+    <aside class="card side">
+      <div class="balance-box" id="balanceBox">
+        <div class="balance-label">Din aktuelle pulje</div>
+        <div class="balance" id="balance">0</div>
+        <div class="balance-sub">point tilbage</div>
+        <div class="balance-change" id="balanceChange"></div>
+      </div>
+
+      <div class="side-title">Indsats</div>
+      <div class="footer-note" style="margin:0 0 8px">
+        Indsatsen stiger ikke automatisk, når du taber og puljen vokser. MAX betyder altid hele din aktuelle pulje. Eksempel: 2 → tab → pulje 3, indsats bliver 2, men MAX sætter den til 3.
+      </div>
+      <div class="wager-row">
+        <input id="wager" type="number" min="1" value="1">
+        <button class="btn small" id="maxBtn">MAX</button>
+      </div>
+      <div id="stakeCapText" class="footer-note" style="margin-top:6px;padding:8px 10px">Aktuel MAX: 0</div>
+
+      <div class="side-actions">
+        <button class="btn good" id="takeBtn">Tag puljen og afslut</button>
+        <button class="btn" id="newRoundBtn">Ny modtaget pulje</button>
+      </div>
+
+      <div class="side-title">Seneste</div>
+      <div id="lastAction" class="footer-note">Ingen gamble endnu.</div>
+
+      <div class="footer-note">
+        <strong>Gældsregel:</strong> 10 point er sidste sikre niveau. Rammer puljen 11 eller mere, taber du automatisk runden og skal cashe puljen ud.
+      </div>
+      <div class="footer-note">
+        Hvert spil ændrer kun denne ene pulje. Når en ny person får en ny straf, starter I bare en ny runde og indtaster det nye antal.
+      </div>
+    </aside>
+
+    <main class="card main" id="mainCard">
+      <div class="games">
+        <button class="game-tab active" data-game="wheel"><div class="ico">🎡</div><strong>Risk Wheel</strong><span>Rigtigt roterende hjul</span></button>
+        <button class="game-tab" data-game="case"><div class="ico">📦</div><strong>Case Opening</strong><span>CS inspireret rul</span></button>
+        <button class="game-tab" data-game="coin"><div class="ico">🪙</div><strong>Coin Flip</strong><span>3D flip</span></button>
+        <button class="game-tab" data-game="dice"><div class="ico">🎲</div><strong>Dice Risk</strong><span>Animeret kast</span></button>
+        <button class="game-tab" data-game="higher"><div class="ico">🃏</div><strong>Higher / Lower</strong><span>Kort reveal</span></button>
+        <button class="game-tab" data-game="slots"><div class="ico">🎰</div><strong>Slots</strong><span>Tre rigtige reels</span></button>
+        <button class="game-tab" data-game="double"><div class="ico">⚡</div><strong>Double or Nothing</strong><span>Alt eller intet</span></button>
+        <button class="game-tab" data-game="blackjack"><div class="ico">🂡</div><strong>Blackjack</strong><span>Slå huset til 21</span></button>
+        <button class="game-tab" data-game="roulette"><div class="ico">🎯</div><strong>Casino Roulette</strong><span>Rød, sort eller grøn</span></button>
+        <button class="game-tab" data-game="redblack"><div class="ico">♦️</div><strong>Red / Black</strong><span>Gæt kortets farve</span></button>
+        <button class="game-tab" data-game="war"><div class="ico">⚔️</div><strong>War</strong><span>Højeste kort vinder</span></button>
+        <button class="game-tab" data-game="plinko"><div class="ico">🔻</div><strong>Plinko</strong><span>Lad chippen falde</span></button>
+        <button class="game-tab" data-game="boxes"><div class="ico">💣</div><strong>Safe Boxes</strong><span>Undgå bomben</span></button>
+        <button class="game-tab" data-game="lucky7"><div class="ico">7️⃣</div><strong>Lucky 7</strong><span>Ram præcis 7</span></button>
+        <button class="game-tab" data-game="overunder"><div class="ico">↕️</div><strong>Over / Under 7</strong><span>Gæt terningesummen</span></button>
+        <button class="game-tab" data-game="tridice"><div class="ico">🎲</div><strong>Triple Dice</strong><span>Lav eller høj sum</span></button>
+        <button class="game-tab" data-game="baccarat"><div class="ico">🎴</div><strong>Baccarat Lite</strong><span>Player eller Banker</span></button>
+        <button class="game-tab" data-game="poker"><div class="ico">🃏</div><strong>Poker Draw</strong><span>Par eller bedre</span></button>
+        <button class="game-tab" data-game="cups"><div class="ico">🥤</div><strong>Three Cups</strong><span>Find bolden</span></button>
+        <button class="game-tab" data-game="picknumber"><div class="ico">🔢</div><strong>Pick a Number</strong><span>Ram 1 til 6</span></button>
+        <button class="game-tab" data-game="rps"><div class="ico">✊</div><strong>Rock Paper Scissors</strong><span>Slå huset</span></button>
+        <button class="game-tab" data-game="crash"><div class="ico">📈</div><strong>Crash</strong><span>Cash ud før crash</span></button>
+        <button class="game-tab" data-game="queen"><div class="ico">👑</div><strong>Royal Draw</strong><span>Træk ét kort fra dækket</span></button>
+        <button class="game-tab" data-game="rabbit"><div class="ico">🐇</div><strong>Rabbit Adventure</strong><span>5 hop · 1 fælde pr. række</span></button>
+      </div>
+      <div class="arena" id="arena"></div>
+    </main>
+  </section>
+</div>
+
+<script>
+(() => {
+  const $ = s => document.querySelector(s);
+  const $$ = s => [...document.querySelectorAll(s)];
+  const clamp = (n,a,b) => Math.max(a,Math.min(b,n));
+  const sleep = ms => new Promise(r=>setTimeout(r,ms));
+
+  let balance = 0;
+  let initialStakeCap = 0;
+  let desiredWager = 1;
+  let game = "wheel";
+  let busy = false;
+  let wheelRotation = 0;
+  let higherCard = randomCard();
+  let higherStreak = 0;
+  let resultHudTimer = null;
+  let zeroOverlayTimer = null;
+  let debtBustTimer = null;
+  let debtBusted = false;
+  let roundEnding = false;
+  const DEBT_SAFE_MAX = 10;
+  const DEBT_BUST_AT = 11;
+
+  const wheelOptions = [
+    {label:"0x", kind:"delta", delta:w=>-w, text:"Hele indsatsen forsvinder"},
+    {label:"½x", kind:"delta", delta:w=>-Math.max(1,Math.floor(w/2)), text:"Halvdelen af indsatsen forsvinder"},
+    {label:"1x", kind:"delta", delta:w=>0, text:"Ingen ændring"},
+    {label:"1½x", kind:"delta", delta:w=>Math.max(1,Math.ceil(w/2)), text:"En halv indsats bliver lagt oveni"},
+    {label:"2x", kind:"delta", delta:w=>w, text:"Indsatsen bliver lagt oveni"},
+    {label:"3x", kind:"delta", delta:w=>2*w, text:"Dobbelt indsats bliver lagt oveni"},
+    {label:"-1", kind:"fixed", amount:-1, text:"Ét point forsvinder"},
+    {label:"+1", kind:"fixed", amount:1, text:"Ét point bliver lagt oveni"},
+    {label:"GIV UD", kind:"give", text:"Giv den gamblede indsats ud til andre"},
+    {label:"GIV ½", kind:"giveHalf", text:"Giv halvdelen af indsatsen ud til andre"},
+    {label:"3 SIP", kind:"sips", amount:3, text:"Tag 3 slurke som særudfald"},
+    {label:"1 SHOT", kind:"shot", text:"Tag 1 shot som særudfald"},
+    {label:"HALV PULJE", kind:"halfPool", text:"Halvdelen af hele puljen forsvinder"},
+    {label:"CLEAR", kind:"clear", text:"Hele puljen går i 0"},
+    {label:"RE-SPIN", kind:"respin", text:"Hjulet spinner én gang til"},
+    {label:"+2", kind:"fixed", amount:2, text:"To point bliver lagt oveni"}
+  ];
+
+  function beep(freq=440,dur=.04,vol=.025){
+    try{
+      const ctx = beep.ctx || (beep.ctx = new (window.AudioContext||window.webkitAudioContext)());
+      const o=ctx.createOscillator(), g=ctx.createGain();
+      o.connect(g); g.connect(ctx.destination); o.frequency.value=freq; g.gain.value=vol;
+      o.start(); g.gain.exponentialRampToValueAtTime(.0001,ctx.currentTime+dur); o.stop(ctx.currentTime+dur);
+    }catch(e){}
+  }
+
+  function vibrate(pattern){ if(navigator.vibrate) navigator.vibrate(pattern); }
+
+  function setBusy(v){
+    busy=v||debtBusted||roundEnding;
+    const locked=busy;
+    $$(".game-tab").forEach(x=>x.disabled=locked);
+    $("#newRoundBtn").disabled=locked;
+    $("#takeBtn").disabled=locked;
+    $("#wager").disabled=locked;
+    $("#maxBtn").disabled=locked;
+  }
+
+  function getWager(){
+    if(balance<=0) return 0;
+    const maxAllowed=Math.max(1,balance);
+    const actualWager=Math.max(1,Math.min(desiredWager,maxAllowed));
+    $("#wager").max=maxAllowed;
+    $("#wager").value=actualWager;
+    return actualWager;
+  }
+
+  function updateDebtUI(){
+    const hud=$("#debtHud");
+    const vignette=$("#debtVignette");
+    if(!hud || !vignette)return;
+
+    $("#debtHudNumber").textContent=balance;
+    const pct=clamp((balance/DEBT_BUST_AT)*100,0,100);
+    $("#debtMeterFill").style.width=pct+"%";
+
+    hud.classList.remove("caution","danger","critical","busted");
+    vignette.classList.remove("caution","danger","critical");
+
+    let message="Sikker zone";
+    if(balance>=DEBT_BUST_AT){
+      hud.classList.add("busted");
+      vignette.classList.add("critical");
+      message="GÆLDSGRÆNSEN ER BRUDT";
+    }else if(balance===10){
+      hud.classList.add("critical");
+      vignette.classList.add("critical");
+      message="1 point fra automatisk tab";
+    }else if(balance===9){
+      hud.classList.add("danger");
+      vignette.classList.add("danger");
+      message="2 point fra automatisk tab";
+    }else if(balance>=7){
+      hud.classList.add("caution");
+      vignette.classList.add("caution");
+      message=`${DEBT_BUST_AT-balance} point fra automatisk tab`;
+    }
+    $("#debtHudMessage").textContent=message;
+  }
+
+  function scheduleDebtBust(delay=2400){
+    if(debtBusted)return;
+    debtBusted=true;
+    setBusy(true);
+    updateDebtUI();
+
+    clearTimeout(debtBustTimer);
+    debtBustTimer=setTimeout(()=>{
+      $("#debtBustAmount").textContent=balance;
+      $("#debtOverlay").classList.add("show");
+      beep(145,.28,.055);
+      vibrate([120,80,160]);
+    },Math.max(2400,delay));
+  }
+
+  function updateBalance(delta, reason="", feedbackMode="auto", zeroDelay=350){
+    const before=balance;
+    balance=clamp(balance+delta,0,99);
+    const actual=balance-before;
+    $("#balance").textContent=balance;
+    updateDebtUI();
+    const maxAllowed=Math.max(1,balance);
+    $("#wager").max=maxAllowed;
+    $("#stakeCapText").textContent=`Aktuel MAX: ${balance}`;
+    if(balance>0){
+      $("#wager").value=Math.min(desiredWager,maxAllowed);
+    }
+
+    const c=$("#balanceChange");
+    c.textContent=(actual>0?"+":"")+actual;
+    c.style.color=actual<0?"var(--green)":actual>0?"var(--red)":"var(--muted)";
+    c.classList.remove("fly"); void c.offsetWidth; c.classList.add("fly");
+
+    if(reason) $("#lastAction").textContent=reason;
+    if(feedbackMode==="auto"){
+      if(actual<0) feedback("good");
+      if(actual>0) feedback("bad");
+    }
+
+    if(actual>0 && balance>=9 && balance<DEBT_BUST_AT){
+      setTimeout(()=>beep(balance===10?190:235,.11,.028),180);
+      vibrate(balance===10?[45,45,80]:[35,45,35]);
+    }
+
+    if(balance>=DEBT_BUST_AT){
+      scheduleDebtBust(zeroDelay);
+    }else if(balance===0){
+      // Lås runden MED DET SAMME, men vent med vinderskærmen,
+      // så resultatet fra det sidste spil stadig kan nå at blive set.
+      roundEnding=true;
+      setBusy(false);
+      const arena=$("#arena");
+      if(arena) arena.classList.add("round-ending");
+
+      clearTimeout(zeroOverlayTimer);
+      zeroOverlayTimer=setTimeout(()=>{
+        $("#zeroOverlay").classList.add("show");
+      },zeroDelay);
+    }
+    return actual;
+  }
+
+  function feedback(type){
+    const f=$("#flash");
+    f.className=`flash ${type} go`;
+    setTimeout(()=>f.className="flash",500);
+    if(type==="good"){confetti();vibrate([30,40,30]);}
+    else {$("#mainCard").classList.remove("shake");void $("#mainCard").offsetWidth;$("#mainCard").classList.add("shake");vibrate(80);}
+  }
+
+  function confetti(){
+    for(let i=0;i<26;i++){
+      const p=document.createElement("i");
+      p.className="particle";
+      p.style.left=(45+Math.random()*10)+"vw";
+      p.style.top=(38+Math.random()*8)+"vh";
+      p.style.background=["#ffc857","#45d483","#5ea1ff","#a578ff","#eb63cf"][Math.floor(Math.random()*5)];
+      p.style.setProperty("--x",(Math.random()*420-210)+"px");
+      p.style.setProperty("--y",(Math.random()*300-80)+"px");
+      document.body.appendChild(p);
+      setTimeout(()=>p.remove(),1200);
+    }
+  }
+
+  function showResult(title,text,type=""){
+    const el=$("#gameResult");
+    if(el){
+      el.className=`result ${type}`;
+      el.innerHTML=`<strong>${title}</strong><p>${text}</p>`;
+      void el.offsetWidth;
+      el.classList.add("show");
+    }
+
+    const hud=$("#resultHud");
+    $("#resultHudTitle").textContent=title;
+    $("#resultHudText").textContent=text;
+    hud.className=`result-hud ${type} show`;
+
+    clearTimeout(resultHudTimer);
+    resultHudTimer=setTimeout(()=>hud.classList.remove("show"),4300);
+  }
+
+  $("#resultHudClose").onclick=()=>{
+    clearTimeout(resultHudTimer);
+    $("#resultHud").classList.remove("show");
+  };
+
+  function startRound(amount){
+    clearTimeout(zeroOverlayTimer);
+    clearTimeout(debtBustTimer);
+    debtBusted=false;
+    roundEnding=false;
+    balance=clamp(parseInt(amount||1),1,10);
+    initialStakeCap=balance;
+    desiredWager=balance;
+    $("#balance").textContent=balance;
+    $("#wager").value=desiredWager;
+    $("#wager").max=balance;
+    $("#stakeCapText").textContent=`Aktuel MAX: ${balance}`;
+    $("#lastAction").textContent=`Ny pulje på ${balance} point. Indsatsen starter på MAX.`;
+    higherStreak=0;
+    higherCard=randomCard();
+    $("#startScreen").classList.add("hidden");
+    $("#hub").classList.remove("hidden");
+    $("#zeroOverlay").classList.remove("show");
+    $("#debtOverlay").classList.remove("show");
+    $("#resultHud").classList.remove("show");
+    $("#debtHud").classList.remove("hidden");
+    $("#arena").classList.remove("round-ending");
+
+    // En afsluttet runde kan have efterladt tabs/controls med disabled=true.
+    // Nulstil den faktiske DOM-lås før den nye runde renderes.
+    setBusy(false);
+    updateDebtUI();
+    renderGame();
+
+    // Sørg også for at den nuværende tab markeres korrekt efter genstart.
+    $$(".game-tab").forEach(tab=>{
+      tab.disabled=false;
+      tab.classList.toggle("active",tab.dataset.game===game);
+    });
+    $("#newRoundBtn").disabled=false;
+    $("#takeBtn").disabled=false;
+    $("#wager").disabled=false;
+    $("#maxBtn").disabled=false;
+  }
+
+  function resetToStart(){
+    if(busy && !debtBusted && !roundEnding) return;
+    clearTimeout(zeroOverlayTimer);
+    clearTimeout(debtBustTimer);
+    debtBusted=false;
+    roundEnding=false;
+    busy=false;
+    balance=0;
+    initialStakeCap=0;
+    desiredWager=1;
+    $("#stakeCapText").textContent="Aktuel MAX: 0";
+    $("#hub").classList.add("hidden");
+    $("#startScreen").classList.remove("hidden");
+    $("#zeroOverlay").classList.remove("show");
+    $("#debtOverlay").classList.remove("show");
+    $("#resultHud").classList.remove("show");
+    $("#debtHud").classList.add("hidden");
+    $("#debtVignette").className="debt-vignette";
+    $("#arena").classList.remove("round-ending");
+
+    // Fjern alle gamle disabled-attributter fra den afsluttede runde.
+    $$(".game-tab").forEach(tab=>tab.disabled=false);
+    $("#newRoundBtn").disabled=false;
+    $("#takeBtn").disabled=false;
+    $("#wager").disabled=false;
+    $("#maxBtn").disabled=false;
+
+    setTimeout(()=>$("#startAmount").focus(),50);
+  }
+
+  $("#startBtn").onclick=()=>{
+    const input=$("#startAmount");
+    let amount=parseInt(input.value||"1");
+    if(!Number.isFinite(amount)) amount=1;
+    if(amount>10){
+      amount=10;
+      input.value=10;
+      toast("Maks startpulje er 10");
+    }
+    if(amount<1){
+      amount=1;
+      input.value=1;
+    }
+    startRound(amount);
+  };
+  $("#startAmount").addEventListener("input",()=>{
+    const input=$("#startAmount");
+    if(+input.value>10) input.value=10;
+    if(+input.value<0) input.value=1;
+  });
+  $("#startAmount").addEventListener("keydown",e=>{if(e.key==="Enter")$("#startBtn").click()});
+  $("#newRoundBtn").onclick=resetToStart;
+  $("#newRoundOverlay").onclick=resetToStart;
+  $("#debtCashoutBtn").onclick=resetToStart;
+  $("#takeBtn").onclick=()=>{
+    if(busy)return;
+    $("#lastAction").textContent=`Runden sluttede med ${balance} point tilbage.`;
+    resetToStart();
+  };
+  $("#maxBtn").onclick=()=>{
+    if(balance<=0)return;
+    desiredWager=balance;
+    $("#wager").max=balance;
+    $("#wager").value=balance;
+    $("#stakeCapText").textContent=`Aktuel MAX: ${balance}`;
+    $("#lastAction").textContent=`Valgt indsats: MAX ${balance}.`;
+  };
+  $("#wager").onchange=()=>{
+    if(balance<=0)return;
+    const maxAllowed=Math.max(1,balance);
+    desiredWager=clamp(parseInt($("#wager").value||1),1,maxAllowed);
+    $("#wager").value=desiredWager;
+    $("#lastAction").textContent=`Valgt indsats ændret til ${desiredWager}.`;
+  };
+
+  $$(".game-tab").forEach(tab=>tab.onclick=()=>{
+    if(busy)return;
+    const nextGame=tab.dataset.game;
+    if(game==="higher" && nextGame!=="higher") higherStreak=0;
+    game=nextGame;
+    $$(".game-tab").forEach(x=>x.classList.toggle("active",x===tab));
+    renderGame();
+    if(window.innerWidth<761){
+      setTimeout(()=>$("#arena").scrollIntoView({behavior:"smooth",block:"start"}),40);
+    }
+  });
+
+  function renderGame(){
+    const a=$("#arena");
+    if(game==="wheel") renderWheel(a);
+    if(game==="case") renderCase(a);
+    if(game==="coin") renderCoin(a);
+    if(game==="dice") renderDice(a);
+    if(game==="higher") renderHigher(a);
+    if(game==="slots") renderSlots(a);
+    if(game==="double") renderDouble(a);
+    if(game==="blackjack") renderBlackjack(a);
+    if(game==="roulette") renderRoulette(a);
+    if(game==="redblack") renderRedBlack(a);
+    if(game==="war") renderWar(a);
+    if(game==="plinko") renderPlinko(a);
+    if(game==="boxes") renderBoxes(a);
+    if(game==="lucky7") renderLucky7(a);
+    if(game==="overunder") renderOverUnder(a);
+    if(game==="tridice") renderTriDice(a);
+    if(game==="baccarat") renderBaccarat(a);
+    if(game==="poker") renderPoker(a);
+    if(game==="cups") renderCups(a);
+    if(game==="picknumber") renderPickNumber(a);
+    if(game==="rps") renderRps(a);
+    if(game==="crash") renderCrash(a);
+    if(game==="queen") renderQueen(a);
+    if(game==="rabbit") renderRabbit(a);
+  }
+
+  function titleBlock(title,desc){
+    return `<div class="arena-title"><h2>${title}</h2><p>${desc}</p></div>`;
+  }
+
+  function renderWheel(a){
+    const step=360/wheelOptions.length;
+    const radius=138;
+    const labels=wheelOptions.map((o,i)=>{
+      const angle=i*step;
+      return `<div class="wheel-label" style="transform:rotate(${angle}deg) translateY(-${radius}px) rotate(${-angle}deg)">${o.label}</div>`;
+    }).join("");
+
+    const colors=[
+      "#273547","#315585","#5f4592","#923c7f",
+      "#2f7b61","#8a5b27","#7a3448","#365e75",
+      "#466f45","#72508c","#6a4b8c","#8e5260",
+      "#2f665a","#9b762e","#43556b","#7c3d58"
+    ];
+    const slices=colors.map((color,i)=>{
+      const start=i*step;
+      const end=(i+1)*step;
+      return `${color} ${start}deg ${end}deg`;
+    }).join(",");
+
+    const tickCount=48;
+    const ticks=Array.from({length:tickCount},(_,i)=>`<i class="tick" style="transform:translate(-50%,-50%) rotate(${i*(360/tickCount)}deg) translateY(-175px)"></i>`).join("");
+
+    a.innerHTML=`
+      ${titleBlock("🎡 Risk Wheel","16 forskellige udfald. Der er både små ændringer, store risici, GIV UD, HALV PULJE, CLEAR og RE-SPIN.")}
+      <div class="wheel-stage">
+        <div class="wheel-shell">
+          <div class="wheel-pointer"></div>
+          <div class="wheel" id="wheel" style="background:conic-gradient(from -${step/2}deg,${slices})">
+            ${labels}
+          </div>
+          <div class="wheel-ticks">${ticks}</div>
+        </div>
+      </div>
+      <button class="big-button" id="wheelBtn">SPIN HJULET</button>
+      <div id="gameResult"></div>`;
+    $("#wheel").style.transform=`rotate(${wheelRotation}deg)`;
+    $("#wheelBtn").onclick=()=>spinWheel(false);
+  }
+
+  async function spinWheel(isRespin=false){
+    if((busy&&!isRespin)||balance<=0)return;
+    const w=getWager();
+    const index=Math.floor(Math.random()*wheelOptions.length);
+    const opt=wheelOptions[index];
+
+    if(!isRespin) setBusy(true);
+    $("#wheelBtn").disabled=true;
+    const localResult=$("#gameResult");
+    if(localResult) localResult.innerHTML="";
+
+    const step=360/wheelOptions.length;
+    const segmentCenter=index*step;
+    const currentMod=((wheelRotation%360)+360)%360;
+    const targetMod=((360-segmentCenter)%360+360)%360;
+    const correction=(targetMod-currentMod+360)%360;
+    const turns=5+Math.floor(Math.random()*3);
+    wheelRotation += turns*360 + correction;
+
+    const wheel=$("#wheel");
+    wheel.style.transition="transform 4.8s cubic-bezier(.08,.72,.08,1)";
+    wheel.style.transform=`rotate(${wheelRotation}deg)`;
+
+    let t=0;
+    const ticker=setInterval(()=>{
+      beep(500+(t%6)*26,.025,.013);
+      t++;
+    },105);
+
+    await sleep(4820);
+    clearInterval(ticker);
+    beep(840,.12,.04);
+
+    if(opt.kind==="delta"){
+      const delta=opt.delta(w);
+      const actual=updateBalance(delta,`Risk Wheel: ${opt.label}. ${opt.text}.`);
+      showResult(`🎡 ${opt.label}`,
+        actual<0?`${Math.abs(actual)} point forsvandt fra puljen.`:
+        actual>0?`${actual} point blev lagt oveni puljen.`:"Puljen ændrede sig ikke.",
+        actual<0?"good":actual>0?"bad":"");
+
+    }else if(opt.kind==="fixed"){
+      const actual=updateBalance(opt.amount,`Risk Wheel: ${opt.label}. ${opt.text}.`);
+      showResult(`🎡 ${opt.label}`,
+        actual<0?`${Math.abs(actual)} point forsvandt.`:
+        actual>0?`${actual} point blev lagt oveni.`:"Ingen ændring.",
+        actual<0?"good":actual>0?"bad":"");
+
+    }else if(opt.kind==="give"){
+      const actual=updateBalance(-w,`Risk Wheel: Giv ${w} point ud til andre.`);
+      showResult("🎁 GIV UD",
+        `Giv ${Math.abs(actual)} point ud til de andre. De er fjernet fra din egen pulje.`,
+        "good");
+
+    }else if(opt.kind==="giveHalf"){
+      const amount=Math.max(1,Math.ceil(w/2));
+      const actual=updateBalance(-amount,`Risk Wheel: Giv ${amount} point ud til andre.`);
+      showResult("🎁 GIV HALVDELEN UD",
+        `Giv ${Math.abs(actual)} point ud til de andre. De er fjernet fra din egen pulje.`,
+        "good");
+
+    }else if(opt.kind==="shot"){
+      const actual=updateBalance(-w,`Risk Wheel: 1 shot. Den gamblede indsats er fjernet.`, "none");
+      showResult("🥃 1 SHOT",
+        `Tag 1 shot. Samtidig fjernes ${Math.abs(actual)} point fra din pulje.`,
+        "special");
+      vibrate([60,50,60]);
+
+    }else if(opt.kind==="sips"){
+      const actual=updateBalance(-w,`Risk Wheel: ${opt.amount} slurke. Den gamblede indsats er fjernet.`, "none");
+      showResult(`🍻 ${opt.amount} SLURKE`,
+        `Tag ${opt.amount} slurke. Samtidig fjernes ${Math.abs(actual)} point fra din pulje.`,
+        "special");
+      vibrate([40,40,40]);
+
+    }else if(opt.kind==="halfPool"){
+      const amount=Math.max(1,Math.ceil(balance/2));
+      const actual=updateBalance(-amount,`Risk Wheel: Halv pulje forsvandt.`);
+      showResult("✂️ HALV PULJE",
+        `${Math.abs(actual)} point forsvandt fra hele din pulje.`,
+        "good");
+
+    }else if(opt.kind==="clear"){
+      const amount=balance;
+      const actual=updateBalance(-amount,`Risk Wheel: CLEAR. Hele puljen gik i 0.`);
+      showResult("🔥 CLEAR",
+        `Hele puljen blev fjernet. ${Math.abs(actual)} point forsvandt.`,
+        "good");
+
+    }else if(opt.kind==="respin"){
+      if(isRespin){
+        showResult("🔁 RE-SPIN",
+          "Du ramte RE-SPIN igen. Denne gang bliver det til 1x, så puljen ændrer sig ikke.",
+          "special");
+      }else{
+        showResult("🔁 RE-SPIN",
+          "Ingen ændring endnu. Hjulet spinner automatisk én gang til.",
+          "special");
+        await sleep(900);
+        return spinWheel(true);
+      }
+    }
+
+    setBusy(false);
+    $("#wheelBtn").disabled=false;
+  }
+
+  function renderCoin(a){
+    a.innerHTML=`
+      ${titleBlock("🪙 Coin Flip","Vælg side. Rammer du rigtigt, forsvinder indsatsen. Rammer du forkert, bliver indsatsen lagt oveni.")}
+      <div class="coin-stage">
+        <div class="coin3d" id="coin">
+          <div class="coin-face front"><div>👑<small>KRONE</small></div></div>
+          <div class="coin-face back"><div>★<small>PLAT</small></div></div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:center">
+        <button class="btn primary coinPick" data-pick="heads">Krone</button>
+        <button class="btn primary coinPick" data-pick="tails">Plat</button>
+      </div>
+      <div id="gameResult"></div>`;
+    $$(".coinPick").forEach(b=>b.onclick=()=>flipCoin(b.dataset.pick));
+  }
+
+  async function flipCoin(choice){
+    if(busy||balance<=0)return;
+    const w=getWager();
+    setBusy(true);
+    const outcome=Math.random()<.5?"heads":"tails";
+    const coin=$("#coin");
+
+    coin.className="coin3d";
+    coin.style.transition="none";
+    coin.style.transform="rotateY(0deg) rotateX(0deg)";
+    coin.style.webkitTransform="rotateY(0deg) rotateX(0deg)";
+    void coin.offsetWidth;
+
+    const targetY=outcome==="heads"?1800:1980;
+    coin.style.transition="transform 1.8s cubic-bezier(.16,.78,.2,1)";
+    coin.style.transform=`rotateY(${targetY}deg) rotateX(720deg)`;
+    coin.style.webkitTransform=`rotateY(${targetY}deg) rotateX(720deg)`;
+
+    for(let i=0;i<9;i++){await sleep(150);beep(420+i*30,.025,.014)}
+    await sleep(470);
+
+    // Normaliser slutvisningen i stedet for at lade browseren vise bagsiden
+    // af en roteret 3D-mønt. Det undgår spejlvendt Krone på især mobile browsere.
+    coin.style.transition="none";
+    coin.style.transform="none";
+    coin.style.webkitTransform="none";
+    coin.className=outcome==="heads"?"coin3d final-heads":"coin3d final-tails";
+    beep(outcome==="heads"?760:660,.1,.035);
+
+    const win=choice===outcome;
+    const delta=win?-w:w;
+    const actual=updateBalance(delta,`Coin Flip: ${outcome==="heads"?"krone":"plat"}.`);
+    showResult(`${outcome==="heads"?"👑 KRONE":"★ PLAT"} · ${win?"RIGTIGT":"FORKERT"}`,
+      win?`${Math.abs(actual)} point forsvandt.`:`${actual} point blev lagt oveni.`,
+      win?"good":"bad");
+    setBusy(false);
+  }
+
+  function renderDice(a){
+    a.innerHTML=`
+      ${titleBlock("🎲 Dice Risk","1 til 3 giver indsatsen ekstra. 4 eller 5 fjerner cirka halvdelen. 6 er jackpot og fjerner hele indsatsen.")}
+      <div class="dice-stage"><div class="die" id="die">⚄</div></div>
+      <button class="big-button" id="diceBtn">KAST TERNINGEN</button>
+      <div id="gameResult"></div>`;
+    $("#diceBtn").onclick=rollDice;
+  }
+
+  async function rollDice(){
+    if(busy||balance<=0)return;
+    const w=getWager();
+    setBusy(true);
+    const d=1+Math.floor(Math.random()*6);
+    const die=$("#die");
+    die.classList.remove("roll");void die.offsetWidth;die.classList.add("roll");
+    const faces=["⚀","⚁","⚂","⚃","⚄","⚅"];
+    let i=0;
+    const id=setInterval(()=>{die.textContent=faces[Math.floor(Math.random()*6)];beep(330+(i++%4)*45,.022,.012)},95);
+    await sleep(1350);clearInterval(id);die.textContent=faces[d-1];beep(750,.1,.035);
+    const delta=d===6?-w:d>=4?-Math.max(1,Math.ceil(w/2)):w;
+    const actual=updateBalance(delta,`Dice Risk: du slog ${d}.`);
+    showResult(`Du slog ${d}`,
+      actual<0?`${Math.abs(actual)} point forsvandt.`:`${actual} point blev lagt oveni.`,
+      actual<0?"good":"bad");
+    setBusy(false);
+  }
+
+  function randomCard(){
+    return 2+Math.floor(Math.random()*13);
+  }
+  function cardText(v){return v===14?"A":v===13?"K":v===12?"Q":v===11?"J":String(v)}
+
+  function renderHigher(a){
+    const pips=[0,1,2].map(i=>`<i class="streak-pip ${i<higherStreak?"active":""}"></i>`).join("");
+    a.innerHTML=`
+      ${titleBlock("🃏 Higher / Lower","Du skal ramme 3 korrekte gæt i træk. Først ved 3 i streg vinder du indsatsen. Ét forkert gæt nulstiller streaken og giver tab.")}
+      <div class="streak-wrap">
+        <div class="streak-label">3 I STREG</div>
+        <div class="streak-pips">${pips}</div>
+        <div class="streak-text">${higherStreak}/3 rigtige i træk</div>
+      </div>
+      <div class="card-stage" id="cardStage">
+        <div class="play-card"><div class="front">${cardText(higherCard)}</div><div class="back"></div></div>
+        <div class="play-card face-down" id="nextCard"><div class="front">?</div><div class="back"></div></div>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:center">
+        <button class="btn primary hlBtn" data-choice="higher">Højere</button>
+        <button class="btn primary hlBtn" data-choice="lower">Lavere</button>
+      </div>
+      <div id="gameResult"></div>`;
+    $$(".hlBtn").forEach(b=>b.onclick=()=>playHigher(b.dataset.choice));
+  }
+
+  async function playHigher(choice){
+    if(busy||balance<=0)return;
+    const w=getWager();
+    setBusy(true);
+    let next=randomCard();
+    while(next===higherCard) next=randomCard();
+
+    const previous=higherCard;
+    const el=$("#nextCard");
+    el.querySelector(".front").textContent=cardText(next);
+    el.classList.add("flip");
+    beep(560,.08,.025);
+    await sleep(700);
+
+    const correct=(choice==="higher"&&next>previous)||(choice==="lower"&&next<previous);
+    higherCard=next;
+
+    if(correct){
+      higherStreak++;
+      if(higherStreak>=3){
+        const actual=updateBalance(-w,`Higher / Lower: 3 rigtige i træk.`);
+        higherStreak=0;
+        showResult("🔥 3 I STREG",
+          `${cardText(previous)} → ${cardText(next)} var korrekt. ${Math.abs(actual)} point forsvandt fra puljen.`,
+          "good");
+      }else{
+        $("#lastAction").textContent=`Higher / Lower: ${higherStreak}/3 rigtige i træk.`;
+        showResult(`✅ KORREKT · ${higherStreak}/3`,
+          `${cardText(previous)} → ${cardText(next)}. Du mangler ${3-higherStreak} korrekt${3-higherStreak===1?"":"e"} i træk. Puljen ændres ikke endnu.`,
+          "special");
+      }
+    }else{
+      higherStreak=0;
+      const actual=updateBalance(w,`Higher / Lower: forkert gæt. Streak nulstillet.`);
+      showResult("❌ FORKERT · STREAK NULSTILLET",
+        `${cardText(previous)} → ${cardText(next)} gik den anden vej. ${actual} point blev lagt oveni.`,
+        "bad");
+    }
+
+    setBusy(false);
+    await sleep(650);
+    if(game==="higher"&&!busy)renderHigher($("#arena"));
+  }
+
+  const slotSymbols=["🍒","🍋","🔔","💎","7️⃣"];
+  const rarityMeta = {
+    common:{label:"Common", quality:"Mest almindelig", color:"#aeb8c5"},
+    blue:{label:"Uncommon", quality:"Lidt sjælden", color:"#5ea1ff"},
+    purple:{label:"Rare", quality:"Sjælden", color:"#a578ff"},
+    pink:{label:"Epic", quality:"Meget sjælden", color:"#eb63cf"},
+    gold:{label:"Legendary", quality:"Top tier", color:"#ffc857"}
+  };
+
+
+  function reelMarkup(id){
+    const items=[];
+    for(let i=0;i<18;i++)items.push(slotSymbols[Math.floor(Math.random()*slotSymbols.length)]);
+    return `<div class="reel-window"><div class="reel-strip" id="${id}">${items.map(s=>`<div class="reel-symbol">${s}</div>`).join("")}</div></div>`;
+  }
+
+  function renderSlots(a){
+    a.innerHTML=`
+      ${titleBlock("🎰 Slots","Tre ens fjerner dobbelt indsats. To ens fjerner indsatsen. Intet match giver indsatsen ekstra.")}
+      <div class="slot-machine"><div class="slot-window">${reelMarkup("reel1")}${reelMarkup("reel2")}${reelMarkup("reel3")}</div></div>
+      <button class="big-button" id="slotsBtn">SPIN REELS</button>
+      <div id="gameResult"></div>`;
+    $("#slotsBtn").onclick=spinSlots;
+  }
+
+  async function spinSlots(){
+    if(busy||balance<=0)return;
+    const w=getWager();
+    setBusy(true);
+
+    const result=[0,0,0].map(()=>slotSymbols[Math.floor(Math.random()*slotSymbols.length)]);
+    const reels=[1,2,3].map(i=>$("#reel"+i));
+    reels.forEach((r,idx)=>{
+      const children=[...r.children];
+      const targetIndex=12+idx;
+      children[targetIndex].textContent=result[idx];
+      r.style.transition="none";
+      r.style.transform="translateY(0)";
+      void r.offsetWidth;
+      r.style.transition=`transform ${1.45+idx*.35}s cubic-bezier(.08,.72,.08,1)`;
+      r.style.transform=`translateY(${-targetIndex*110}px)`;
+    });
+
+    let ticks=0;
+    const ticker=setInterval(()=>{beep(300+(ticks++%6)*35,.02,.01)},85);
+    await sleep(2200);clearInterval(ticker);beep(780,.1,.035);
+
+    const counts={};result.forEach(x=>counts[x]=(counts[x]||0)+1);
+    const max=Math.max(...Object.values(counts));
+    const delta=max===3?-2*w:max===2?-w:w;
+    const actual=updateBalance(delta,`Slots: ${result.join(" ")}`);
+    showResult(max===3?"Tre ens!":max===2?"To ens":"Ingen match",
+      actual<0?`${Math.abs(actual)} point forsvandt.`:`${actual} point blev lagt oveni.`,
+      actual<0?"good":"bad");
+    setBusy(false);
+  }
+
+  const lootTable=[
+    // COMMON · 39%
+    {name:"Heavy Debt",e:"💥",cls:"common",kind:"delta",mult:1.5,weight:7,desc:"+150% af indsatsen til gælden"},
+    {name:"Debt Hit",e:"📈",cls:"common",kind:"delta",mult:1,weight:8,desc:"+100% af indsatsen til gælden"},
+    {name:"Small Debt",e:"⚠️",cls:"common",kind:"delta",mult:.5,weight:9,desc:"+50% af indsatsen til gælden"},
+    {name:"Tiny Debt",e:"➕",cls:"common",kind:"delta",mult:.25,weight:7,desc:"+25% af indsatsen til gælden"},
+    {name:"No Change",e:"➖",cls:"common",kind:"delta",mult:0,weight:5,desc:"Puljen ændres ikke"},
+    {name:"Close Call",e:"😮‍💨",cls:"common",kind:"delta",mult:0,weight:3,desc:"Du slap uden ændring"},
+
+    // UNCOMMON / BLUE · 26%
+    {name:"Safe",e:"🛡️",cls:"blue",kind:"delta",mult:0,weight:5,desc:"Puljen ændres ikke"},
+    {name:"Give Out",e:"🎁",cls:"blue",kind:"give",weight:5,desc:"Indsatsen fjernes og gives videre"},
+    {name:"Half Save",e:"🔹",cls:"blue",kind:"delta",mult:-.5,weight:6,desc:"Fjern 50% af indsatsen"},
+    {name:"Lucky Save",e:"🍀",cls:"blue",kind:"delta",mult:-.75,weight:4,desc:"Fjern 75% af indsatsen"},
+    {name:"Second Chance",e:"🔁",cls:"blue",kind:"delta",mult:0,weight:3,desc:"Ingen ændring, du får en ny chance"},
+    {name:"Quick Save",e:"⚡",cls:"blue",kind:"delta",mult:-.25,weight:3,desc:"Fjern 25% af indsatsen"},
+
+    // RARE / PURPLE · 21%
+    {name:"3 Sips",e:"🍻",cls:"purple",kind:"sips",amount:3,weight:4,desc:"3 slurke og indsatsen fjernes"},
+    {name:"Save",e:"💜",cls:"purple",kind:"delta",mult:-1,weight:6,desc:"Fjern hele indsatsen"},
+    {name:"Clean Save",e:"✨",cls:"purple",kind:"delta",mult:-1.25,weight:4,desc:"Fjern op til 1.25× indsatsen"},
+    {name:"Strong Save",e:"🟣",cls:"purple",kind:"delta",mult:-1.5,weight:3,desc:"Fjern op til 1.5× indsatsen"},
+    {name:"Risk Reversal",e:"↩️",cls:"purple",kind:"delta",mult:-.75,weight:2,desc:"Fjern 75% af indsatsen"},
+    {name:"Deep Save",e:"🔮",cls:"purple",kind:"delta",mult:-1.75,weight:2,desc:"Fjern op til 1.75× indsatsen"},
+
+    // EPIC / PINK · 11%
+    {name:"1 Shot",e:"🥃",cls:"pink",kind:"shot",weight:3,desc:"1 shot og indsatsen fjernes"},
+    {name:"Big Save",e:"💗",cls:"pink",kind:"delta",mult:-2,weight:4,desc:"Fjern op til 2× indsatsen"},
+    {name:"Mega Save",e:"💖",cls:"pink",kind:"delta",mult:-2.5,weight:2,desc:"Fjern op til 2.5× indsatsen"},
+    {name:"Near Clear",e:"🌟",cls:"pink",kind:"delta",mult:-3,weight:2,desc:"Fjern op til 3× indsatsen"},
+
+    // LEGENDARY / GOLD · 3%
+    {name:"Golden Save",e:"🏆",cls:"gold",kind:"delta",mult:-3.5,weight:1.5,desc:"Fjern op til 3.5× indsatsen"},
+    {name:"Legendary Clear",e:"🔥",cls:"gold",kind:"clear",weight:1.5,desc:"Fjern hele din nuværende pulje"}
+  ];
+  function loot(){
+    let total=lootTable.reduce((s,x)=>s+x.weight,0),r=Math.random()*total;
+    for(const x of lootTable){r-=x.weight;if(r<=0)return x}
+    return lootTable[0]
+  }
+  function lootChancePercent(x){
+    const total=lootTable.reduce((s,item)=>s+item.weight,0);
+    return ((x.weight/total)*100).toFixed(1);
+  }
+
+  function lootHtml(x){
+    const meta=rarityMeta[x.cls] || {label:x.cls, quality:""};
+    const m=x.desc || "";
+    return `<div class="loot ${x.cls}">
+      <div class="tier">${meta.label}</div>
+      <div class="e">${x.e}</div>
+      <div>
+        <div class="n">${x.name}</div>
+        <div class="m">${m}</div>
+      </div>
+    </div>`;
+  }
+
+  function caseLegendHtml(){
+    const order=["common","blue","purple","pink","gold"];
+    const bestPerTier={};
+    for(const item of lootTable){
+      if(!bestPerTier[item.cls]) bestPerTier[item.cls]=item;
+    }
+    return order.map(cls=>{
+      const items=lootTable.filter(item=>item.cls===cls);
+      const totalWeight=lootTable.reduce((s,item)=>s+item.weight,0);
+      const tierWeight=items.reduce((s,item)=>s+item.weight,0);
+      const chance=((tierWeight/totalWeight)*100).toFixed(1);
+      const meta=rarityMeta[cls];
+      return `<div class="case-legend-row">
+        <i class="case-dot" style="background:${meta.color}"></i>
+        <div>
+          <strong>${meta.label}</strong>
+          <span> ${meta.quality}</span>
+        </div>
+        <div class="chance">${chance}%</div>
+        <div class="quality">Tier</div>
+      </div>`;
+    }).join("");
+  }
+
+  function renderCase(a){
+    a.innerHTML=`
+      ${titleBlock("📦 Case Opening","24 forskellige drops fordelt på 5 tiers. Break og Soft Hit er erstattet, mens klassikere som Save, Big Save og Legendary Clear er tilbage.")}
+      <div class="case-box">
+        <div class="case-pointer"></div>
+        <div class="case-track" id="caseTrack">${Array.from({length:20},()=>lootHtml(loot())).join("")}</div>
+      </div>
+      <div class="case-legend">${caseLegendHtml()}</div>
+      <button class="big-button" id="caseBtn">ÅBN CASE</button>
+      <div class="case-reveal" id="caseReveal"></div>
+      <div id="gameResult"></div>`;
+    $("#caseBtn").onclick=openCase;
+  }
+
+  async function openCase(){
+    if(busy||balance<=0)return;
+    const w=getWager();
+    setBusy(true);
+    const win=loot();
+    const items=Array.from({length:34},()=>loot());
+    const target=27;items[target]=win;
+    const track=$("#caseTrack");
+    track.innerHTML=items.map(lootHtml).join("");
+    track.style.transition="none";track.style.transform="translateX(0)";
+    void track.offsetWidth;
+
+    const box=track.parentElement;
+    const itemWidth=124, gap=8, startPad=12;
+    const targetCenter=startPad+target*(itemWidth+gap)+itemWidth/2;
+
+    // Markøren kan lande næsten hvor som helst inde i det vindende felt.
+    // En lille sikkerhedsmargin holder den væk fra mellemrummet mellem items.
+    const safeEdge=7;
+    const maxLandingOffset=itemWidth/2-safeEdge;
+    const landingOffset=(Math.random()*2-1)*maxLandingOffset;
+    const end=box.clientWidth/2-targetCenter+landingOffset;
+
+    track.style.transition="transform 5.2s cubic-bezier(.06,.72,.06,1)";
+    track.style.transform=`translateX(${end}px)`;
+
+    let interval=150;
+    for(let i=0;i<32;i++){
+      await sleep(interval);
+      beep(350+i*9,.025,.014);
+      if(i>18)interval+=12;
+    }
+    await sleep(500);
+
+    const cards=[...track.children];
+    cards[target].classList.add("winner");
+    beep(win.cls==="gold"?980:760,.18,.045);
+    if(win.cls==="gold"||win.cls==="pink")confetti();
+
+    const reveal=$("#caseReveal");
+    const meta=rarityMeta[win.cls] || {label:win.cls, quality:""};
+    reveal.innerHTML=`<div class="case-reveal-card" style="--rar:${meta.color}">
+      <div style="font-size:45px">${win.e}</div>
+      <div class="tier-line">${meta.label}</div>
+      <div style="font-weight:1000;font-size:23px;margin-top:8px">${win.name}</div>
+      <div class="quality-line">${meta.quality}</div>
+      <div class="chance-line">Drop chance for denne type: ${lootChancePercent(win)}%</div>
+    </div>`;
+    reveal.classList.add("show");
+    if(balance===0){
+      $("#lastAction").textContent += " Resultatet vises først, derefter afsluttes runden.";
+    }
+
+    if(win.kind==="clear"){
+      const actual=updateBalance(-balance,`Case: Legendary Clear. Hele puljen blev fjernet.`,"auto",1350);
+      showResult(`🔥 LEGENDARY CLEAR · ${meta.label}`,
+        `Hele puljen blev clearet. ${Math.abs(actual)} point forsvandt.`,
+        "good");
+      confetti();
+    }else if(win.kind==="give"){
+      const actual=updateBalance(-w,`Case: Giv ${w} point ud til andre.`,"auto",1350);
+      showResult(`🎁 GIVE OUT · ${meta.label}`,
+        `Giv ${Math.abs(actual)} point ud til de andre. De er fjernet fra din egen pulje.`,
+        "good");
+    }else if(win.kind==="shot"){
+      const actual=updateBalance(-w,`Case: 1 shot. Den gamblede indsats er fjernet.`, "none",1350);
+      showResult("🥃 1 SHOT",
+        `Tag 1 shot. Samtidig fjernes ${Math.abs(actual)} point fra din pulje.`,
+        "special");
+      vibrate([60,50,60]);
+    }else if(win.kind==="sips"){
+      const actual=updateBalance(-w,`Case: ${win.amount} slurke. Den gamblede indsats er fjernet.`, "none",1350);
+      showResult(`🍻 ${win.amount} SLURKE · ${meta.label}`,
+        `Tag ${win.amount} slurke. Samtidig fjernes ${Math.abs(actual)} point fra din pulje.`,
+        "special");
+      vibrate([40,40,40]);
+    }else{
+      let delta;
+      if(win.mult>0)delta=Math.max(1,Math.ceil(w*win.mult));
+      else if(win.mult===0)delta=0;
+      else delta=Math.floor(w*win.mult);
+
+      const meta=rarityMeta[win.cls] || {label:win.cls};
+      const actual=updateBalance(delta,`Case: ${win.name} (${meta.label}).`,"auto",1350);
+      showResult(`${win.name} · ${meta.label}`,
+        actual<0?`${Math.abs(actual)} point forsvandt.`:actual>0?`${actual} point blev lagt oveni.`:"Ingen ændring.",
+        actual<0?"good":actual>0?"bad":"");
+    }
+    setBusy(false);
+  }
+
+
+  const suits=["♠","♥","♦","♣"];
+
+  function casinoCard(){
+    const rank=1+Math.floor(Math.random()*13);
+    const suit=suits[Math.floor(Math.random()*suits.length)];
+    const value=rank===1?11:Math.min(rank,10);
+    const label=rank===1?"A":rank===11?"J":rank===12?"Q":rank===13?"K":String(rank);
+    return {rank,suit,value,label,red:suit==="♥"||suit==="♦"};
+  }
+
+  function cardHtml(c, hidden=false){
+    if(hidden) return `
+      <div class="mini-card bj-hole-card">
+        <div class="bj-hole-inner">
+          <div class="bj-hole-face bj-hole-back"></div>
+          <div class="bj-hole-face bj-hole-front ${c.red?"red":""}">${c.label}${c.suit}</div>
+        </div>
+      </div>`;
+    return `<div class="mini-card ${c.red?"red":""}">${c.label}${c.suit}</div>`;
+  }
+
+  function blackjackValue(cards){
+    let total=cards.reduce((s,c)=>s+c.value,0);
+    let aces=cards.filter(c=>c.rank===1).length;
+    while(total>21 && aces>0){total-=10;aces--}
+    return total;
+  }
+
+  let bjState=null;
+
+  function renderBlackjack(a){
+    bjState=null;
+    a.innerHTML=`
+      ${titleBlock("🂡 Blackjack","Kom tættere på 21 end huset uden at gå over. Vinder du, fjernes indsatsen. Blackjack fjerner op til dobbelt indsats.")}
+      <div class="casino-table" id="bjTable">
+        <div class="hand-label">Huset</div>
+        <div class="hand" id="dealerHand"><div class="muted">Klar til deal</div></div>
+        <div style="text-align:center"><span class="score-bubble" id="dealerScore">?</span></div>
+        <div class="hand-label">Din hånd</div>
+        <div class="hand" id="playerHand"></div>
+        <div style="text-align:center"><span class="score-bubble" id="playerScore">0</span></div>
+      </div>
+      <button class="big-button" id="bjDeal">DEAL</button>
+      <div id="bjControls" style="display:flex;gap:8px;justify-content:center;margin-top:10px"></div>
+      <div id="gameResult"></div>`;
+    $("#bjDeal").onclick=blackjackDeal;
+  }
+
+  function paintBlackjack(revealDealer=false){
+    if(!bjState)return;
+    $("#dealerHand").innerHTML=bjState.dealer.map((c,i)=>cardHtml(c,!revealDealer&&i===1)).join("");
+    $("#playerHand").innerHTML=bjState.player.map(c=>cardHtml(c)).join("");
+    $("#playerScore").textContent=blackjackValue(bjState.player);
+    $("#dealerScore").textContent=revealDealer?blackjackValue(bjState.dealer):bjState.dealer[0].value;
+  }
+
+  async function blackjackRevealDealerHole(){
+    if(!bjState || !bjState.dealer[1])return;
+    const hand=$("#dealerHand");
+    const hole=hand && hand.children[1];
+
+    if(!hole){
+      paintBlackjack(true);
+      return;
+    }
+
+    // Ét sammenhængende flip. Begge sider af kortet findes allerede i DOM'en,
+    // så vi undgår den tidligere "ud + ind" dobbeltanimation.
+    hole.classList.remove("revealed");
+    void hole.offsetWidth;
+    hole.classList.add("revealed");
+    beep(470,.06,.02);
+
+    await sleep(300);
+    $("#dealerScore").textContent=blackjackValue(bjState.dealer);
+
+    await sleep(300);
+  }
+
+  async function blackjackDealerDrawCard(){
+    if(!bjState)return;
+    const card=casinoCard();
+    bjState.dealer.push(card);
+
+    const hand=$("#dealerHand");
+    const el=document.createElement("div");
+    el.className=`mini-card ${card.red?"red":""} bj-dealer-new`;
+    el.textContent=`${card.label}${card.suit}`;
+    hand.appendChild(el);
+
+    $("#dealerScore").textContent=blackjackValue(bjState.dealer);
+    beep(470,.055,.02);
+    await sleep(620);
+    el.classList.remove("bj-dealer-new");
+  }
+
+  async function blackjackDeal(){
+    if(busy||balance<=0)return;
+    const w=getWager();
+    setBusy(true);
+    bjState={w,player:[casinoCard(),casinoCard()],dealer:[casinoCard(),casinoCard()],resolving:false};
+    $("#bjDeal").style.display="none";
+    paintBlackjack(false);
+    beep(520,.05,.02);await sleep(160);beep(600,.05,.02);
+
+    const controls=$("#bjControls");
+    controls.innerHTML=`<button class="btn primary" id="bjHit">HIT</button><button class="btn" id="bjStand">STAND</button>`;
+    $("#bjHit").onclick=blackjackHit;
+    $("#bjStand").onclick=blackjackStand;
+
+    if(blackjackValue(bjState.player)===21) await blackjackResolve(true);
+  }
+
+  async function blackjackHit(){
+    if(!bjState || bjState.resolving)return;
+    const card=casinoCard();
+    bjState.player.push(card);
+
+    const hand=$("#playerHand");
+    const el=document.createElement("div");
+    el.className=`mini-card ${card.red?"red":""} bj-dealer-new`;
+    el.textContent=`${card.label}${card.suit}`;
+    hand.appendChild(el);
+    $("#playerScore").textContent=blackjackValue(bjState.player);
+
+    beep(620,.06,.025);
+    await sleep(430);
+    el.classList.remove("bj-dealer-new");
+
+    if(blackjackValue(bjState.player)>21){
+      bjState.resolving=true;
+      await blackjackResolve(false);
+    }
+  }
+
+  async function blackjackStand(){
+    if(!bjState || bjState.resolving)return;
+    bjState.resolving=true;
+    $("#bjHit").disabled=true;
+    $("#bjStand").disabled=true;
+    await blackjackResolve(false);
+  }
+
+  async function blackjackResolve(natural=false){
+    if(!bjState)return;
+    bjState.resolving=true;
+    $("#bjControls").innerHTML="";
+
+    const pv=blackjackValue(bjState.player);
+
+    // Ved bust viser huset stadig sit skjulte kort, men trækker ikke
+    // unødvendige ekstra kort. Ved Stand/Blackjack spiller dealeren
+    // sin hånd færdig ét kort ad gangen.
+    await sleep(260);
+    await blackjackRevealDealerHole();
+
+    if(pv<=21){
+      while(blackjackValue(bjState.dealer)<17){
+        await sleep(360);
+        await blackjackDealerDrawCard();
+      }
+    }
+
+    const dv=blackjackValue(bjState.dealer);
+    await sleep(280);
+
+    let delta=0,title="",type="",text="";
+    if(pv>21){
+      delta=bjState.w;title="Bust";type="bad";text="Du gik over 21.";
+    }else if(natural && bjState.player.length===2 && pv===21){
+      delta=-2*bjState.w;title="Blackjack!";type="good";text="Natural 21.";
+    }else if(dv>21 || pv>dv){
+      delta=-bjState.w;title="Du vinder";type="good";text=`${pv} mod husets ${dv}.`;
+    }else if(pv===dv){
+      delta=0;title="Push";text=`Begge endte på ${pv}.`;
+    }else{
+      delta=bjState.w;title="Huset vinder";type="bad";text=`${pv} mod husets ${dv}.`;
+    }
+
+    const actual=updateBalance(delta,`Blackjack: ${title}.`);
+    showResult(title,
+      `${text} ${actual<0?Math.abs(actual)+" point forsvandt.":actual>0?actual+" point blev lagt oveni.":"Ingen ændring."}`,
+      type);
+
+    bjState=null;
+    setBusy(false);
+    $("#bjDeal").style.display="block";
+    $("#bjDeal").textContent="NY HÅND";
+  }
+
+  const rouletteRed=new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]);
+  const rouletteOrder=[0,32,15,19,4,21,2,25,17,34,6,27,13,36,11,30,8,23,10,5,24,16,33,1,20,14,31,9,22,18,29,7,28,12,35,3,26];
+  let rouletteRotation=0;
+  let rouletteBallRotation=0;
+  let rouletteBetView="quick";
+  let rouletteBet={
+    type:"outside",
+    key:"red",
+    label:"RØD",
+    payout:1,
+    numbers:[1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]
+  };
+
+  function rouletteColor(n){return n===0?"green":rouletteRed.has(n)?"red":"black"}
+
+  function rouletteSetBet(type,key,label,payout,numbers){
+    rouletteBet={type,key,label,payout,numbers:[...numbers]};
+    updateRouletteBetSummary();
+
+    $$(".roulette-number").forEach(b=>{
+      b.classList.toggle("active",type==="straight" && +b.dataset.num===numbers[0]);
+    });
+    $$(".roulette-outside").forEach(b=>{
+      b.classList.toggle("active",type==="outside" && b.dataset.bet===key);
+    });
+  }
+
+  function setRouletteBetView(view){
+    rouletteBetView=view;
+    $$(".roulette-bet-tab").forEach(b=>b.classList.toggle("active",b.dataset.view===view));
+    $$(".roulette-bet-view").forEach(p=>p.classList.toggle("active",p.dataset.view===view));
+  }
+
+  function rouletteInlineResult(title,text,type="special"){
+    const box=$("#rouletteInlineResult");
+    if(!box)return;
+    box.className=`roulette-inline-result show ${type}`;
+    $("#rouletteInlineTitle").textContent=title;
+    $("#rouletteInlineText").textContent=text;
+  }
+
+  function roulettePointRule(bet=rouletteBet){
+    // Grundregel i drikkespillet:
+    // Et VINDENDE bet fjerner altid mindst 100% af indsatsen.
+    // Satser du hele puljen, kan du derfor altid cleare den på ét hit.
+    // Sværere bets balanceres i stedet med en mildere straf ved miss.
+    if(bet.type==="straight"){
+      if(bet.numbers[0]===0){
+        return {
+          winFraction:1,
+          lossFixed:1,
+          winLabel:"Clear puljen + giv 2× puljen",
+          lossLabel:"+1 point ved miss",
+          special:"green"
+        };
+      }
+      return {
+        winFraction:1,
+        lossFixed:1,
+        winLabel:"Clear hele puljen",
+        lossLabel:"+1 point ved miss",
+        special:"straight"
+      };
+    }
+
+    if(bet.type==="outside"){
+      if(bet.key==="green"){
+        return {
+          winFraction:1,
+          lossFixed:1,
+          winLabel:"Clear puljen + giv 2× puljen",
+          lossLabel:"+1 point ved miss",
+          special:"green"
+        };
+      }
+      if(["red","black","odd","even","low","high"].includes(bet.key)){
+        return {
+          winFraction:1,
+          lossFraction:1,
+          winLabel:"Fjern 100% af indsatsen",
+          lossLabel:"+100% ved miss"
+        };
+      }
+      if(["d1","d2","d3","c1","c2","c3"].includes(bet.key)){
+        return {
+          winFraction:1,
+          lossFraction:.50,
+          winLabel:"Fjern 100% af indsatsen",
+          lossLabel:"+50% ved miss"
+        };
+      }
+    }
+
+    if(bet.type==="combo"){
+      if(bet.key.startsWith("six:")){
+        return {
+          winFraction:1,
+          lossFraction:.33,
+          winLabel:"Fjern 100% af indsatsen",
+          lossLabel:"+33% ved miss"
+        };
+      }
+      if(bet.key.startsWith("corner:")){
+        return {
+          winFraction:1,
+          lossFraction:.25,
+          winLabel:"Fjern 100% af indsatsen",
+          lossLabel:"+25% ved miss"
+        };
+      }
+      if(bet.key.startsWith("street:")){
+        return {
+          winFraction:1,
+          lossFraction:.20,
+          winLabel:"Fjern 100% af indsatsen",
+          lossLabel:"+20% ved miss"
+        };
+      }
+      if(bet.key.startsWith("split:")){
+        return {
+          winFraction:1,
+          lossFraction:.15,
+          winLabel:"Fjern 100% af indsatsen",
+          lossLabel:"+15% ved miss"
+        };
+      }
+    }
+
+    return {
+      winFraction:1,
+      lossFraction:1,
+      winLabel:"Fjern 100% af indsatsen",
+      lossLabel:"+100% ved miss"
+    };
+  }
+
+  function roulettePointRuleText(bet=rouletteBet){
+    const r=roulettePointRule(bet);
+    return `${r.winLabel} · ${r.lossLabel}`;
+  }
+
+  function updateRouletteBetSummary(){
+    const summary=$("#rouletteBetSummary");
+    const effect=$("#rouletteBetOdds");
+    const dock=$("#rouletteDockBet");
+    if(summary) summary.textContent=rouletteBet.label;
+    if(effect) effect.textContent=roulettePointRuleText();
+    if(dock) dock.textContent=rouletteBet.label;
+  }
+
+  function rouletteOutsideBet(key){
+    const all=Array.from({length:36},(_,i)=>i+1);
+    const defs={
+      red:{label:"RØD",payout:1,numbers:all.filter(n=>rouletteRed.has(n))},
+      black:{label:"SORT",payout:1,numbers:all.filter(n=>!rouletteRed.has(n))},
+      green:{label:"GRØN 0",payout:35,numbers:[0]},
+      odd:{label:"ULIGE",payout:1,numbers:all.filter(n=>n%2===1)},
+      even:{label:"LIGE",payout:1,numbers:all.filter(n=>n%2===0)},
+      low:{label:"1-18",payout:1,numbers:all.filter(n=>n<=18)},
+      high:{label:"19-36",payout:1,numbers:all.filter(n=>n>=19)},
+      d1:{label:"1. DUSIN · 1-12",payout:2,numbers:all.filter(n=>n<=12)},
+      d2:{label:"2. DUSIN · 13-24",payout:2,numbers:all.filter(n=>n>=13&&n<=24)},
+      d3:{label:"3. DUSIN · 25-36",payout:2,numbers:all.filter(n=>n>=25)},
+      c1:{label:"KOLONNE 1",payout:2,numbers:all.filter(n=>n%3===1)},
+      c2:{label:"KOLONNE 2",payout:2,numbers:all.filter(n=>n%3===2)},
+      c3:{label:"KOLONNE 3",payout:2,numbers:all.filter(n=>n%3===0)}
+    };
+    const d=defs[key];
+    if(d) rouletteSetBet("outside",key,d.label,d.payout,d.numbers);
+  }
+
+  function rouletteComboOptions(type){
+    const opts=[];
+    if(type==="split"){
+      opts.push({label:"0 / 1",numbers:[0,1]},{label:"0 / 2",numbers:[0,2]},{label:"0 / 3",numbers:[0,3]});
+      for(let r=0;r<12;r++){
+        const a=1+r*3;
+        opts.push({label:`${a} / ${a+1}`,numbers:[a,a+1]});
+        opts.push({label:`${a+1} / ${a+2}`,numbers:[a+1,a+2]});
+      }
+      for(let n=1;n<=33;n++) opts.push({label:`${n} / ${n+3}`,numbers:[n,n+3]});
+    }else if(type==="street"){
+      for(let r=0;r<12;r++){
+        const a=1+r*3;
+        opts.push({label:`${a}-${a+2}`,numbers:[a,a+1,a+2]});
+      }
+      opts.unshift({label:"0-1-2 · Trio",numbers:[0,1,2]});
+      opts.unshift({label:"0-2-3 · Trio",numbers:[0,2,3]});
+    }else if(type==="corner"){
+      for(let r=0;r<11;r++){
+        const a=1+r*3;
+        opts.push({label:`${a}-${a+1}-${a+3}-${a+4}`,numbers:[a,a+1,a+3,a+4]});
+        opts.push({label:`${a+1}-${a+2}-${a+4}-${a+5}`,numbers:[a+1,a+2,a+4,a+5]});
+      }
+      opts.unshift({label:"0-1-2-3 · First Four",numbers:[0,1,2,3],firstFour:true});
+    }else if(type==="six"){
+      for(let r=0;r<11;r++){
+        const a=1+r*3;
+        opts.push({label:`${a}-${a+5}`,numbers:[a,a+1,a+2,a+3,a+4,a+5]});
+      }
+    }
+    return opts;
+  }
+
+  function rouletteComboPayout(type,opt){
+    if(type==="split") return 17;
+    if(type==="street") return 11;
+    if(type==="corner") return opt && opt.firstFour ? 8 : 8;
+    if(type==="six") return 5;
+    return 1;
+  }
+
+  function populateRouletteComboOptions(){
+    const type=$("#rouletteComboType");
+    const select=$("#rouletteComboOption");
+    if(!type||!select)return;
+    const opts=rouletteComboOptions(type.value);
+    select.innerHTML=opts.map((o,i)=>`<option value="${i}">${o.label}</option>`).join("");
+  }
+
+  function chooseRouletteCombo(){
+    const type=$("#rouletteComboType");
+    const select=$("#rouletteComboOption");
+    if(!type||!select)return;
+    const opts=rouletteComboOptions(type.value);
+    const opt=opts[+select.value]||opts[0];
+    if(!opt)return;
+    const payout=rouletteComboPayout(type.value,opt);
+    const typeNames={split:"SPLIT",street:"STREET",corner:"CORNER",six:"SIX LINE"};
+    rouletteSetBet("combo",`${type.value}:${select.value}`,
+      `${typeNames[type.value]} · ${opt.label}`,payout,opt.numbers);
+  }
+
+  function renderRoulette(a){
+    const step=360/rouletteOrder.length;
+
+    const slices=rouletteOrder.map((n,i)=>{
+      const color=rouletteColor(n);
+      const c=color==="red"?"#c23b45":color==="green"?"#177548":"#171d27";
+      const start=i*step-step/2;
+      const finish=start+step;
+      return `${c} ${start}deg ${finish}deg`;
+    }).join(",");
+
+    const labels=rouletteOrder.map((n,i)=>{
+      const angle=i*step;
+      const color=rouletteColor(n);
+      const extra=n===0?" zero":"";
+      return `<span class="roulette-pocket-label ${color}${extra}"
+        style="transform:rotate(${angle}deg) translateY(-122px) rotate(${-angle}deg)">${n}</span>`;
+    }).join("");
+
+    const numberButtons=[0,...Array.from({length:36},(_,i)=>i+1)].map(n=>{
+      const color=rouletteColor(n);
+      return `<button class="roulette-number ${color} ${n===0?"zero":""}
+        ${rouletteBet.type==="straight"&&rouletteBet.numbers[0]===n?"active":""}"
+        data-num="${n}">${n===0?"0 · GRØN JACKPOT":n}</button>`;
+    }).join("");
+
+    const outside=[
+      ["red","RØD","redbet"],["black","SORT","blackbet"],["green","GRØN 0","greenbet"],
+      ["odd","ULIGE",""],["even","LIGE",""],
+      ["low","1-18",""],["high","19-36",""],
+      ["d1","1-12",""],["d2","13-24",""],["d3","25-36",""],
+      ["c1","KOLONNE 1",""],["c2","KOLONNE 2",""],["c3","KOLONNE 3",""]
+    ].map(([key,label,cls])=>`
+      <button class="roulette-outside ${cls} ${rouletteBet.type==="outside"&&rouletteBet.key===key?"active":""}"
+        data-bet="${key}">${label}</button>`).join("");
+
+    a.innerHTML=`
+      ${titleBlock("🎯 Casino Roulette","Alle vindende bets kan cleare hele puljen på ét spin, hvis du satser MAX. Sværere bets har til gengæld en mindre straf, når de misser.")}
+
+      <div class="roulette-stage">
+        <div class="roulette-shell">
+          <div class="roulette-pointer"></div>
+          <div class="roulette-disc" id="rouletteDisc"
+               style="background:conic-gradient(from 0deg,${slices})">
+            ${labels}
+          </div>
+          <div class="roulette-ball-orbit" id="rouletteBallOrbit">
+            <div class="roulette-ball"></div>
+          </div>
+          <div class="roulette-result" id="rouletteResult">?</div>
+        </div>
+      </div>
+
+      <div class="roulette-bet-panel">
+        <div class="roulette-bet-tabs">
+          <button class="roulette-bet-tab ${rouletteBetView==="quick"?"active":""}" data-view="quick">HURTIGE</button>
+          <button class="roulette-bet-tab ${rouletteBetView==="number"?"active":""}" data-view="number">ET NUMMER</button>
+          <button class="roulette-bet-tab ${rouletteBetView==="combo"?"active":""}" data-view="combo">KOMBI</button>
+        </div>
+
+        <div class="roulette-bet-summary">
+          <span>VALGT BET</span>
+          <strong id="rouletteBetSummary">${rouletteBet.label}</strong>
+          <span>POINT-EFFEKT</span>
+          <strong id="rouletteBetOdds">${roulettePointRuleText()}</strong>
+        </div>
+
+        <div class="roulette-bet-view ${rouletteBetView==="quick"?"active":""}" data-view="quick">
+          <div class="roulette-bet-heading">Farve, lige/ulige, høj/lav, dusin og kolonne</div>
+          <div class="roulette-outside-grid">${outside}</div>
+          <div class="roulette-rule-note">
+            Rød/Sort, Lige/Ulige og 1-18/19-36: gevinst -100%, miss +100%. Grøn 0: clear puljen og giv 2× puljen videre ved hit, +1 ved miss.
+            Dusin/Kolonne: gevinst -100%, miss +50%.
+          </div>
+        </div>
+
+        <div class="roulette-bet-view ${rouletteBetView==="number"?"active":""}" data-view="number">
+          <div class="roulette-bet-heading">Vælg ét nummer</div>
+          <div class="roulette-number-grid">${numberButtons}</div>
+          <div class="roulette-rule-note">
+            Et almindeligt enkelt-tal clearer hele puljen ved hit. Grøn 0 clearer puljen og giver 2× din tidligere pulje videre. Miss på enkelt-tal giver kun +1 point.
+          </div>
+        </div>
+
+        <div class="roulette-bet-view ${rouletteBetView==="combo"?"active":""}" data-view="combo">
+          <div class="roulette-bet-heading">Vælg kombination</div>
+          <div class="roulette-combo-builder">
+            <select id="rouletteComboType" aria-label="Type roulette kombinationsbet">
+              <option value="split">Split · 2 tal</option>
+              <option value="street">Street / Trio · 3 tal</option>
+              <option value="corner">Corner / First Four · 4 tal</option>
+              <option value="six">Six Line · 6 tal</option>
+            </select>
+            <select id="rouletteComboOption" aria-label="Vælg tal til kombinationsbet"></select>
+            <button class="btn" id="rouletteComboSet">VÆLG KOMBI</button>
+          </div>
+          <div class="roulette-rule-note">
+            Alle kombi-hits fjerner 100% af indsatsen. Miss-straf: Six Line +33%, Corner +25%, Street +20%, Split +15%.
+          </div>
+        </div>
+      </div>
+
+      <div class="roulette-spin-dock">
+        <div class="roulette-spin-dock-top">
+          <div class="roulette-spin-dock-bet">
+            <span>DU SPILLER PÅ</span>
+            <strong id="rouletteDockBet">${rouletteBet.label}</strong>
+          </div>
+          <span style="font-size:10px;color:var(--muted);font-weight:900">${roulettePointRuleText()}</span>
+        </div>
+        <button class="big-button" id="rouletteBtn" style="margin:0">SPIN ROULETTE</button>
+        <div class="roulette-inline-result" id="rouletteInlineResult">
+          <strong id="rouletteInlineTitle"></strong>
+          <span id="rouletteInlineText"></span>
+        </div>
+      </div>
+
+      <div id="gameResult"></div>`;
+
+    $("#rouletteDisc").style.transform=`rotate(${rouletteRotation}deg)`;
+    $("#rouletteBallOrbit").style.transform=`rotate(${rouletteBallRotation}deg)`;
+
+    $$(".roulette-bet-tab").forEach(b=>b.onclick=()=>setRouletteBetView(b.dataset.view));
+
+    $$(".roulette-number").forEach(b=>b.onclick=()=>{
+      const n=+b.dataset.num;
+      rouletteSetBet("straight",`n${n}`,`NUMMER ${n}`,35,[n]);
+    });
+
+    $$(".roulette-outside").forEach(b=>b.onclick=()=>rouletteOutsideBet(b.dataset.bet));
+
+    $("#rouletteComboType").onchange=populateRouletteComboOptions;
+    $("#rouletteComboSet").onclick=chooseRouletteCombo;
+    populateRouletteComboOptions();
+
+    $("#rouletteBtn").onclick=spinRoulette;
+  }
+
+  async function spinRoulette(){
+    if(busy||balance<=0)return;
+    const w=getWager();
+    setBusy(true);
+
+    // Pick one of the 37 real European roulette pockets.
+    const winIndex=Math.floor(Math.random()*rouletteOrder.length);
+    const n=rouletteOrder[winIndex];
+    const color=rouletteColor(n);
+
+    const disc=$("#rouletteDisc");
+    const orbit=$("#rouletteBallOrbit");
+    const result=$("#rouletteResult");
+    const step=360/rouletteOrder.length;
+
+    result.textContent="";
+    orbit.classList.remove("settle");
+    rouletteInlineResult("🎯 SPINNER...",`${rouletteBet.label} · ${roulettePointRuleText()}`,"special");
+
+    // Rotate the wheel several turns, but finish with the chosen pocket
+    // exactly under the ball at 12 o'clock.
+    const currentDiscMod=((rouletteRotation%360)+360)%360;
+    const targetDiscMod=((-(winIndex*step))%360+360)%360;
+    const discCorrection=(targetDiscMod-currentDiscMod+360)%360;
+    rouletteRotation += 5*360 + discCorrection;
+
+    // Ball spins the opposite direction and always ends at 12 o'clock.
+    const currentBallMod=((rouletteBallRotation%360)+360)%360;
+    rouletteBallRotation -= 7*360 + currentBallMod;
+
+    disc.style.transition="transform 4.6s cubic-bezier(.08,.72,.08,1)";
+    orbit.style.transition="transform 4.35s cubic-bezier(.08,.68,.08,1)";
+    disc.style.transform=`rotate(${rouletteRotation}deg)`;
+    orbit.style.transform=`rotate(${rouletteBallRotation}deg)`;
+
+    let t=0;
+    const id=setInterval(()=>{
+      beep(330+(t++%6)*35,.02,.011);
+    },95);
+
+    await sleep(3900);
+    orbit.classList.add("settle");
+    await sleep(500);
+    clearInterval(id);
+
+    result.textContent=n;
+    result.style.color=color==="red"?"#ff7180":color==="green"?"#64e69a":"#edf2f7";
+    beep(800,.12,.04);
+
+    const win=rouletteBet.numbers.includes(n);
+    const rule=roulettePointRule();
+
+    if(win && rule.special==="green"){
+      const poolBefore=balance;
+      const giveAmount=poolBefore*2;
+      const actual=updateBalance(-poolBefore,
+        `Roulette: Grøn 0. Puljen blev clearet og ${giveAmount} point kan gives videre.`,
+        "auto",1400);
+
+      rouletteInlineResult("🟢 0 · GRØN JACKPOT",
+        `Puljen blev clearet. Giv ${giveAmount} point videre.`,"good");
+      showResult("🟢 0 · GRØN JACKPOT",
+        `Hele din pulje på ${poolBefore} point blev clearet. Giv ${giveAmount} point videre, altså 2× din pulje.`,
+        "good");
+      confetti();
+    }else if(win && rule.special==="straight"){
+      const poolBefore=balance;
+      const actual=updateBalance(-poolBefore,
+        `Roulette: Nummer ${n} ramte. Hele puljen blev clearet.`,
+        "auto",1200);
+
+      rouletteInlineResult(`${n} · JACKPOT`,
+        `Dit nummer ramte. Hele puljen blev clearet.`,"good");
+      showResult(`${n} · JACKPOT`,
+        `Dit enkelt-tal ramte. Hele puljen på ${poolBefore} point blev clearet.`,
+        "good");
+      confetti();
+    }else if(win){
+      const reward=Math.max(1,Math.ceil(w*rule.winFraction));
+      const actual=updateBalance(-reward,`Roulette: ${n} ${color}. Bet: ${rouletteBet.label}.`);
+      rouletteInlineResult(`${n} · ${color==="red"?"RØD":color==="black"?"SORT":"GRØN"}`,
+        `${rouletteBet.label} ramte. ${Math.abs(actual)} point forsvandt.`,"good");
+      showResult(`${n} · ${color==="red"?"RØD":color==="black"?"SORT":"GRØN"}`,
+        `${rouletteBet.label} ramte. ${Math.abs(actual)} point forsvandt.`,
+        "good");
+    }else{
+      let penalty;
+      if(rule.lossFixed){
+        penalty=rule.lossFixed;
+      }else{
+        penalty=Math.max(1,Math.ceil(w*rule.lossFraction));
+      }
+
+      const actual=updateBalance(penalty,`Roulette: ${n} ${color}. Bet: ${rouletteBet.label}.`);
+      rouletteInlineResult(`${n} · ${color==="red"?"RØD":color==="black"?"SORT":"GRØN"}`,
+        `${rouletteBet.label} missede. ${actual} point blev lagt oveni.`,"bad");
+      showResult(`${n} · ${color==="red"?"RØD":color==="black"?"SORT":"GRØN"}`,
+        `${rouletteBet.label} missede. ${actual} point blev lagt oveni.`,
+        "bad");
+    }
+
+    setBusy(false);
+  }
+
+  function renderRedBlack(a){
+    a.innerHTML=`
+      ${titleBlock("♦️ Red / Black","Gæt om et tilfældigt kort bliver rødt eller sort.")}
+      <div class="quick-card-stage"><div class="quick-card" id="rbCard">?</div></div>
+      <div class="bet-picks">
+        <button class="btn bet-red rbPick" data-rb="red">RØD</button>
+        <button class="btn bet-black rbPick" data-rb="black">SORT</button>
+      </div>
+      <div id="gameResult"></div>`;
+    $$(".rbPick").forEach(b=>b.onclick=()=>playRedBlack(b.dataset.rb));
+  }
+
+  async function playRedBlack(choice){
+    if(busy||balance<=0)return;
+    const w=getWager(),c=casinoCard();
+    setBusy(true);
+    const el=$("#rbCard");
+    el.className="quick-card";
+    el.textContent="?";
+    await sleep(180);
+    el.className=`quick-card ${c.red?"red":""} reveal`;
+    el.textContent=`${c.label}${c.suit}`;
+    beep(690,.09,.03);
+    await sleep(720);
+    const win=(choice==="red")===c.red;
+    const actual=updateBalance(win?-w:w,`Red / Black: ${c.label}${c.suit}.`);
+    showResult(c.red?"RØDT KORT":"SORT KORT",
+      win?`${Math.abs(actual)} point forsvandt.`:`${actual} point blev lagt oveni.`,
+      win?"good":"bad");
+    setBusy(false);
+  }
+
+  function renderWar(a){
+    a.innerHTML=`
+      ${titleBlock("⚔️ War","Du og huset trækker ét kort. Højeste rank vinder. Es er højt.")}
+      <div class="war-stage">
+        <div class="war-side"><div class="hand-label">DIG</div><div id="warPlayer" class="hand"><div class="muted">?</div></div></div>
+        <div class="war-side"><div class="hand-label">HUSET</div><div id="warDealer" class="hand"><div class="muted">?</div></div></div>
+      </div>
+      <button class="big-button" id="warBtn">TRÆK KORT</button>
+      <div id="gameResult"></div>`;
+    $("#warBtn").onclick=playWar;
+  }
+
+  async function playWar(){
+    if(busy||balance<=0)return;
+    const w=getWager(),p=casinoCard(),d=casinoCard();
+    setBusy(true);
+    $("#warPlayer").innerHTML=cardHtml(p);
+    beep(560,.05,.02);await sleep(420);
+    $("#warDealer").innerHTML=cardHtml(d);
+    beep(620,.05,.02);await sleep(480);
+    let delta=0,title="Uafgjort",type="";
+    const pWar=p.rank===1?14:p.rank;
+    const dWar=d.rank===1?14:d.rank;
+    if(pWar>dWar){delta=-w;title="Du vinder";type="good"}
+    else if(pWar<dWar){delta=w;title="Huset vinder";type="bad"}
+    const actual=updateBalance(delta,`War: ${p.label} mod ${d.label}.`);
+    showResult(title,
+      `${p.label}${p.suit} mod ${d.label}${d.suit}. ${actual<0?Math.abs(actual)+" point forsvandt.":actual>0?actual+" point blev lagt oveni.":"Ingen ændring."}`,
+      type);
+    setBusy(false);
+  }
+
+  function renderPlinko(a){
+    let pegs="";
+    for(let r=0;r<6;r++){
+      const count=5+r;
+      for(let c=0;c<count;c++){
+        const left=12+(c/(count-1))*76;
+        const top=18+r*11.5;
+        pegs+=`<i class="peg" style="left:${left}%;top:${top}%"></i>`;
+      }
+    }
+    a.innerHTML=`
+      ${titleBlock("🔻 Plinko","Slip chippen. Den hopper gennem brættet og lander i en multiplikator.")}
+      <div class="plinko-board" id="plinkoBoard">
+        ${pegs}
+        <div class="plinko-chip" id="plinkoChip"></div>
+        <div class="plinko-slots">
+          <div class="plinko-slot">0x</div><div class="plinko-slot">½x</div><div class="plinko-slot">1x</div><div class="plinko-slot">1½x</div><div class="plinko-slot">2x</div>
+        </div>
+      </div>
+      <button class="big-button" id="plinkoBtn">DROP CHIP</button>
+      <div id="gameResult"></div>`;
+    $("#plinkoBtn").onclick=playPlinko;
+  }
+
+  async function playPlinko(){
+    if(busy||balance<=0)return;
+    const w=getWager();
+    setBusy(true);
+    const outcomes=[
+      {label:"0x",delta:-w},{label:"½x",delta:-Math.max(1,Math.floor(w/2))},
+      {label:"1x",delta:0},{label:"1½x",delta:Math.max(1,Math.ceil(w/2))},{label:"2x",delta:w}
+    ];
+    const weights=[12,22,32,22,12];
+    let r=Math.random()*100,idx=2;
+    for(let i=0;i<weights.length;i++){r-=weights[i];if(r<=0){idx=i;break}}
+    const chip=$("#plinkoChip");
+    let x=50;
+    for(let row=0;row<7;row++){
+      const desired=20+idx*15;
+      x += (desired-x)*0.35 + (Math.random()*10-5);
+      chip.style.left=`${clamp(x,8,92)}%`;
+      chip.style.top=`${35+row*36}px`;
+      beep(410+row*36,.02,.012);
+      await sleep(190);
+    }
+    chip.style.left=`${10+idx*20}%`;
+    chip.style.top="286px";
+    await sleep(260);
+    const out=outcomes[idx];
+    const actual=updateBalance(out.delta,`Plinko: ${out.label}.`);
+    showResult(`Plinko ${out.label}`,
+      actual<0?`${Math.abs(actual)} point forsvandt.`:actual>0?`${actual} point blev lagt oveni.`:"Ingen ændring.",
+      actual<0?"good":actual>0?"bad":"");
+    setBusy(false);
+  }
+
+  function renderBoxes(a){
+    a.innerHTML=`
+      ${titleBlock("💣 Safe Boxes","Der er fem bokse og to bomber. En sikker boks fjerner cirka 2/3 af indsatsen. En bombe giver indsatsen ekstra.")}
+      <div class="box-grid" id="boxGrid">
+        ${Array.from({length:5},(_,i)=>`<button class="safe-box" data-box="${i}">?</button>`).join("")}
+      </div>
+      <div id="gameResult"></div>`;
+    $$(".safe-box").forEach(b=>b.onclick=()=>playBox(+b.dataset.box));
+  }
+
+  async function playBox(choice){
+    if(busy||balance<=0)return;
+    const w=getWager();
+    setBusy(true);
+
+    const bombSet=new Set();
+    while(bombSet.size<2) bombSet.add(Math.floor(Math.random()*5));
+
+    const boxes=$$(".safe-box");
+    await sleep(250);
+    boxes.forEach((b,i)=>{
+      const isBomb=bombSet.has(i);
+      b.classList.add("open",isBomb?"bomb":"safe");
+      b.textContent=isBomb?"💣":"✅";
+      b.disabled=true;
+    });
+
+    const win=!bombSet.has(choice);
+    beep(win?780:220,.14,.04);
+
+    const safeReward=Math.max(1,Math.round(w*2/3));
+    const actual=updateBalance(win?-safeReward:w,`Safe Boxes: ${win?"safe":"bomb"}.`);
+
+    showResult(win?"✅ SAFE":"💣 BOMBE",
+      win
+        ? `${Math.abs(actual)} point forsvandt. Der var 2 bomber blandt 5 bokse.`
+        : `${actual} point blev lagt oveni.`,
+      win?"good":"bad");
+    setBusy(false);
+  }
+
+
+  function dieFace(n){return ["⚀","⚁","⚂","⚃","⚄","⚅"][n-1]}
+
+  function renderLucky7(a){
+    a.innerHTML=`
+      ${titleBlock("7️⃣ Lucky 7","Præcis 7 fjerner hele indsatsen. Sum 6 eller 8 giver en halv gevinst. Andre summer giver kun cirka en halv indsats ekstra.")}
+      <div class="dice-pair"><div class="mini-die" id="l7d1">⚅</div><div class="mini-die" id="l7d2">⚀</div></div>
+      <button class="big-button" id="lucky7Btn">ROLL FOR 7</button>
+      <div id="gameResult"></div>`;
+    $("#lucky7Btn").onclick=playLucky7;
+  }
+
+  async function playLucky7(){
+    if(busy||balance<=0)return;
+    const w=getWager(),d1=1+Math.floor(Math.random()*6),d2=1+Math.floor(Math.random()*6);
+    setBusy(true);
+    const els=[$("#l7d1"),$("#l7d2")];
+    els.forEach(e=>{e.classList.remove("roll");void e.offsetWidth;e.classList.add("roll")});
+    const id=setInterval(()=>{
+      els[0].textContent=dieFace(1+Math.floor(Math.random()*6));
+      els[1].textContent=dieFace(1+Math.floor(Math.random()*6));
+      beep(360+Math.random()*140,.02,.011);
+    },90);
+    await sleep(1100);clearInterval(id);
+    els[0].textContent=dieFace(d1);els[1].textContent=dieFace(d2);
+    const sum=d1+d2;
+    if(sum===7){
+      const actual=updateBalance(-w,`Lucky 7: ${d1}+${d2}=7.`);
+      showResult("🎉 LUCKY 7",`${Math.abs(actual)} point forsvandt.`,"good");
+    }else if(sum===6||sum===8){
+      const amount=Math.max(1,Math.ceil(w/2));
+      const actual=updateBalance(-amount,`Lucky 7: near hit ${sum}.`);
+      showResult(`✨ NEAR HIT · ${sum}`,`${Math.abs(actual)} point forsvandt.`,"good");
+    }else{
+      const amount=Math.max(1,Math.ceil(w/2));
+      const actual=updateBalance(amount,`Lucky 7: sum ${sum}.`);
+      showResult(`SUM ${sum}`,`${actual} point blev lagt oveni.`,"bad");
+    }
+    setBusy(false);
+  }
+
+  let overUnderPick="over";
+  function renderOverUnder(a){
+    a.innerHTML=`
+      ${titleBlock("↕️ Over / Under 7","UNDER og OVER er næsten 50/50 med 7 som push. PRÆCIS 7 er sværere, men et miss giver derfor kun en lille straf.")}
+      <div class="dice-pair"><div class="mini-die" id="oud1">⚂</div><div class="mini-die" id="oud2">⚃</div></div>
+      <div class="bet-picks">
+        <button class="btn bet-pick ouPick" data-ou="under">UNDER 7</button>
+        <button class="btn bet-pick ouPick" data-ou="seven">PRÆCIS 7</button>
+        <button class="btn bet-pick ouPick active" data-ou="over">OVER 7</button>
+      </div>
+      <button class="big-button" id="ouBtn">ROLL</button>
+      <div id="gameResult"></div>`;
+    $$(".ouPick").forEach(b=>b.onclick=()=>{
+      overUnderPick=b.dataset.ou;
+      $$(".ouPick").forEach(x=>x.classList.toggle("active",x===b));
+    });
+    $("#ouBtn").onclick=playOverUnder;
+  }
+
+  async function playOverUnder(){
+    if(busy||balance<=0)return;
+    const w=getWager(),d1=1+Math.floor(Math.random()*6),d2=1+Math.floor(Math.random()*6),sum=d1+d2;
+    setBusy(true);
+    const a=$("#oud1"),b=$("#oud2");
+    a.classList.add("roll");b.classList.add("roll");
+    const id=setInterval(()=>{a.textContent=dieFace(1+Math.floor(Math.random()*6));b.textContent=dieFace(1+Math.floor(Math.random()*6));beep(390,.02,.01)},95);
+    await sleep(1050);clearInterval(id);a.textContent=dieFace(d1);b.textContent=dieFace(d2);
+    const actualKind=sum<7?"under":sum===7?"seven":"over";
+
+    if(overUnderPick==="seven"){
+      if(actualKind==="seven"){
+        const actual=updateBalance(-w,`Over / Under: præcis 7.`);
+        showResult("🎯 PRÆCIS 7",`${Math.abs(actual)} point forsvandt.`,"good");
+      }else{
+        const penalty=Math.max(1,Math.ceil(w/5));
+        const actual=updateBalance(penalty,`Over / Under: miss på præcis 7.`);
+        showResult(`SUM ${sum}`,`${actual} point blev lagt oveni. Den svære 7-bet har lavere tab.`,"bad");
+      }
+    }else if(actualKind==="seven"){
+      updateBalance(0,`Over / Under: sum 7, push.`);
+      showResult("7 · PUSH","Ingen ændring i puljen.","special");
+    }else{
+      const win=actualKind===overUnderPick;
+      const actual=updateBalance(win?-w:w,`Over / Under: sum ${sum}.`);
+      showResult(`SUM ${sum}`,
+        win?`${Math.abs(actual)} point forsvandt.`:`${actual} point blev lagt oveni.`,
+        win?"good":"bad");
+    }
+    setBusy(false);
+  }
+
+  let triPick="high";
+  function renderTriDice(a){
+    a.innerHTML=`
+      ${titleBlock("🎲 Triple Dice","Tre terninger. Vælg LOW 3 til 9 eller HIGH 12 til 18. Sum 10 eller 11 giver push.")}
+      <div class="dice-triple"><div class="mini-die" id="td1">⚀</div><div class="mini-die" id="td2">⚁</div><div class="mini-die" id="td3">⚂</div></div>
+      <div class="bet-picks">
+        <button class="btn bet-pick triPick" data-tri="low">LOW 3 til 9</button>
+        <button class="btn bet-pick triPick active" data-tri="high">HIGH 12 til 18</button>
+      </div>
+      <button class="big-button" id="triBtn">ROLL 3 DICE</button>
+      <div id="gameResult"></div>`;
+    $$(".triPick").forEach(b=>b.onclick=()=>{
+      triPick=b.dataset.tri;
+      $$(".triPick").forEach(x=>x.classList.toggle("active",x===b));
+    });
+    $("#triBtn").onclick=playTriDice;
+  }
+
+  async function playTriDice(){
+    if(busy||balance<=0)return;
+    const w=getWager();
+    const ds=[0,0,0].map(()=>1+Math.floor(Math.random()*6));
+    const sum=ds.reduce((s,x)=>s+x,0);
+    setBusy(true);
+    const els=[$("#td1"),$("#td2"),$("#td3")];
+    els.forEach(e=>e.classList.add("roll"));
+    const id=setInterval(()=>{els.forEach(e=>e.textContent=dieFace(1+Math.floor(Math.random()*6)));beep(350+Math.random()*130,.02,.009)},80);
+    await sleep(1120);clearInterval(id);els.forEach((e,i)=>e.textContent=dieFace(ds[i]));
+    if(sum===10||sum===11){
+      updateBalance(0,`Triple Dice: ${sum}, push.`);
+      showResult(`SUM ${sum} · PUSH`,"Ingen ændring i puljen.","special");
+    }else{
+      const actualKind=sum<=9?"low":"high";
+      const win=actualKind===triPick;
+      const actual=updateBalance(win?-w:w,`Triple Dice: sum ${sum}.`);
+      showResult(`SUM ${sum}`,win?`${Math.abs(actual)} point forsvandt.`:`${actual} point blev lagt oveni.`,win?"good":"bad");
+    }
+    setBusy(false);
+  }
+
+  let baccaratPick="player";
+  function baccaratTotal(cards){
+    return cards.reduce((s,c)=>s+(c.rank>=10?0:c.rank===1?1:c.rank),0)%10;
+  }
+  function renderBaccarat(a){
+    a.innerHTML=`
+      ${titleBlock("🎴 Baccarat Lite","Vælg Player eller Banker. Højeste baccarat total vinder. Tie giver ingen ændring.")}
+      <div class="baccarat-board">
+        <div class="baccarat-side"><strong>PLAYER</strong><div class="hand" id="bacPlayer"></div><div class="score-bubble" id="bacPS">?</div></div>
+        <div class="baccarat-side"><strong>BANKER</strong><div class="hand" id="bacBanker"></div><div class="score-bubble" id="bacBS">?</div></div>
+      </div>
+      <div class="bet-picks">
+        <button class="btn bet-pick bacPick active" data-bac="player">PLAYER</button>
+        <button class="btn bet-pick bacPick" data-bac="banker">BANKER</button>
+      </div>
+      <button class="big-button" id="bacBtn">DEAL</button>
+      <div id="gameResult"></div>`;
+    $$(".bacPick").forEach(b=>b.onclick=()=>{
+      baccaratPick=b.dataset.bac;
+      $$(".bacPick").forEach(x=>x.classList.toggle("active",x===b));
+    });
+    $("#bacBtn").onclick=playBaccarat;
+  }
+
+  async function playBaccarat(){
+    if(busy||balance<=0)return;
+    const w=getWager(),p=[casinoCard(),casinoCard()],b=[casinoCard(),casinoCard()];
+    setBusy(true);
+    $("#bacPlayer").innerHTML=cardHtml(p[0]);$("#bacBanker").innerHTML=cardHtml(b[0]);beep(520,.04,.018);
+    await sleep(330);
+    $("#bacPlayer").innerHTML+=cardHtml(p[1]);$("#bacBanker").innerHTML+=cardHtml(b[1]);beep(610,.04,.018);
+    const pt=baccaratTotal(p),bt=baccaratTotal(b);
+    $("#bacPS").textContent=pt;$("#bacBS").textContent=bt;
+    await sleep(450);
+    if(pt===bt){
+      updateBalance(0,`Baccarat: tie ${pt}-${bt}.`);
+      showResult("TIE",`${pt} mod ${bt}. Ingen ændring.`,"special");
+    }else{
+      const winner=pt>bt?"player":"banker";
+      const win=winner===baccaratPick;
+      const actual=updateBalance(win?-w:w,`Baccarat: ${winner} vandt ${pt}-${bt}.`);
+      showResult(`${winner==="player"?"PLAYER":"BANKER"} VINDER`,
+        `${pt} mod ${bt}. ${win?Math.abs(actual)+" point forsvandt.":actual+" point blev lagt oveni."}`,
+        win?"good":"bad");
+    }
+    setBusy(false);
+  }
+
+  function freshDeck(){
+    const deck=[];
+    for(const suit of suits) for(let rank=1;rank<=13;rank++) deck.push({rank,suit,value:rank===1?14:rank,label:rank===1?"A":rank===11?"J":rank===12?"Q":rank===13?"K":String(rank),red:suit==="♥"||suit==="♦"});
+    for(let i=deck.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[deck[i],deck[j]]=[deck[j],deck[i]]}
+    return deck;
+  }
+
+  function pokerRank(cards){
+    const vals=cards.map(c=>c.value).sort((a,b)=>a-b);
+    const counts={};vals.forEach(v=>counts[v]=(counts[v]||0)+1);
+    const groups=Object.values(counts).sort((a,b)=>b-a);
+    const flush=cards.every(c=>c.suit===cards[0].suit);
+    const unique=[...new Set(vals)];
+    let straight=unique.length===5 && unique[4]-unique[0]===4;
+    if(JSON.stringify(unique)==="[2,3,4,5,14]") straight=true;
+    if(straight&&flush)return {name:"Straight Flush",mult:4};
+    if(groups[0]===4)return {name:"Four of a Kind",mult:4};
+    if(groups[0]===3&&groups[1]===2)return {name:"Full House",mult:3};
+    if(flush)return {name:"Flush",mult:3};
+    if(straight)return {name:"Straight",mult:3};
+    if(groups[0]===3)return {name:"Three of a Kind",mult:2};
+    if(groups[0]===2&&groups[1]===2)return {name:"Two Pair",mult:2};
+    if(groups[0]===2)return {name:"One Pair",mult:1};
+    return {name:"High Card",mult:-1};
+  }
+
+  function renderPoker(a){
+    a.innerHTML=`
+      ${titleBlock("🃏 Poker Draw","Der deles 5 kort. Et par eller bedre vinder. Stærkere hænder fjerner mere af puljen.")}
+      <div class="poker-hand" id="pokerHand">${Array.from({length:5},()=>`<div class="mini-card hidden-card">?</div>`).join("")}</div>
+      <button class="big-button" id="pokerBtn">DEAL 5 CARDS</button>
+      <div id="gameResult"></div>`;
+    $("#pokerBtn").onclick=playPoker;
+  }
+
+  async function playPoker(){
+    if(busy||balance<=0)return;
+    const w=getWager(),deck=freshDeck(),cards=deck.slice(0,5);
+    setBusy(true);
+    const hand=$("#pokerHand");hand.innerHTML="";
+    for(const c of cards){hand.innerHTML+=cardHtml(c);beep(500+Math.random()*130,.04,.016);await sleep(180)}
+    const rank=pokerRank(cards);
+    const delta=rank.mult<0?w:-rank.mult*w;
+    const actual=updateBalance(delta,`Poker Draw: ${rank.name}.`);
+    showResult(rank.name,
+      actual<0?`${Math.abs(actual)} point forsvandt.`:`${actual} point blev lagt oveni.`,
+      actual<0?"good":"bad");
+    setBusy(false);
+  }
+
+  function renderCups(a){
+    a.innerHTML=`
+      ${titleBlock("🥤 Three Cups","En bold gemmes under én af tre kopper. Rigtigt valg fjerner hele indsatsen. Forkert valg giver kun en halv indsats ekstra.")}
+      <div class="cups-stage">
+        ${[0,1,2].map(i=>`<button class="cup" data-cup="${i}">${i+1}<i class="ball"></i></button>`).join("")}
+      </div>
+      <div class="muted" style="text-align:center">Vælg en kop</div>
+      <div id="gameResult"></div>`;
+    $$(".cup").forEach(c=>c.onclick=()=>playCups(+c.dataset.cup));
+  }
+
+  async function playCups(choice){
+    if(busy||balance<=0)return;
+    const w=getWager(),ball=Math.floor(Math.random()*3),cups=$$(".cup");
+    setBusy(true);
+    for(let round=0;round<3;round++){
+      cups.forEach(c=>{c.classList.remove("shuffle");void c.offsetWidth;c.classList.add("shuffle")});
+      beep(430+round*70,.05,.018);await sleep(720);
+    }
+    cups[ball].classList.add("has-ball");
+    cups[choice].classList.add("lift");
+    if(choice!==ball) setTimeout(()=>cups[ball].classList.add("lift"),300);
+    await sleep(720);
+    const win=choice===ball;
+    const missPenalty=Math.max(1,Math.ceil(w/2));
+    const actual=updateBalance(win?-w:missPenalty,`Three Cups: bolden var under kop ${ball+1}.`);
+    showResult(win?"🎉 DU FANDT BOLDEN":`BOLDEN VAR UNDER ${ball+1}`,
+      win?`${Math.abs(actual)} point forsvandt.`:`${actual} point blev lagt oveni.`,
+      win?"good":"bad");
+    setBusy(false);
+  }
+
+  let pickedNumber=6;
+  function renderPickNumber(a){
+    a.innerHTML=`
+      ${titleBlock("🔢 Pick a Number","Vælg 1 til 6. Præcist hit fjerner hele indsatsen. Et nabotal giver delvis gevinst. Et almindeligt miss giver kun cirka en halv indsats ekstra.")}
+      <div class="big-number" id="numberReveal">?</div>
+      <div class="number-picks">${[1,2,3,4,5,6].map(n=>`<button class="number-pick ${n===pickedNumber?"active":""}" data-num="${n}">${n}</button>`).join("")}</div>
+      <button class="big-button" id="numberBtn">DRAW NUMBER</button>
+      <div id="gameResult"></div>`;
+    $$(".number-pick").forEach(b=>b.onclick=()=>{
+      pickedNumber=+b.dataset.num;
+      $$(".number-pick").forEach(x=>x.classList.toggle("active",x===b));
+    });
+    $("#numberBtn").onclick=playPickNumber;
+  }
+
+  async function playPickNumber(){
+    if(busy||balance<=0)return;
+    const w=getWager(),n=1+Math.floor(Math.random()*6);
+    setBusy(true);
+    const el=$("#numberReveal");
+    for(let i=0;i<12;i++){el.textContent=1+Math.floor(Math.random()*6);beep(400+i*20,.025,.01);await sleep(75+i*4)}
+    el.textContent=n;
+    const exact=n===pickedNumber;
+    const left=pickedNumber===1?6:pickedNumber-1;
+    const right=pickedNumber===6?1:pickedNumber+1;
+    const near=n===left||n===right;
+
+    if(exact){
+      beep(850,.12,.04);
+      const actual=updateBalance(-w,`Pick a Number: direkte hit ${n}.`);
+      showResult(`🎯 DIREKTE HIT · ${n}`,`${Math.abs(actual)} point forsvandt.`,"good");
+    }else if(near){
+      beep(680,.12,.035);
+      const reward=Math.max(1,Math.ceil(w/3));
+      const actual=updateBalance(-reward,`Pick a Number: nabotal ${n}.`);
+      showResult(`✨ NABOTAL · ${n}`,`${Math.abs(actual)} point forsvandt. Dit valg var ${pickedNumber}.`,"good");
+    }else{
+      beep(250,.12,.04);
+      const penalty=Math.max(1,Math.ceil(w/2));
+      const actual=updateBalance(penalty,`Pick a Number: miss ${n}.`);
+      showResult(`NUMMER ${n}`,`${actual} point blev lagt oveni. Dit valg var ${pickedNumber}.`,"bad");
+    }
+    setBusy(false);
+  }
+
+  const rpsMap={rock:"✊",paper:"✋",scissors:"✌️"};
+  function renderRps(a){
+    a.innerHTML=`
+      ${titleBlock("✊ Rock Paper Scissors","Vælg dit tegn. Sejr fjerner indsatsen, tab lægger indsatsen oveni, uafgjort giver ingen ændring.")}
+      <div class="rps-stage"><div class="rps-hand" id="rpsYou">❔</div><div style="font-weight:1000">VS</div><div class="rps-hand" id="rpsHouse">❔</div></div>
+      <div class="bet-picks">
+        <button class="btn rpsPick" data-rps="rock">✊ STEN</button>
+        <button class="btn rpsPick" data-rps="paper">✋ PAPIR</button>
+        <button class="btn rpsPick" data-rps="scissors">✌️ SAKS</button>
+      </div>
+      <div id="gameResult"></div>`;
+    $$(".rpsPick").forEach(b=>b.onclick=()=>playRps(b.dataset.rps));
+  }
+
+  async function playRps(choice){
+    if(busy||balance<=0)return;
+    const w=getWager(),opts=["rock","paper","scissors"],house=opts[Math.floor(Math.random()*3)];
+    setBusy(true);
+    const y=$("#rpsYou"),h=$("#rpsHouse");
+
+    // Fjern animationen fra forrige runde, tving browseren til at
+    // registrere reset, og tilføj den derefter igen.
+    y.classList.remove("shake");
+    h.classList.remove("shake");
+    y.textContent="✊";
+    h.textContent="✊";
+    void y.offsetWidth;
+    void h.offsetWidth;
+    y.classList.add("shake");
+    h.classList.add("shake");
+
+    await sleep(1250);
+    y.classList.remove("shake");
+    h.classList.remove("shake");
+    y.textContent=rpsMap[choice];
+    h.textContent=rpsMap[house];
+    const tie=choice===house;
+    const win=(choice==="rock"&&house==="scissors")||(choice==="paper"&&house==="rock")||(choice==="scissors"&&house==="paper");
+    const actual=updateBalance(tie?0:win?-w:w,`RPS: ${choice} mod ${house}.`);
+    showResult(tie?"UAFGJORT":win?"DU VINDER":"HUSET VINDER",
+      `${rpsMap[choice]} mod ${rpsMap[house]}. ${actual<0?Math.abs(actual)+" point forsvandt.":actual>0?actual+" point blev lagt oveni.":"Ingen ændring."}`,
+      tie?"special":win?"good":"bad");
+    setBusy(false);
+  }
+
+  let crashRunning=false;
+  let crashCashoutRequested=false;
+  function renderCrash(a){
+    crashRunning=false;crashCashoutRequested=false;
+    a.innerHTML=`
+      ${titleBlock("📈 Crash","Crash kører nu markant langsommere og viser 3 decimaler. CASH OUT låses ved 1.350x. Sjældne runder kan komme over 10x.")}
+      <div class="crash-stage">
+        <div class="crash-grid"></div>
+        <div class="crash-line" id="crashLine"></div>
+        <div class="crash-mult" id="crashMult">1.000x</div>
+        <div class="crash-note" id="crashNote">Cash out låses ved 1.350x</div>
+      </div>
+      <button class="big-button" id="crashBtn">START CRASH</button>
+      <div id="gameResult"></div>`;
+    $("#crashBtn").onclick=()=>{
+      if(crashRunning){
+        if(!$("#crashBtn").disabled) crashCashoutRequested=true;
+        return;
+      }
+      playCrash();
+    };
+  }
+
+  function randomCrashPoint(){
+    const r=Math.random();
+    if(r<0.18) return 1.02+Math.random()*0.33;      // 18% before 1.35
+    if(r<0.43) return 1.35+Math.random()*0.65;      // 25% between 1.35 and 2.00
+    if(r<0.68) return 2.00+Math.random()*1.50;      // 25% between 2.00 and 3.50
+    if(r<0.86) return 3.50+Math.random()*2.50;      // 18% between 3.50 and 6.00
+    if(r<0.96) return 6.00+Math.random()*4.00;      // 10% between 6.00 and 10.00
+    return 10.00+Math.random()*5.00;                // 4% between 10.00 and 15.00
+  }
+
+  function crashRewardFraction(mult){
+    if(mult<1.50) return 0.30;
+    if(mult<2.00) return 0.50;
+    if(mult<3.00) return 0.75;
+    if(mult<5.00) return 1.00;
+    if(mult<8.00) return 1.25;
+    if(mult<10.00) return 1.50;
+    return 2.00;
+  }
+
+  async function playCrash(){
+    if(busy||balance<=0)return;
+    const w=getWager();
+    setBusy(true);crashRunning=true;crashCashoutRequested=false;
+
+    const btn=$("#crashBtn"),multEl=$("#crashMult"),dot=$("#crashLine"),note=$("#crashNote");
+    const crashAt=randomCrashPoint();
+
+    btn.disabled=true;
+    btn.textContent="LÅST TIL 1.35x";
+    note.textContent="Cash out er låst";
+    multEl.classList.remove("crashed");
+
+    let mult=1.000;
+    let cashed=false;
+    let tick=0;
+
+    while(mult<crashAt){
+      // Langsom vækst: ca. 10-14 sekunder til omkring 2x,
+      // og væsentligt længere ved høje multiplikatorer.
+      mult+=0.0065+mult*.00125;
+      multEl.textContent=mult.toFixed(3)+"x";
+
+      if(mult>=1.350 && btn.disabled){
+        btn.disabled=false;
+        btn.textContent="CASH OUT";
+        note.textContent="Cash out er åben";
+        beep(720,.07,.022);
+      }
+
+      if(crashCashoutRequested && mult>=1.350){
+        cashed=true;
+        break;
+      }
+
+      const progress=clamp(Math.log(mult)/Math.log(15),0,1);
+      dot.style.left=`${4+progress*88}%`;
+      dot.style.bottom=`${20+progress*220}px`;
+
+      if(tick++ % 4===0){
+        beep(285+progress*450,.014,.004);
+      }
+      await sleep(95);
+    }
+
+    crashRunning=false;
+    btn.disabled=true;
+
+    if(cashed){
+      const fraction=crashRewardFraction(mult);
+      const remove=Math.max(1,Math.round(w*fraction));
+      const actual=updateBalance(-remove,`Crash: cashed ud ved ${mult.toFixed(3)}x.`);
+      showResult(`💰 CASH OUT ${mult.toFixed(3)}x`,
+        `${Math.abs(actual)} point forsvandt. Risikoen stiger markant jo længere du venter.`,
+        "good");
+    }else{
+      multEl.textContent="CRASH";
+      multEl.classList.add("crashed");
+      beep(180,.18,.05);vibrate(100);
+
+      const actual=updateBalance(w,`Crash: crashede ved ${crashAt.toFixed(3)}x.`);
+      showResult(`💥 CRASH ${crashAt.toFixed(3)}x`,
+        `${actual} point blev lagt oveni.`,
+        "bad");
+    }
+
+    setBusy(false);
+    if(game==="crash"){
+      $("#crashBtn").disabled=false;
+      $("#crashBtn").textContent="START IGEN";
+      $("#crashNote").textContent="Cash out låses ved 1.350x";
+    }
+  }
+
+  function renderQueen(a){
+    a.innerHTML=`
+      ${titleBlock("👑 Royal Draw","Ingen 1-af-3 valg. Ét kort trækkes automatisk fra et helt kortspil. Queen er jackpot, mens andre royal cards giver mindre gevinster.")}
+      <div class="royal-stage">
+        <div class="royal-deck"></div>
+        <div class="royal-draw-card" id="royalCard">
+          <div class="royal-face royal-front" id="royalFront">?</div>
+          <div class="royal-face royal-back"></div>
+        </div>
+      </div>
+      <div class="royal-odds">
+        <div><strong>QUEEN</strong>Jackpot · 4/52</div>
+        <div><strong>K / A</strong>Stor gevinst · 8/52</div>
+        <div><strong>JACK</strong>Lille gevinst · 4/52</div>
+        <div><strong>10</strong>Push · 4/52</div>
+        <div><strong>2 til 9</strong>Tab · 32/52</div>
+      </div>
+      <button class="big-button" id="royalBtn">TRÆK KORT</button>
+      <div id="gameResult"></div>`;
+    $("#royalBtn").onclick=playQueen;
+  }
+
+  async function playQueen(){
+    if(busy||balance<=0)return;
+    const w=getWager();
+    const card=casinoCard();
+    setBusy(true);
+
+    const el=$("#royalCard");
+    const front=$("#royalFront");
+    front.className=`royal-face royal-front ${card.red?"red":""}`;
+    front.textContent=`${card.label}${card.suit}`;
+    el.classList.remove("draw");
+    void el.offsetWidth;
+    el.classList.add("draw");
+
+    for(let i=0;i<7;i++){
+      beep(430+i*42,.035,.014);
+      await sleep(150);
+    }
+    await sleep(520);
+
+    let delta=0,title="",type="",detail="";
+    if(card.rank===12){
+      delta=-2*w;
+      title=`👑 QUEEN JACKPOT · ${card.label}${card.suit}`;
+      type="good";
+      detail="Queen er topresultatet.";
+      confetti();
+    }else if(card.rank===13||card.rank===1){
+      delta=-w;
+      title=`✨ ROYAL HIT · ${card.label}${card.suit}`;
+      type="good";
+      detail="King eller Ace giver stor gevinst.";
+    }else if(card.rank===11){
+      delta=-Math.max(1,Math.ceil(w/2));
+      title=`✅ JACK · ${card.label}${card.suit}`;
+      type="good";
+      detail="Jack giver en mindre gevinst.";
+    }else if(card.rank===10){
+      delta=0;
+      title=`10 · PUSH`;
+      type="special";
+      detail="Ingen ændring i puljen.";
+    }else{
+      delta=Math.max(1,Math.ceil(w/2));
+      title=`${card.label}${card.suit} · MISS`;
+      type="bad";
+      detail="Et almindeligt kort giver cirka en halv indsats ekstra.";
+    }
+
+    const actual=updateBalance(delta,`Royal Draw: ${card.label}${card.suit}.`);
+    showResult(title,
+      `${detail} ${actual<0?Math.abs(actual)+" point forsvandt.":actual>0?actual+" point blev lagt oveni.":""}`,
+      type);
+    setBusy(false);
+  }
+
+
+  let rabbitState=null;
+
+  function rabbitMakeRound(){
+    // Five jumps. Each row has exactly one hidden trap.
+    return {
+      step:1,
+      traps:Array.from({length:5},()=>Math.floor(Math.random()*3)),
+      active:false,
+      finished:false,
+      animating:false,
+      wager:null
+    };
+  }
+
+  function rabbitProgressHtml(step){
+    return [1,2,3,4,5].map(i=>{
+      const cls=i<step?"done":i===step?"current":"";
+      return `<i class="${cls}"></i>`;
+    }).join("");
+  }
+
+  function renderRabbit(a){
+    rabbitState=rabbitMakeRound();
+
+    const rows=[5,4,3,2,1].map(step=>`
+      <div class="rabbit-row" data-step="${step}">
+        ${[0,1,2].map(col=>`
+          <button class="rabbit-pad ${step===1?"":"locked"}"
+                  data-rabbit-step="${step}"
+                  data-rabbit-col="${col}"
+                  ${step===1?"":"disabled"}
+                  aria-label="Hop ${step}, plade ${col+1}">
+            ${col+1}
+          </button>`).join("")}
+      </div>`).join("");
+
+    a.innerHTML=`
+      ${titleBlock("🐇 Rabbit Adventure","Vælg indsats før første hop. Den låses til hele eventyret. Rammer du en fælde, lægges hele indsatsen oveni. Klarer du alle 5 hop, kan op til 2× indsatsen fjernes.")}
+      <div class="rabbit-status">
+        <strong id="rabbitStepText">Hop 1 af 5</strong>
+        <div class="rabbit-progress" id="rabbitProgress">${rabbitProgressHtml(1)}</div>
+        <span class="muted" id="rabbitStakeText" style="font-size:11px">Indsats låses ved første hop</span>
+      </div>
+      <div class="rabbit-board" id="rabbitBoard">
+        <div class="rabbit-goal">🏁 MÅL</div>
+        ${rows}
+        <div class="rabbit-start">START</div>
+        <div class="rabbit-token" id="rabbitToken" aria-label="Kanin">🐇</div>
+      </div>
+      <div class="rabbit-instruction" id="rabbitInstruction">Vælg én af de 3 plader på første række.</div>
+      <button class="big-button hidden" id="rabbitRestartBtn">START IGEN</button>
+      <div id="gameResult"></div>`;
+
+    $$(".rabbit-pad").forEach(p=>{
+      p.onclick=()=>rabbitChoose(+p.dataset.rabbitStep,+p.dataset.rabbitCol,p);
+    });
+    $("#rabbitRestartBtn").onclick=restartRabbit;
+  }
+
+  function restartRabbit(){
+    if(busy || debtBusted || roundEnding || balance<=0 || balance>=DEBT_BUST_AT)return;
+    const arena=$("#arena");
+    if(!arena)return;
+    renderRabbit(arena);
+  }
+
+  function showRabbitRestart(){
+    const btn=$("#rabbitRestartBtn");
+    if(!btn)return;
+    if(balance>0 && balance<DEBT_BUST_AT){
+      btn.classList.remove("hidden");
+      btn.disabled=false;
+    }
+  }
+
+  function rabbitSetRowEnabled(step,enabled){
+    const row=document.querySelector(`.rabbit-row[data-step="${step}"]`);
+    if(!row)return;
+    row.querySelectorAll(".rabbit-pad").forEach(p=>{
+      p.disabled=!enabled;
+      p.classList.toggle("locked",!enabled);
+    });
+  }
+
+  function rabbitRevealRow(step,chosenCol,trapCol){
+    const row=document.querySelector(`.rabbit-row[data-step="${step}"]`);
+    if(!row)return;
+    row.querySelectorAll(".rabbit-pad").forEach(p=>{
+      const col=+p.dataset.rabbitCol;
+      p.disabled=true;
+      p.classList.remove("locked");
+      if(col===trapCol){
+        p.classList.add("trap");
+        p.textContent="💀";
+        if(col===chosenCol)p.classList.add("chosen-trap");
+      }else{
+        p.classList.add("safe");
+        p.textContent="✓";
+        if(col===chosenCol)p.classList.add("chosen-safe");
+      }
+    });
+  }
+
+  async function rabbitMoveToPad(pad){
+    const board=$("#rabbitBoard");
+    const rabbit=$("#rabbitToken");
+    const br=board.getBoundingClientRect();
+    const pr=pad.getBoundingClientRect();
+
+    const x=pr.left-br.left+pr.width/2;
+    const y=pr.top-br.top+pr.height/2;
+
+    rabbit.style.bottom="auto";
+    rabbit.style.left=`${x}px`;
+    rabbit.style.top=`${y}px`;
+    rabbit.style.transform="translate(-50%,-50%)";
+    rabbit.classList.remove("hopping");
+    void rabbit.offsetWidth;
+    rabbit.classList.add("hopping");
+    beep(520,.055,.018);
+    await sleep(610);
+    rabbit.classList.remove("hopping");
+  }
+
+  async function rabbitMoveToGoal(){
+    const board=$("#rabbitBoard");
+    const rabbit=$("#rabbitToken");
+    const goal=board.querySelector(".rabbit-goal");
+    const br=board.getBoundingClientRect();
+    const gr=goal.getBoundingClientRect();
+
+    rabbit.style.left=`${gr.left-br.left+gr.width/2}px`;
+    rabbit.style.top=`${gr.top-br.top+gr.height+28}px`;
+    rabbit.style.bottom="auto";
+    rabbit.style.transform="translate(-50%,-50%)";
+    rabbit.classList.add("hopping");
+    beep(720,.07,.025);
+    await sleep(620);
+    rabbit.classList.remove("hopping");
+    rabbit.classList.add("goal");
+  }
+
+  async function rabbitChoose(step,col,pad){
+    if(!rabbitState || rabbitState.finished || rabbitState.animating)return;
+    if(step!==rabbitState.step)return;
+
+    if(!rabbitState.active){
+      rabbitState.wager=getWager();
+      rabbitState.active=true;
+      setBusy(true);
+      // Indsatsen låses én gang ved første hop og bruges gennem alle 5 hop.
+      rabbitSetRowEnabled(step,true);
+      const stakeText=$("#rabbitStakeText");
+      if(stakeText) stakeText.textContent=`Låst indsats: ${rabbitState.wager}`;
+    }
+
+    const w=rabbitState.wager;
+    rabbitState.animating=true;
+    rabbitSetRowEnabled(step,false);
+    $("#rabbitInstruction").textContent="Kaninen hopper...";
+
+    await rabbitMoveToPad(pad);
+
+    const trap=rabbitState.traps[step-1];
+    rabbitRevealRow(step,col,trap);
+
+    if(col===trap){
+      rabbitState.finished=true;
+      const rabbit=$("#rabbitToken");
+      rabbit.classList.add("falling");
+      beep(180,.2,.05);
+      vibrate([90,60,120]);
+
+      const penalty=w;
+      const actual=updateBalance(penalty,`Rabbit Adventure: faldt på hop ${step}. Indsats ${w}.`);
+
+      $("#rabbitInstruction").textContent=`Fælden var plade ${trap+1}. Kaninen faldt på hop ${step}.`;
+      showResult(`🐇💥 FALDT PÅ HOP ${step}`,
+        `${actual} point blev lagt oveni. Det svarer til hele den låste indsats på ${w}.`,
+        "bad");
+
+      rabbitState.animating=false;
+      setBusy(false);
+      showRabbitRestart();
+      return;
+    }
+
+    beep(760,.08,.025);
+    $("#rabbitInstruction").textContent=`Sikker plade. ${step===5?"Målet er lige foran!":"Vælg næste række."}`;
+
+    if(step>=5){
+      rabbitState.finished=true;
+      $("#rabbitStepText").textContent="5 af 5 klaret";
+      $("#rabbitProgress").innerHTML=rabbitProgressHtml(6);
+
+      await sleep(350);
+      await rabbitMoveToGoal();
+      confetti();
+
+      // Survival chance is (2/3)^5 ≈ 13.2%, so the reward remains up to 2x the locked wager.
+      const actual=updateBalance(-2*w,`Rabbit Adventure: alle 5 hop klaret. Låst indsats ${w}.`);
+      showResult("🏁🐇 MÅL NÅET!",
+        `${Math.abs(actual)} point forsvandt. Gevinsten var op til 2× den låste indsats på ${w}.`,
+        "good");
+
+      $("#rabbitInstruction").textContent="Kaninen nåede sikkert i mål.";
+      rabbitState.animating=false;
+      setBusy(false);
+      showRabbitRestart();
+      return;
+    }
+
+    rabbitState.step++;
+    $("#rabbitStepText").textContent=`Hop ${rabbitState.step} af 5`;
+    $("#rabbitProgress").innerHTML=rabbitProgressHtml(rabbitState.step);
+    rabbitSetRowEnabled(rabbitState.step,true);
+    rabbitState.animating=false;
+  }
+
+  function renderDouble(a){
+    a.innerHTML=`
+      ${titleBlock("⚡ Double or Nothing","50/50. Vinder du, forsvinder indsatsen. Taber du, bliver indsatsen lagt oveni.")}
+      <div class="double-stage"><div class="double-orb" id="orb">50/50</div></div>
+      <button class="big-button" id="doubleBtn">GAMBLE</button>
+      <div id="gameResult"></div>`;
+    $("#doubleBtn").onclick=playDouble;
+  }
+
+  async function playDouble(){
+    if(busy||balance<=0)return;
+    const w=getWager();
+    setBusy(true);
+    const win=Math.random()<.5;
+    const orb=$("#orb");
+    orb.classList.add("spin");
+    let i=0;
+    const id=setInterval(()=>{orb.textContent=i++%2?"WIN":"LOSE";beep(390+(i%2)*110,.03,.014)},120);
+    await sleep(1500);clearInterval(id);
+    orb.textContent=win?"WIN":"LOSE";
+    beep(win?850:220,.13,.04);
+    const actual=updateBalance(win?-w:w,`Double or Nothing: ${win?"WIN":"LOSE"}.`);
+    showResult(win?"Du vandt":"Du tabte",
+      win?`${Math.abs(actual)} point forsvandt.`:`${actual} point blev lagt oveni.`,
+      win?"good":"bad");
+    setBusy(false);
+  }
+})();
+</script>
+</body>
+</html>
