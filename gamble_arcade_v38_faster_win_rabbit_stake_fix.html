@@ -415,9 +415,9 @@ button{cursor:pointer}
   font-size:9px;font-weight:1000;letter-spacing:.12em;text-transform:uppercase;
   border:1px solid rgba(255,255,255,.18);background:rgba(0,0,0,.28);color:#f6f8fb
 }
-.loot .e{font-size:28px}
-.loot .n{font-size:12px;font-weight:900}
-.loot .m{font-size:11px;color:var(--muted)}
+.loot .e{font-size:26px}
+.loot .n{font-size:11px;font-weight:900;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.loot .m{font-size:9.5px;color:var(--muted);line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .loot.common{--rar:#aeb8c5;background:linear-gradient(180deg,rgba(174,184,197,.12),rgba(20,29,40,.96))}
 .loot.blue{--rar:#5ea1ff;background:linear-gradient(180deg,rgba(94,161,255,.16),rgba(20,29,40,.96))}
 .loot.purple{--rar:#a578ff;background:linear-gradient(180deg,rgba(165,120,255,.18),rgba(20,29,40,.96))}
@@ -2010,14 +2010,6 @@ button{cursor:pointer}
   }
 
   const slotSymbols=["🍒","🍋","🔔","💎","7️⃣"];
-  const rarityMeta = {
-    common:{label:"Common", quality:"Mest almindelig", color:"#aeb8c5"},
-    blue:{label:"Uncommon", quality:"Lidt sjælden", color:"#5ea1ff"},
-    purple:{label:"Rare", quality:"Sjælden", color:"#a578ff"},
-    pink:{label:"Epic", quality:"Meget sjælden", color:"#eb63cf"},
-    gold:{label:"Legendary", quality:"Top tier", color:"#ffc857"}
-  };
-
 
   function reelMarkup(id){
     const items=[];
@@ -2066,45 +2058,93 @@ button{cursor:pointer}
     setBusy(false);
   }
 
+  const rarityMeta = {
+    common:{label:"Mil-Spec", quality:"Grå / Almindelig", color:"#aeb8c5"},
+    blue:{label:"Restricted", quality:"Blå / Lidt sjælden", color:"#5ea1ff"},
+    purple:{label:"Classified", quality:"Lilla / Sjælden", color:"#a578ff"},
+    pink:{label:"Covert", quality:"Pink / Meget sjælden", color:"#eb63cf"},
+    gold:{label:"Special Rare ★", quality:"Guld / Kniv & Handsker", color:"#ffc857"}
+  };
+
   const lootTable=[
-    // COMMON · 39%
-    {name:"Heavy Debt",e:"💥",cls:"common",kind:"delta",mult:1.5,weight:7,desc:"+150% af indsatsen til gælden"},
-    {name:"Debt Hit",e:"📈",cls:"common",kind:"delta",mult:1,weight:8,desc:"+100% af indsatsen til gælden"},
-    {name:"Small Debt",e:"⚠️",cls:"common",kind:"delta",mult:.5,weight:9,desc:"+50% af indsatsen til gælden"},
-    {name:"Tiny Debt",e:"➕",cls:"common",kind:"delta",mult:.25,weight:7,desc:"+25% af indsatsen til gælden"},
-    {name:"No Change",e:"➖",cls:"common",kind:"delta",mult:0,weight:5,desc:"Puljen ændres ikke"},
-    {name:"Close Call",e:"😮‍💨",cls:"common",kind:"delta",mult:0,weight:3,desc:"Du slap uden ændring"},
+    // ══════════════════════════════════════════════════════
+    // MIL-SPEC / COMMON (Grå / Blå) · ca. 38% samlet
+    // Små straffe, neutrale drops og enkelte slurke
+    // ══════════════════════════════════════════════════════
+    {name:"P250 | Sand Dune",e:"🔫",cls:"common",kind:"delta",mult:.5,weight:4,desc:"+50% indsats til puljen"},
+    {name:"MP9 | Storm",e:"🔫",cls:"common",kind:"delta",mult:1,weight:3.5,desc:"+100% indsats til puljen"},
+    {name:"MAG-7 | Rust Coat",e:"🔫",cls:"common",kind:"delta",mult:.25,weight:3.5,desc:"+25% indsats til puljen"},
+    {name:"Nova | Predator",e:"🍻",cls:"common",kind:"sips",amount:1,weight:3,desc:"Tag 1 slurk (puljen uændret)"},
+    {name:"PP-Bizon | Water Sigil",e:"🎁",cls:"common",kind:"giveSips",amount:1,weight:3,desc:"Giv 1 slurk ud til en ven"},
+    {name:"Dual Berettas | Colony",e:"🔫",cls:"common",kind:"delta",mult:.5,weight:3,desc:"+50% indsats til puljen"},
+    {name:"UMP-45 | Mud-Spec",e:"➖",cls:"common",kind:"delta",mult:0,weight:3,desc:"Safe! Puljen ændres ikke"},
+    {name:"SG 553 | Waves Perforated",e:"🔫",cls:"common",kind:"delta",mult:.75,weight:3,desc:"+75% indsats til puljen"},
+    {name:"G3SG1 | Polar Camo",e:"💥",cls:"common",kind:"delta",mult:1.25,weight:2.5,desc:"Heavy Debt! +125% indsats"},
+    {name:"Negev | Army Sheen",e:"🍻",cls:"common",kind:"sips",amount:2,weight:2.5,desc:"Tag 2 slurke (puljen uændret)"},
+    {name:"P90 | Grim",e:"🔫",cls:"common",kind:"delta",mult:.5,weight:2.5,desc:"+50% indsats til puljen"},
+    {name:"Five-SeveN | Forest Night",e:"📈",cls:"common",kind:"delta",mult:1,weight:2.5,desc:"+100% indsats til puljen"},
+    {name:"FAMAS | Colony",e:"😮‍💨",cls:"common",kind:"delta",mult:0,weight:2,desc:"Close Call! Du slap med skrækken"},
 
-    // UNCOMMON / BLUE · 26%
-    {name:"Safe",e:"🛡️",cls:"blue",kind:"delta",mult:0,weight:5,desc:"Puljen ændres ikke"},
-    {name:"Give Out",e:"🎁",cls:"blue",kind:"give",weight:5,desc:"Indsatsen fjernes og gives videre"},
-    {name:"Half Save",e:"🔹",cls:"blue",kind:"delta",mult:-.5,weight:6,desc:"Fjern 50% af indsatsen"},
-    {name:"Lucky Save",e:"🍀",cls:"blue",kind:"delta",mult:-.75,weight:4,desc:"Fjern 75% af indsatsen"},
-    {name:"Second Chance",e:"🔁",cls:"blue",kind:"delta",mult:0,weight:3,desc:"Ingen ændring, du får en ny chance"},
-    {name:"Quick Save",e:"⚡",cls:"blue",kind:"delta",mult:-.25,weight:3,desc:"Fjern 25% af indsatsen"},
+    // ══════════════════════════════════════════════════════
+    // RESTRICTED / BLUE (Blå) · ca. 28% samlet
+    // Gode saves, drik/giv ud og sjove gruppe-effekter
+    // ══════════════════════════════════════════════════════
+    {name:"AK-47 | Safari Mesh",e:"🎁",cls:"blue",kind:"give",mult:-1,weight:3.5,desc:"Giv hele indsatsen ud til en ven!"},
+    {name:"Glock-18 | Water Elemental",e:"🔹",cls:"blue",kind:"delta",mult:-.5,weight:3.5,desc:"Half Save: Fjern 50% af indsatsen"},
+    {name:"M4A4 | Evil Daimyo",e:"⚡",cls:"blue",kind:"delta",mult:-.75,weight:3,desc:"Fjern 75% af indsatsen"},
+    {name:"USP-S | Guardian",e:"🛡️",cls:"blue",kind:"delta",mult:-1,weight:3,desc:"Fuld Save: Fjern hele indsatsen"},
+    {name:"Desert Eagle | Light Rail",e:"🔹",cls:"blue",kind:"delta",mult:-.5,weight:3,desc:"Fjern 50% af indsatsen"},
+    {name:"MAC-10 | Ensnared",e:"🍻",cls:"blue",kind:"giveSips",amount:2,mult:-.5,weight:2.5,desc:"Giv 2 slurke ud + fjern 50% indsats"},
+    {name:"AWP | Safari Mesh",e:"🎁",cls:"blue",kind:"give",mult:-1,weight:2.5,desc:"Fjern indsatsen og fordel til andre"},
+    {name:"FAMAS | Valence",e:"🔹",cls:"blue",kind:"delta",mult:-.5,weight:2.5,desc:"Fjern 50% af indsatsen"},
+    {name:"Galil AR | Stone Cold",e:"🥂",cls:"blue",kind:"cheers",mult:-.5,weight:2,desc:"Fællesskål! Alle tager 1 slurk + 50% save"},
+    {name:"SSG 08 | Abyss",e:"⚡",cls:"blue",kind:"delta",mult:-.75,weight:2,desc:"Fjern 75% af indsatsen"},
+    {name:"M4A1-S | Flashback",e:"🍻",cls:"blue",kind:"giveSips",amount:3,weight:2,desc:"Giv 3 slurke ud til modstanderne"},
 
-    // RARE / PURPLE · 21%
-    {name:"3 Sips",e:"🍻",cls:"purple",kind:"sips",amount:3,weight:4,desc:"3 slurke og indsatsen fjernes"},
-    {name:"Save",e:"💜",cls:"purple",kind:"delta",mult:-1,weight:6,desc:"Fjern hele indsatsen"},
-    {name:"Clean Save",e:"✨",cls:"purple",kind:"delta",mult:-1.25,weight:4,desc:"Fjern op til 1.25× indsatsen"},
-    {name:"Strong Save",e:"🟣",cls:"purple",kind:"delta",mult:-1.5,weight:3,desc:"Fjern op til 1.5× indsatsen"},
-    {name:"Risk Reversal",e:"↩️",cls:"purple",kind:"delta",mult:-.75,weight:2,desc:"Fjern 75% af indsatsen"},
-    {name:"Deep Save",e:"🔮",cls:"purple",kind:"delta",mult:-1.75,weight:2,desc:"Fjern op til 1.75× indsatsen"},
+    // ══════════════════════════════════════════════════════
+    // CLASSIFIED / PURPLE (Lilla) · ca. 20% samlet
+    // Store saves, stærke fordelinger og gode belønninger
+    // ══════════════════════════════════════════════════════
+    {name:"AWP | Atheris",e:"🟣",cls:"purple",kind:"delta",mult:-1.25,weight:2.8,desc:"Fjern op til 1.25× indsatsen!"},
+    {name:"M4A1-S | Leaded Glass",e:"🟣",cls:"purple",kind:"delta",mult:-1.5,weight:2.5,desc:"Fjern op til 1.5× indsatsen!"},
+    {name:"AK-47 | Point Disarray",e:"🟣",cls:"purple",kind:"delta",mult:-1.5,weight:2.5,desc:"Fjern op til 1.5× indsatsen!"},
+    {name:"Desert Eagle | Mecha",e:"🟣",cls:"purple",kind:"delta",mult:-1.25,weight:2.2,desc:"Fjern op til 1.25× indsatsen!"},
+    {name:"P90 | Asiimov Drink",e:"🍻",cls:"purple",kind:"sips",amount:3,mult:-1.5,weight:2,desc:"Tag 3 slurke + fjern 1.5× indsatsen!"},
+    {name:"USP-S | Cortex",e:"🎁",cls:"purple",kind:"give",mult:-1.5,weight:2,desc:"Giv 1.5× indsatsen ud til andre!"},
+    {name:"Glock-18 | Bullet Queen",e:"🟣",cls:"purple",kind:"delta",mult:-1.75,weight:1.8,desc:"Fjern op til 1.75× indsatsen!"},
+    {name:"AK-47 | Frontside Misty",e:"🎁",cls:"purple",kind:"give",mult:-2,weight:1.8,desc:"Giv 2× indsatsen ud til bordet!"},
+    {name:"SSG 08 | Dragonfire",e:"🔮",cls:"purple",kind:"delta",mult:-1.75,weight:1.4,desc:"Fjern op til 1.75× indsatsen!"},
+    {name:"CZ75-Auto | Xiangliu",e:"🍻",cls:"purple",kind:"giveSips",amount:4,mult:-1,weight:1.4,desc:"Giv 4 slurke ud + fjern hele indsatsen!"},
 
-    // EPIC / PINK · 11%
-    {name:"1 Shot",e:"🥃",cls:"pink",kind:"shot",weight:3,desc:"1 shot og indsatsen fjernes"},
-    {name:"Big Save",e:"💗",cls:"pink",kind:"delta",mult:-2,weight:4,desc:"Fjern op til 2× indsatsen"},
-    {name:"Mega Save",e:"💖",cls:"pink",kind:"delta",mult:-2.5,weight:2,desc:"Fjern op til 2.5× indsatsen"},
-    {name:"Near Clear",e:"🌟",cls:"pink",kind:"delta",mult:-3,weight:2,desc:"Fjern op til 3× indsatsen"},
+    // ══════════════════════════════════════════════════════
+    // COVERT / PINK (Pink / Rød) · ca. 10% samlet
+    // Kæmpe point-fjernelser, shots og store uddelinger
+    // ══════════════════════════════════════════════════════
+    {name:"AK-47 | Vulcan",e:"💖",cls:"pink",kind:"delta",mult:-2.5,weight:1.8,desc:"Fjern op til 2.5× indsatsen!"},
+    {name:"M4A4 | The Emperor",e:"👑",cls:"pink",kind:"delta",mult:-2.5,weight:1.6,desc:"Fjern op til 2.5× indsatsen!"},
+    {name:"AWP | Asiimov",e:"🎁",cls:"pink",kind:"give",mult:-2.5,weight:1.6,desc:"Giv 2.5× indsatsen ud til bordet!"},
+    {name:"Desert Eagle | Printstream",e:"🥃",cls:"pink",kind:"shot",mult:-2,weight:1.4,desc:"Tag 1 shot! Samtidig fjernes 2× indsatsen!"},
+    {name:"USP-S | Kill Confirmed",e:"💀",cls:"pink",kind:"delta",mult:-3,weight:1.4,desc:"Fjern op til 3× indsatsen!"},
+    {name:"AK-47 | The Empress",e:"🎁",cls:"pink",kind:"give",mult:-3,weight:1.2,desc:"Giv 3× indsatsen ud! Fjernes fra din pulje"},
+    {name:"M4A1-S | Player Two",e:"🌟",cls:"pink",kind:"delta",mult:-3,weight:1,desc:"Fjern op til 3× indsatsen!"},
+    {name:"AK-47 | Bloodsport",e:"🥃",cls:"pink",kind:"giveShot",mult:-2,weight:1,desc:"Uddel 1 shot til en modstander + 2× save!"},
 
-    // LEGENDARY / GOLD · 3%
-    {name:"Golden Save",e:"🏆",cls:"gold",kind:"delta",mult:-3.5,weight:1.5,desc:"Fjern op til 3.5× indsatsen"},
-    {name:"Legendary Clear",e:"🔥",cls:"gold",kind:"clear",weight:1.5,desc:"Fjern hele din nuværende pulje"}
+    // ══════════════════════════════════════════════════════
+    // SPECIAL RARE ★ / GOLD (Guld - Knive & Handsker) · ca. 3.5%
+    // Det legendariske drop! Clearer puljen eller kæmpe saves!
+    // ══════════════════════════════════════════════════════
+    {name:"★ Karambit | Fade",e:"🔪",cls:"gold",kind:"clear",bonusGive:5,weight:.7,desc:"CLEAR HELE PULJEN + Giv 5 slurke ud!"},
+    {name:"★ Butterfly Knife | Doppler",e:"🔪",cls:"gold",kind:"clear",weight:.7,desc:"CLEAR HELE PULJEN! Direkte i 0!"},
+    {name:"★ M9 Bayonet | Lore",e:"🔪",cls:"gold",kind:"delta",mult:-4,weight:.7,desc:"Fjern op til 4× indsatsen fra puljen!"},
+    {name:"★ Sport Gloves | Vice",e:"🧤",cls:"gold",kind:"clear",bonusAll:2,weight:.6,desc:"CLEAR PULJEN + Alle andre drikker 2 slurke!"},
+    {name:"★ Skeleton | Case Hardened",e:"🔪",cls:"gold",kind:"delta",mult:-3.5,weight:.5,desc:"Fjern op til 3.5× indsatsen!"},
+    {name:"★ AWP | Dragon Lore (Collector)",e:"🏆",cls:"gold",kind:"clear",bonusShot:1,weight:.4,desc:"CLEAR PULJEN + Vælg hvem der tager 1 shot!"}
   ];
+
   function loot(){
     let total=lootTable.reduce((s,x)=>s+x.weight,0),r=Math.random()*total;
     for(const x of lootTable){r-=x.weight;if(r<=0)return x}
-    return lootTable[0]
+    return lootTable[0];
   }
   function lootChancePercent(x){
     const total=lootTable.reduce((s,item)=>s+item.weight,0);
@@ -2118,18 +2158,14 @@ button{cursor:pointer}
       <div class="tier">${meta.label}</div>
       <div class="e">${x.e}</div>
       <div>
-        <div class="n">${x.name}</div>
-        <div class="m">${m}</div>
+        <div class="n" title="${x.name}">${x.name}</div>
+        <div class="m" title="${m}">${m}</div>
       </div>
     </div>`;
   }
 
   function caseLegendHtml(){
     const order=["common","blue","purple","pink","gold"];
-    const bestPerTier={};
-    for(const item of lootTable){
-      if(!bestPerTier[item.cls]) bestPerTier[item.cls]=item;
-    }
     return order.map(cls=>{
       const items=lootTable.filter(item=>item.cls===cls);
       const totalWeight=lootTable.reduce((s,item)=>s+item.weight,0);
@@ -2140,7 +2176,7 @@ button{cursor:pointer}
         <i class="case-dot" style="background:${meta.color}"></i>
         <div>
           <strong>${meta.label}</strong>
-          <span> ${meta.quality}</span>
+          <span> ${meta.quality} (${items.length} drops)</span>
         </div>
         <div class="chance">${chance}%</div>
         <div class="quality">Tier</div>
@@ -2150,7 +2186,7 @@ button{cursor:pointer}
 
   function renderCase(a){
     a.innerHTML=`
-      ${titleBlock("📦 Case Opening","24 forskellige drops fordelt på 5 tiers. Break og Soft Hit er erstattet, mens klassikere som Save, Big Save og Legendary Clear er tilbage.")}
+      ${titleBlock("📦 CS:GO Case Opening","Over 50 forskellige skins og drops fordelt på 5 tiers! Træk alt fra P250 Sand Dune og straf-slurke til Covert AWP Asiimov, shot-uddelinger og ★ Guld Knive!")}
       <div class="case-box">
         <div class="case-pointer"></div>
         <div class="case-track" id="caseTrack">${Array.from({length:20},()=>lootHtml(loot())).join("")}</div>
@@ -2167,8 +2203,8 @@ button{cursor:pointer}
     const w=getWager();
     setBusy(true);
     const win=loot();
-    const items=Array.from({length:34},()=>loot());
-    const target=27;items[target]=win;
+    const items=Array.from({length:36},()=>loot());
+    const target=28;items[target]=win;
     const track=$("#caseTrack");
     track.innerHTML=items.map(lootHtml).join("");
     track.style.transition="none";track.style.transform="translateX(0)";
@@ -2178,77 +2214,110 @@ button{cursor:pointer}
     const itemWidth=124, gap=8, startPad=12;
     const targetCenter=startPad+target*(itemWidth+gap)+itemWidth/2;
 
-    // Markøren kan lande næsten hvor som helst inde i det vindende felt.
-    // En lille sikkerhedsmargin holder den væk fra mellemrummet mellem items.
-    const safeEdge=7;
+    const safeEdge=10;
     const maxLandingOffset=itemWidth/2-safeEdge;
     const landingOffset=(Math.random()*2-1)*maxLandingOffset;
     const end=box.clientWidth/2-targetCenter+landingOffset;
 
-    track.style.transition="transform 5.2s cubic-bezier(.06,.72,.06,1)";
+    // Snappy, realistisk CS:GO rullekurve: 4 sekunder præcist
+    const spinDuration=4000;
+    track.style.transition=`transform ${spinDuration/1000}s cubic-bezier(.12,.86,.26,1)`;
     track.style.transform=`translateX(${end}px)`;
 
-    let interval=150;
-    for(let i=0;i<32;i++){
-      await sleep(interval);
-      beep(350+i*9,.025,.014);
-      if(i>18)interval+=12;
-    }
-    await sleep(500);
+    const startTime=performance.now();
+    let tickCount=0;
 
+    // Dynamiske ticks der følger opbremsningen i hjulet
+    while(performance.now() - startTime < spinDuration - 100){
+      const elapsed=performance.now() - startTime;
+      const progress=elapsed / spinDuration;
+      const interval=45 + Math.pow(progress, 2.7) * 440;
+      beep(360 + (tickCount++ % 8) * 22, .018, .011);
+      await sleep(interval);
+    }
+
+    // Afvent de sidste få millisekunder indtil hjulet lander præcist
+    const remaining=spinDuration - (performance.now() - startTime);
+    if(remaining > 0) await sleep(remaining);
+
+    // Marker vinderen med det samme uden nogen ventepause
     const cards=[...track.children];
-    cards[target].classList.add("winner");
-    beep(win.cls==="gold"?980:760,.18,.045);
-    if(win.cls==="gold"||win.cls==="pink")confetti();
+    if(cards[target]) cards[target].classList.add("winner");
+    beep(win.cls==="gold"?990:win.cls==="pink"?840:740, .18, .045);
+    if(win.cls==="gold"||win.cls==="pink") confetti();
 
     const reveal=$("#caseReveal");
     const meta=rarityMeta[win.cls] || {label:win.cls, quality:""};
     reveal.innerHTML=`<div class="case-reveal-card" style="--rar:${meta.color}">
-      <div style="font-size:45px">${win.e}</div>
-      <div class="tier-line">${meta.label}</div>
-      <div style="font-weight:1000;font-size:23px;margin-top:8px">${win.name}</div>
-      <div class="quality-line">${meta.quality}</div>
-      <div class="chance-line">Drop chance for denne type: ${lootChancePercent(win)}%</div>
+      <div style="font-size:48px">${win.e}</div>
+      <div class="tier-line" style="color:${meta.color};font-weight:1000;letter-spacing:1px">${meta.label}</div>
+      <div style="font-weight:1000;font-size:22px;margin-top:6px">${win.name}</div>
+      <div class="quality-line" style="margin-top:4px;font-size:13px;color:#dce5ef">${win.desc}</div>
+      <div class="chance-line" style="margin-top:8px;font-size:11px;color:var(--muted)">Drop chance for denne type: ${lootChancePercent(win)}%</div>
     </div>`;
     reveal.classList.add("show");
-    if(balance===0){
-      $("#lastAction").textContent += " Resultatet vises først, derefter afsluttes runden.";
-    }
 
     if(win.kind==="clear"){
-      const actual=updateBalance(-balance,`Case: Legendary Clear. Hele puljen blev fjernet.`,"auto",1350);
-      showResult(`🔥 LEGENDARY CLEAR · ${meta.label}`,
-        `Hele puljen blev clearet. ${Math.abs(actual)} point forsvandt.`,
+      const actual=updateBalance(-balance,`Case: ${win.name}. Hele puljen blev clearet.`,"auto",800);
+      let bonusText="";
+      if(win.bonusGive) bonusText=` Samtidig skal du give ${win.bonusGive} slurke ud til de andre!`;
+      if(win.bonusAll) bonusText=` Samtidig skal alle andre drikke ${win.bonusAll} slurke!`;
+      if(win.bonusShot) bonusText=` Samtidig bestemmer du hvem der tager 1 shot!`;
+      showResult(`🔥 ${win.name.toUpperCase()} · ${meta.label}`,
+        `HELE PULJEN BLEV CLEARET! ${Math.abs(actual)} point forsvandt.${bonusText}`,
         "good");
       confetti();
     }else if(win.kind==="give"){
-      const actual=updateBalance(-w,`Case: Giv ${w} point ud til andre.`,"auto",1350);
-      showResult(`🎁 GIVE OUT · ${meta.label}`,
-        `Giv ${Math.abs(actual)} point ud til de andre. De er fjernet fra din egen pulje.`,
+      const amount=Math.max(1,Math.round(w*Math.abs(win.mult||1)));
+      const actual=updateBalance(-amount,`Case: ${win.name}. Giv ${amount} point ud.`,"auto",800);
+      showResult(`🎁 GIV UD · ${win.name}`,
+        `Giv ${Math.abs(actual)} point ud til modstanderne! De er fjernet fra din egen pulje.`,
+        "good");
+    }else if(win.kind==="giveSips"){
+      let delta=0;
+      if(win.mult) delta=-Math.max(1,Math.round(w*Math.abs(win.mult)));
+      const actual=delta!==0?updateBalance(delta,`Case: ${win.name}.`,"auto",800):0;
+      showResult(`🍻 GIV SLURKE UD · ${win.name}`,
+        `Giv ${win.amount} slurke ud til modstanderne!${actual<0?` Samtidig forsvandt ${Math.abs(actual)} point fra din pulje.`:""}`,
+        "good");
+    }else if(win.kind==="giveShot"){
+      const amount=Math.max(1,Math.round(w*Math.abs(win.mult||1)));
+      const actual=updateBalance(-amount,`Case: ${win.name}. Uddel 1 shot.`,"auto",800);
+      showResult(`🥃 UDDEL SHOT · ${win.name}`,
+        `Uddel 1 SHOT til en modstander! Samtidig forsvandt ${Math.abs(actual)} point fra din pulje.`,
+        "good");
+      confetti();
+    }else if(win.kind==="cheers"){
+      const amount=Math.max(1,Math.round(w*Math.abs(win.mult||1)));
+      const actual=updateBalance(-amount,`Case: ${win.name}. Fællesskål.`,"auto",800);
+      showResult(`🥂 FÆLLESSKÅL · ${win.name}`,
+        `Alle ved bordet skåler og tager 1 slurk! Samtidig forsvandt ${Math.abs(actual)} point fra din pulje.`,
         "good");
     }else if(win.kind==="shot"){
-      const actual=updateBalance(-w,`Case: 1 shot. Den gamblede indsats er fjernet.`, "none",1350);
-      showResult("🥃 1 SHOT",
-        `Tag 1 shot. Samtidig fjernes ${Math.abs(actual)} point fra din pulje.`,
+      const amount=Math.max(1,Math.round(w*Math.abs(win.mult||1)));
+      const actual=updateBalance(-amount,`Case: 1 shot.`,"none",800);
+      showResult(`🥃 1 SHOT TIL DIG! · ${win.name}`,
+        `Tag 1 shot! Samtidig forsvandt ${Math.abs(actual)} point fra din pulje.`,
         "special");
       vibrate([60,50,60]);
     }else if(win.kind==="sips"){
-      const actual=updateBalance(-w,`Case: ${win.amount} slurke. Den gamblede indsats er fjernet.`, "none",1350);
-      showResult(`🍻 ${win.amount} SLURKE · ${meta.label}`,
-        `Tag ${win.amount} slurke. Samtidig fjernes ${Math.abs(actual)} point fra din pulje.`,
+      let delta=0;
+      if(win.mult) delta=-Math.max(1,Math.round(w*Math.abs(win.mult)));
+      const actual=delta!==0?updateBalance(delta,`Case: ${win.name}.`,"none",800):0;
+      showResult(`🍻 ${win.amount} SLURKE · ${win.name}`,
+        `Tag ${win.amount} slurke!${actual<0?` Samtidig forsvandt ${Math.abs(actual)} point fra din pulje.`:""}`,
         "special");
       vibrate([40,40,40]);
     }else{
       let delta;
       if(win.mult>0)delta=Math.max(1,Math.ceil(w*win.mult));
       else if(win.mult===0)delta=0;
-      else delta=Math.floor(w*win.mult);
+      else delta=-Math.max(1,Math.round(w*Math.abs(win.mult)));
 
-      const meta=rarityMeta[win.cls] || {label:win.cls};
-      const actual=updateBalance(delta,`Case: ${win.name} (${meta.label}).`,"auto",1350);
+      const actual=updateBalance(delta,`Case: ${win.name} (${meta.label}).`,"auto",800);
       showResult(`${win.name} · ${meta.label}`,
-        actual<0?`${Math.abs(actual)} point forsvandt.`:actual>0?`${actual} point blev lagt oveni.`:"Ingen ændring.",
-        actual<0?"good":actual>0?"bad":"");
+        actual<0?`${Math.abs(actual)} point forsvandt fra puljen!`:`${actual>0?actual+" point blev lagt oveni puljen.":"Ingen ændring i puljen."}`,
+        actual<0?"good":actual>0?"bad":"special");
     }
     setBusy(false);
   }
