@@ -2203,8 +2203,8 @@ button{cursor:pointer}
     const w=getWager();
     setBusy(true);
     const win=loot();
-    const items=Array.from({length:36},()=>loot());
-    const target=28;items[target]=win;
+    const items=Array.from({length:56},()=>loot());
+    const target=42;items[target]=win;
     const track=$("#caseTrack");
     track.innerHTML=items.map(lootHtml).join("");
     track.style.transition="none";track.style.transform="translateX(0)";
@@ -2219,20 +2219,20 @@ button{cursor:pointer}
     const landingOffset=(Math.random()*2-1)*maxLandingOffset;
     const end=box.clientWidth/2-targetCenter+landingOffset;
 
-    // Snappy, realistisk CS:GO rullekurve: 4 sekunder præcist
-    const spinDuration=4000;
-    track.style.transition=`transform ${spinDuration/1000}s cubic-bezier(.12,.86,.26,1)`;
+    // Spændingsfyldt, autentisk CS:GO rullekurve: ~6.4 sekunder
+    const spinDuration=6400;
+    track.style.transition=`transform ${spinDuration/1000}s cubic-bezier(.18,.70,.15,1)`;
     track.style.transform=`translateX(${end}px)`;
 
     const startTime=performance.now();
     let tickCount=0;
 
     // Dynamiske ticks der følger opbremsningen i hjulet
-    while(performance.now() - startTime < spinDuration - 100){
+    while(performance.now() - startTime < spinDuration - 110){
       const elapsed=performance.now() - startTime;
       const progress=elapsed / spinDuration;
-      const interval=45 + Math.pow(progress, 2.7) * 440;
-      beep(360 + (tickCount++ % 8) * 22, .018, .011);
+      const interval=36 + Math.pow(progress, 3.0) * 460;
+      beep(360 + (tickCount++ % 8) * 22, .018, .010);
       await sleep(interval);
     }
 
