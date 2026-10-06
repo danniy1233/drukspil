@@ -426,43 +426,239 @@ button{cursor:pointer}
 .loot.winner{animation:lootWinner .7s ease infinite alternate}
 @keyframes lootWinner{to{transform:scale(1.08);box-shadow:0 0 30px var(--rar)}}
 
-.case-legend{
-  width:min(720px,100%);margin:12px auto 0;display:grid;gap:8px
+/* CS:GO WEAPON CRATE CONTAINER & LID OPENING */
+.cs-crate-container{
+  margin:18px auto 14px;
+  width:min(720px,100%);
+  perspective:1200px;
+  position:relative;
 }
-.case-legend-row{
-  display:grid;grid-template-columns:auto 1fr auto auto;gap:10px;align-items:center;
-  padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:#111824
+.cs-crate-lid{
+  background:linear-gradient(180deg,#223040 0%,#151f2b 100%);
+  border:2px solid #3d5068;
+  border-bottom:2px solid #101722;
+  border-radius:18px 18px 4px 4px;
+  padding:10px 16px;
+  position:relative;
+  transform-origin:top center;
+  transition:transform .75s cubic-bezier(.16,1,.3,1), box-shadow .75s ease;
+  box-shadow:0 8px 24px rgba(0,0,0,.65);
+  z-index:10;
 }
-.case-dot{width:12px;height:12px;border-radius:50%;display:inline-block}
-.case-legend-row strong{font-size:13px}
-.case-legend-row span{font-size:12px;color:var(--muted)}
-.case-legend-row .chance{
-  font-size:12px;font-weight:900;padding:4px 8px;border-radius:999px;background:rgba(255,255,255,.05)
+.cs-crate-lid-front{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
 }
-.case-legend-row .quality{
-  font-size:11px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)
+.cs-crate-stripes{
+  width:36px;height:12px;
+  background:repeating-linear-gradient(45deg,#f59e0b,#f59e0b 6px,#1e293b 6px,#1e293b 12px);
+  border-radius:3px;
+  opacity:.85;
+  flex-shrink:0;
+}
+.cs-crate-title-plate{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex:1;
+  justify-content:center;
+  flex-wrap:wrap;
+}
+.cs-crate-series-badge{
+  font-size:11px;
+  font-weight:900;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  color:#cbd5e1;
+  background:rgba(0,0,0,.45);
+  padding:4px 10px;
+  border-radius:6px;
+  border:1px solid rgba(255,255,255,.08);
+}
+.cs-crate-status{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  font-size:11px;
+  font-weight:1000;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  color:#f59e0b;
+  background:rgba(245,158,11,.12);
+  border:1px solid rgba(245,158,11,.3);
+  padding:4px 10px;
+  border-radius:999px;
+  transition:all .3s ease;
+}
+.cs-crate-container.unlocking .cs-crate-lid{
+  animation:crateShake .32s ease infinite alternate;
+}
+.cs-crate-container.unlocking .cs-crate-status{
+  color:#45d483;
+  background:rgba(69,212,131,.18);
+  border-color:rgba(69,212,131,.45);
+}
+.cs-crate-container.open .cs-crate-lid{
+  transform:rotateX(-82deg) translateY(-8px);
+  box-shadow:0 -12px 40px rgba(245,158,11,.35), 0 0 50px rgba(245,158,11,.2);
+}
+.cs-crate-glow-burst{
+  position:absolute;inset:0;
+  background:radial-gradient(ellipse at 50% 0%, rgba(255,200,87,.4) 0%, rgba(245,158,11,.15) 50%, transparent 80%);
+  opacity:0;
+  pointer-events:none;
+  z-index:6;
+  transition:opacity .5s ease;
+}
+.cs-crate-container.open .cs-crate-glow-burst{
+  opacity:1;
+}
+@keyframes crateShake{
+  0%{transform:translateX(-2px) rotate(-0.5deg)}
+  100%{transform:translateX(2px) rotate(0.5deg)}
+}
+.case-box.cs-crate-body{
+  margin:0 auto;
+  border-top-left-radius:0;
+  border-top-right-radius:0;
+  border-top:none;
+  background:#090e15;
+  box-shadow:inset 0 10px 30px rgba(0,0,0,.85), 0 15px 35px rgba(0,0,0,.5);
 }
 
-.case-reveal{
-  text-align:center;opacity:0;transform:scale(.65);margin-top:12px
+/* CASE UNBOX REVEAL MODAL */
+.case-modal-card{
+  width:min(480px,94vw);
+  background:linear-gradient(180deg,#151e2b 0%,#0c1219 100%);
+  border:2px solid var(--rar,#ffc857);
+  border-radius:24px;
+  padding:28px 22px 24px;
+  text-align:center;
+  position:relative;
+  overflow:hidden;
+  box-shadow:0 0 55px color-mix(in srgb, var(--rar,#ffc857) 35%, transparent), 0 20px 45px rgba(0,0,0,.75);
+  animation:modalPop .45s cubic-bezier(.15,.85,.25,1.15) forwards;
 }
-.case-reveal.show{animation:reveal .55s cubic-bezier(.15,.8,.2,1) forwards}
-.case-reveal-card{
-  width:min(430px,100%);margin:0 auto;padding:18px;border-radius:18px;border:2px solid var(--rar);
-  background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.01)),#111824;
-  box-shadow:0 0 32px color-mix(in srgb, var(--rar) 28%, transparent)
+@keyframes modalPop{
+  0%{opacity:0;transform:scale(.72) translateY(28px)}
+  100%{opacity:1;transform:scale(1) translateY(0)}
 }
-.case-reveal-card .tier-line{
-  display:inline-block;padding:5px 10px;border-radius:999px;background:rgba(255,255,255,.06);
-  border:1px solid rgba(255,255,255,.14);font-size:11px;font-weight:1000;letter-spacing:.12em;text-transform:uppercase
+.case-modal-halo{
+  position:absolute;top:-60px;left:50%;transform:translateX(-50%);
+  width:260px;height:260px;border-radius:50%;
+  background:radial-gradient(circle, var(--rar,#ffc857) 0%, transparent 70%);
+  opacity:.25;filter:blur(30px);pointer-events:none;
 }
-.case-reveal-card .chance-line{
-  margin-top:8px;color:var(--muted);font-size:12px
+.case-modal-rarity-badge{
+  display:inline-block;
+  padding:5px 14px;
+  border-radius:999px;
+  background:color-mix(in srgb, var(--rar,#ffc857) 18%, rgba(0,0,0,.6));
+  border:1px solid var(--rar,#ffc857);
+  color:var(--rar,#ffc857);
+  font-size:12px;
+  font-weight:1000;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  margin-bottom:12px;
 }
-.case-reveal-card .quality-line{
-  margin-top:6px;font-size:12px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:var(--rar)
+.case-modal-icon{
+  font-size:62px;
+  line-height:1;
+  margin:6px 0;
+  filter:drop-shadow(0 0 18px var(--rar,#ffc857));
 }
-@keyframes reveal{to{opacity:1;transform:scale(1)}}
+.case-modal-name{
+  font-size:24px;
+  font-weight:1000;
+  letter-spacing:-.02em;
+  line-height:1.2;
+  color:#fff;
+  margin-bottom:4px;
+}
+.case-modal-tier-sub{
+  font-size:12px;
+  font-weight:800;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  color:var(--muted);
+  margin-bottom:16px;
+}
+.case-modal-action-box{
+  background:rgba(0,0,0,.45);
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:16px;
+  padding:16px 14px;
+  margin-bottom:16px;
+  text-align:center;
+}
+.case-modal-action-title{
+  font-size:16px;
+  font-weight:1000;
+  letter-spacing:.02em;
+  margin-bottom:6px;
+}
+.case-modal-action-desc{
+  font-size:14px;
+  color:#d5e0ee;
+  line-height:1.4;
+}
+.case-modal-extra-rule{
+  margin-top:8px;
+  padding-top:8px;
+  border-top:1px dashed rgba(255,255,255,.15);
+  font-size:13px;
+  font-weight:900;
+  color:var(--gold);
+}
+.case-modal-stats-row{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin-bottom:20px;
+}
+.case-stat{
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:12px;
+  padding:8px 10px;
+  text-align:center;
+}
+.case-stat-label{
+  display:block;
+  font-size:11px;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+  color:var(--muted);
+  margin-bottom:2px;
+}
+.case-stat-val{
+  font-size:15px;
+  font-weight:1000;
+  color:#fff;
+}
+.case-modal-btn{
+  width:100%;
+  padding:15px;
+  font-size:16px;
+  font-weight:1000;
+  letter-spacing:.06em;
+  border-radius:14px;
+  box-shadow:0 8px 24px rgba(0,0,0,.4);
+  cursor:pointer;
+}
+@media (max-width: 480px){
+  .cs-crate-stripes{display:none;}
+  .cs-crate-series-badge{font-size:9.5px;padding:3px 6px;}
+  .cs-crate-status{font-size:9.5px;padding:3px 7px;}
+  .case-modal-card{padding:20px 16px;}
+  .case-modal-name{font-size:20px;}
+  .case-modal-icon{font-size:50px;}
+  .case-modal-action-title{font-size:15px;}
+  .case-modal-action-desc{font-size:13px;}
+}
 
 /* DOUBLE */
 .double-stage{display:grid;place-items:center;min-height:300px}
@@ -1195,6 +1391,35 @@ button{cursor:pointer}
   </div>
 </div>
 
+<div class="overlay" id="caseModal">
+  <div class="overlay-card case-modal-card" id="caseModalCard">
+    <div class="case-modal-halo" id="caseModalHalo"></div>
+    <div class="case-modal-rarity-badge" id="caseModalBadge">★ SPECIAL RARE DROP (GULD)</div>
+    <div class="case-modal-icon" id="caseModalIcon">🔪</div>
+    <div class="case-modal-name" id="caseModalName">★ Karambit | Fade</div>
+    <div class="case-modal-tier-sub" id="caseModalTierSub">Guld / Kniv & Handsker</div>
+    
+    <div class="case-modal-action-box" id="caseModalActionBox">
+      <div class="case-modal-action-title" id="caseModalActionTitle">🏆 HELE PULJEN ER CLEARET TIL 0!</div>
+      <div class="case-modal-action-desc" id="caseModalActionDesc">Du har vundet runden! 10 point forsvandt fra puljen.</div>
+      <div class="case-modal-extra-rule" id="caseModalExtraRule" style="display:none"></div>
+    </div>
+
+    <div class="case-modal-stats-row">
+      <div class="case-stat">
+        <span class="case-stat-label">Pulje nu</span>
+        <strong class="case-stat-val" id="caseModalPoolVal">0 tårer</strong>
+      </div>
+      <div class="case-stat">
+        <span class="case-stat-label">Sandsynlighed</span>
+        <strong class="case-stat-val" id="caseModalChanceVal">3.0%</strong>
+      </div>
+    </div>
+
+    <button class="btn primary case-modal-btn" id="caseModalCloseBtn">FORTSÆT</button>
+  </div>
+</div>
+
 <div class="app">
   <div class="top">
     <div class="logo">
@@ -1434,7 +1659,13 @@ button{cursor:pointer}
     }
 
     if(balance>=DEBT_BUST_AT){
-      scheduleDebtBust(zeroDelay);
+      if(zeroDelay!==null && zeroDelay>=0){
+        scheduleDebtBust(zeroDelay);
+      }else{
+        debtBusted=true;
+        setBusy(true);
+        updateDebtUI();
+      }
     }else if(balance===0){
       // Lås runden MED DET SAMME, men vent med vinderskærmen,
       // så resultatet fra det sidste spil stadig kan nå at blive set.
@@ -1443,10 +1674,12 @@ button{cursor:pointer}
       const arena=$("#arena");
       if(arena) arena.classList.add("round-ending");
 
-      clearTimeout(zeroOverlayTimer);
-      zeroOverlayTimer=setTimeout(()=>{
-        $("#zeroOverlay").classList.add("show");
-      },zeroDelay);
+      if(zeroDelay!==null && zeroDelay>=0){
+        clearTimeout(zeroOverlayTimer);
+        zeroOverlayTimer=setTimeout(()=>{
+          $("#zeroOverlay").classList.add("show");
+        },zeroDelay);
+      }
     }
     return actual;
   }
@@ -1515,6 +1748,7 @@ button{cursor:pointer}
     $("#hub").classList.remove("hidden");
     $("#zeroOverlay").classList.remove("show");
     $("#debtOverlay").classList.remove("show");
+    $("#caseModal")?.classList.remove("show");
     $("#resultHud").classList.remove("show");
     $("#debtHud").classList.remove("hidden");
     $("#arena").classList.remove("round-ending");
@@ -1551,6 +1785,7 @@ button{cursor:pointer}
     $("#startScreen").classList.remove("hidden");
     $("#zeroOverlay").classList.remove("show");
     $("#debtOverlay").classList.remove("show");
+    $("#caseModal")?.classList.remove("show");
     $("#resultHud").classList.remove("show");
     $("#debtHud").classList.add("hidden");
     $("#debtVignette").className="debt-vignette";
@@ -1590,6 +1825,13 @@ button{cursor:pointer}
   $("#newRoundBtn").onclick=resetToStart;
   $("#newRoundOverlay").onclick=resetToStart;
   $("#debtCashoutBtn").onclick=resetToStart;
+  $("#caseModalCloseBtn").onclick=dismissCaseModal;
+  $("#caseModal").onclick=e=>{if(e.target===$("#caseModal"))dismissCaseModal()};
+  window.addEventListener("keydown",e=>{
+    if(e.key==="Escape" && $("#caseModal") && $("#caseModal").classList.contains("show")){
+      dismissCaseModal();
+    }
+  });
   $("#takeBtn").onclick=()=>{
     if(busy)return;
     $("#lastAction").textContent=`Runden sluttede med ${balance} point tilbage.`;
@@ -2059,176 +2301,176 @@ button{cursor:pointer}
   }
 
   const rarityMeta = {
-    common:{label:"Mil-Spec", quality:"Grå / Almindelig", color:"#aeb8c5"},
-    blue:{label:"Restricted", quality:"Blå / Lidt sjælden", color:"#5ea1ff"},
-    purple:{label:"Classified", quality:"Lilla / Sjælden", color:"#a578ff"},
-    pink:{label:"Covert", quality:"Pink / Meget sjælden", color:"#eb63cf"},
-    gold:{label:"Special Rare ★", quality:"Guld / Kniv & Handsker", color:"#ffc857"}
+    common:{label:"Mil-Spec", quality:"Grå / Almindelig", color:"#aeb8c5", chance:"54.0%"},
+    blue:{label:"Restricted", quality:"Blå / Lidt sjælden", color:"#5ea1ff", chance:"24.0%"},
+    purple:{label:"Classified", quality:"Lilla / Sjælden", color:"#a578ff", chance:"13.0%"},
+    pink:{label:"Covert", quality:"Pink / Meget sjælden", color:"#eb63cf", chance:"6.0%"},
+    gold:{label:"Special Rare ★", quality:"Guld / Kniv & Handsker", color:"#ffc857", chance:"3.0%"}
   };
 
   const lootTable=[
     // ══════════════════════════════════════════════════════
-    // MIL-SPEC / COMMON (Grå) · 70.0% samlet (40 skins)
-    // Almindelige skins. Straffe til puljen, personlige slurke eller neutrale duds
+    // MIL-SPEC / COMMON (Grå) · 54.0% samlet (40 skins · 1.35% hver)
+    // Almindelige skins. Straffe til puljen, personlige tårer eller neutrale duds
     // ══════════════════════════════════════════════════════
-    {name:"P250 | Sand Dune",e:"🔫",cls:"common",kind:"delta",mult:.5,weight:1.75,desc:"+50% indsats til puljen"},
-    {name:"MP9 | Storm",e:"🔫",cls:"common",kind:"delta",mult:1,weight:1.75,desc:"+100% indsats til puljen"},
-    {name:"MAG-7 | Rust Coat",e:"🔫",cls:"common",kind:"delta",mult:.25,weight:1.75,desc:"+25% indsats til puljen"},
-    {name:"Nova | Predator",e:"🍻",cls:"common",kind:"sips",amount:1,weight:1.75,desc:"Tag 1 slurk selv"},
-    {name:"Dual Berettas | Colony",e:"🔫",cls:"common",kind:"delta",mult:.5,weight:1.75,desc:"+50% indsats til puljen"},
-    {name:"UMP-45 | Mud-Spec",e:"➖",cls:"common",kind:"delta",mult:0,weight:1.75,desc:"Dud! Puljen ændres ikke"},
-    {name:"SG 553 | Waves Perforated",e:"🔫",cls:"common",kind:"delta",mult:.75,weight:1.75,desc:"+75% indsats til puljen"},
-    {name:"G3SG1 | Polar Camo",e:"💥",cls:"common",kind:"delta",mult:1.5,weight:1.75,desc:"Heavy Debt! +150% indsats"},
-    {name:"Negev | Army Sheen",e:"🍻",cls:"common",kind:"sips",amount:2,weight:1.75,desc:"Tag 2 slurke selv!"},
-    {name:"P90 | Grim",e:"🔫",cls:"common",kind:"delta",mult:.5,weight:1.75,desc:"+50% indsats til puljen"},
-    {name:"Five-SeveN | Forest Night",e:"📈",cls:"common",kind:"delta",mult:1,weight:1.75,desc:"+100% indsats til puljen"},
-    {name:"FAMAS | Colony",e:"😮‍💨",cls:"common",kind:"delta",mult:0,weight:1.75,desc:"Close Call! Slap med skrækken"},
-    {name:"Sawed-Off | Forest DDPAT",e:"🍻",cls:"common",kind:"sips",amount:2,mult:.5,weight:1.75,desc:"Tag 2 slurke + 50% til puljen"},
-    {name:"PP-Bizon | Water Sigil",e:"🔫",cls:"common",kind:"delta",mult:.75,weight:1.75,desc:"+75% indsats til puljen"},
-    {name:"MP7 | Cirrus",e:"🔫",cls:"common",kind:"delta",mult:.5,weight:1.75,desc:"+50% indsats til puljen"},
-    {name:"CZ75-Auto | Pole Position",e:"🔫",cls:"common",kind:"delta",mult:1,weight:1.75,desc:"+100% indsats til puljen"},
-    {name:"SG 553 | Aloha",e:"🍻",cls:"common",kind:"sips",amount:1,weight:1.75,desc:"Tag 1 slurk selv"},
-    {name:"MP9 | Black Sand",e:"🔫",cls:"common",kind:"delta",mult:.5,weight:1.75,desc:"+50% indsats til puljen"},
-    {name:"P250 | Ripple",e:"🔫",cls:"common",kind:"delta",mult:.75,weight:1.75,desc:"+75% indsats til puljen"},
-    {name:"Tec-9 | Ice Cap",e:"🍻",cls:"common",kind:"sips",amount:2,weight:1.75,desc:"Tag 2 kolde slurke!"},
-    {name:"R8 Revolver | Bone Mask",e:"💥",cls:"common",kind:"delta",mult:1.25,weight:1.75,desc:"+125% indsats til puljen"},
-    {name:"SCAR-20 | Sand Mesh",e:"🔫",cls:"common",kind:"delta",mult:.5,weight:1.75,desc:"+50% indsats til puljen"},
-    {name:"P2000 | Oceanic",e:"🍻",cls:"common",kind:"sips",amount:1,weight:1.75,desc:"Tag 1 slurk selv"},
-    {name:"Negev | Man-o'-war",e:"🔫",cls:"common",kind:"delta",mult:1,weight:1.75,desc:"+100% indsats til puljen"},
-    {name:"MP5-SD | Dirt Drop",e:"➖",cls:"common",kind:"delta",mult:0,weight:1.75,desc:"Dud! Ingenting sker"},
-    {name:"M249 | System Lock",e:"💥",cls:"common",kind:"delta",mult:1.5,weight:1.75,desc:"System Crash! +150% indsats"},
-    {name:"Glock-18 | Ironwork",e:"🔫",cls:"common",kind:"delta",mult:.5,weight:1.75,desc:"+50% indsats til puljen"},
-    {name:"AWP | Capillary",e:"🍻",cls:"common",kind:"sips",amount:2,mult:.25,weight:1.75,desc:"Tag 2 slurke + 25% til puljen"},
-    {name:"AK-47 | Uncharted",e:"🔫",cls:"common",kind:"delta",mult:.75,weight:1.75,desc:"+75% indsats til puljen"},
-    {name:"UMP-45 | Exposure",e:"📈",cls:"common",kind:"delta",mult:1,weight:1.75,desc:"+100% indsats til puljen"},
-    {name:"Desert Eagle | Blue Ply",e:"🔫",cls:"common",kind:"delta",mult:.5,weight:1.75,desc:"+50% indsats til puljen"},
-    {name:"Galil AR | Black Sand",e:"🔫",cls:"common",kind:"delta",mult:.75,weight:1.75,desc:"+75% indsats til puljen"},
-    {name:"SSG 08 | Mainframe 001",e:"➖",cls:"common",kind:"delta",mult:0,weight:1.75,desc:"Safe! Puljen er urørt"},
-    {name:"FAMAS | Decommissioned",e:"💥",cls:"common",kind:"delta",mult:1.25,weight:1.75,desc:"+125% indsats til puljen"},
-    {name:"MAC-10 | Classic Cranberry",e:"🍻",cls:"common",kind:"sips",amount:1,weight:1.75,desc:"Tag 1 slurk selv"},
-    {name:"USP-S | Lead Conduit",e:"🔫",cls:"common",kind:"delta",mult:.5,weight:1.75,desc:"+50% indsats til puljen"},
-    {name:"Dual Berettas | Ventilators",e:"🔫",cls:"common",kind:"delta",mult:.5,weight:1.75,desc:"+50% indsats til puljen"},
-    {name:"Nova | Wild Six",e:"🍻",cls:"common",kind:"sips",amount:2,weight:1.75,desc:"Tag 2 slurke selv!"},
-    {name:"MAG-7 | Heaven Guard",e:"😮‍💨",cls:"common",kind:"delta",mult:0,weight:1.75,desc:"Close Call! Slap med skrækken"},
-    {name:"XM1014 | Scumbria",e:"🔫",cls:"common",kind:"delta",mult:.75,weight:1.75,desc:"+75% indsats til puljen"},
+    {name:"P250 | Sand Dune",e:"🔫",cls:"common",kind:"delta",mult:.5,weight:1.35,desc:"+50% indsats til puljen"},
+    {name:"MP9 | Storm",e:"🔫",cls:"common",kind:"delta",mult:1,weight:1.35,desc:"+100% indsats til puljen"},
+    {name:"MAG-7 | Rust Coat",e:"🔫",cls:"common",kind:"delta",mult:.25,weight:1.35,desc:"+25% indsats til puljen"},
+    {name:"Nova | Predator",e:"🍻",cls:"common",kind:"sips",amount:1,weight:1.35,desc:"Tag 1 tåre selv"},
+    {name:"Dual Berettas | Colony",e:"🔫",cls:"common",kind:"delta",mult:.5,weight:1.35,desc:"+50% indsats til puljen"},
+    {name:"UMP-45 | Mud-Spec",e:"➖",cls:"common",kind:"delta",mult:0,weight:1.35,desc:"Dud! Puljen ændres ikke"},
+    {name:"SG 553 | Waves Perforated",e:"🔫",cls:"common",kind:"delta",mult:.75,weight:1.35,desc:"+75% indsats til puljen"},
+    {name:"G3SG1 | Polar Camo",e:"💥",cls:"common",kind:"delta",mult:1.5,weight:1.35,desc:"Heavy Debt! +150% indsats"},
+    {name:"Negev | Army Sheen",e:"🍻",cls:"common",kind:"sips",amount:2,weight:1.35,desc:"Tag 2 tårer selv!"},
+    {name:"P90 | Grim",e:"🔫",cls:"common",kind:"delta",mult:.5,weight:1.35,desc:"+50% indsats til puljen"},
+    {name:"Five-SeveN | Forest Night",e:"📈",cls:"common",kind:"delta",mult:1,weight:1.35,desc:"+100% indsats til puljen"},
+    {name:"FAMAS | Colony",e:"😮‍💨",cls:"common",kind:"delta",mult:0,weight:1.35,desc:"Close Call! Slap med skrækken"},
+    {name:"Sawed-Off | Forest DDPAT",e:"🍻",cls:"common",kind:"sips",amount:2,mult:.5,weight:1.35,desc:"Tag 2 tårer + 50% til puljen"},
+    {name:"PP-Bizon | Water Sigil",e:"🔫",cls:"common",kind:"delta",mult:.75,weight:1.35,desc:"+75% indsats til puljen"},
+    {name:"MP7 | Cirrus",e:"🔫",cls:"common",kind:"delta",mult:.5,weight:1.35,desc:"+50% indsats til puljen"},
+    {name:"CZ75-Auto | Pole Position",e:"🔫",cls:"common",kind:"delta",mult:1,weight:1.35,desc:"+100% indsats til puljen"},
+    {name:"SG 553 | Aloha",e:"🍻",cls:"common",kind:"sips",amount:1,weight:1.35,desc:"Tag 1 tåre selv"},
+    {name:"MP9 | Black Sand",e:"🔫",cls:"common",kind:"delta",mult:.5,weight:1.35,desc:"+50% indsats til puljen"},
+    {name:"P250 | Ripple",e:"🔫",cls:"common",kind:"delta",mult:.75,weight:1.35,desc:"+75% indsats til puljen"},
+    {name:"Tec-9 | Ice Cap",e:"🍻",cls:"common",kind:"sips",amount:2,weight:1.35,desc:"Tag 2 kolde tårer!"},
+    {name:"R8 Revolver | Bone Mask",e:"💥",cls:"common",kind:"delta",mult:1.25,weight:1.35,desc:"+125% indsats til puljen"},
+    {name:"SCAR-20 | Sand Mesh",e:"🔫",cls:"common",kind:"delta",mult:.5,weight:1.35,desc:"+50% indsats til puljen"},
+    {name:"P2000 | Oceanic",e:"🍻",cls:"common",kind:"sips",amount:1,weight:1.35,desc:"Tag 1 tåre selv"},
+    {name:"Negev | Man-o'-war",e:"🔫",cls:"common",kind:"delta",mult:1,weight:1.35,desc:"+100% indsats til puljen"},
+    {name:"MP5-SD | Dirt Drop",e:"➖",cls:"common",kind:"delta",mult:0,weight:1.35,desc:"Dud! Ingenting sker"},
+    {name:"M249 | System Lock",e:"💥",cls:"common",kind:"delta",mult:1.5,weight:1.35,desc:"System Crash! +150% indsats"},
+    {name:"Glock-18 | Ironwork",e:"🔫",cls:"common",kind:"delta",mult:.5,weight:1.35,desc:"+50% indsats til puljen"},
+    {name:"AWP | Capillary",e:"🍻",cls:"common",kind:"sips",amount:2,mult:.25,weight:1.35,desc:"Tag 2 tårer + 25% til puljen"},
+    {name:"AK-47 | Uncharted",e:"🔫",cls:"common",kind:"delta",mult:.75,weight:1.35,desc:"+75% indsats til puljen"},
+    {name:"UMP-45 | Exposure",e:"📈",cls:"common",kind:"delta",mult:1,weight:1.35,desc:"+100% indsats til puljen"},
+    {name:"Desert Eagle | Blue Ply",e:"🔫",cls:"common",kind:"delta",mult:.5,weight:1.35,desc:"+50% indsats til puljen"},
+    {name:"Galil AR | Black Sand",e:"🔫",cls:"common",kind:"delta",mult:.75,weight:1.35,desc:"+75% indsats til puljen"},
+    {name:"SSG 08 | Mainframe 001",e:"➖",cls:"common",kind:"delta",mult:0,weight:1.35,desc:"Safe! Puljen er urørt"},
+    {name:"FAMAS | Decommissioned",e:"💥",cls:"common",kind:"delta",mult:1.25,weight:1.35,desc:"+125% indsats til puljen"},
+    {name:"MAC-10 | Classic Cranberry",e:"🍻",cls:"common",kind:"sips",amount:1,weight:1.35,desc:"Tag 1 tåre selv"},
+    {name:"USP-S | Lead Conduit",e:"🔫",cls:"common",kind:"delta",mult:.5,weight:1.35,desc:"+50% indsats til puljen"},
+    {name:"Dual Berettas | Ventilators",e:"🔫",cls:"common",kind:"delta",mult:.5,weight:1.35,desc:"+50% indsats til puljen"},
+    {name:"Nova | Wild Six",e:"🍻",cls:"common",kind:"sips",amount:2,weight:1.35,desc:"Tag 2 tårer selv!"},
+    {name:"MAG-7 | Heaven Guard",e:"😮‍💨",cls:"common",kind:"delta",mult:0,weight:1.35,desc:"Close Call! Slap med skrækken"},
+    {name:"XM1014 | Scumbria",e:"🔫",cls:"common",kind:"delta",mult:.75,weight:1.35,desc:"+75% indsats til puljen"},
 
     // ══════════════════════════════════════════════════════
-    // RESTRICTED / BLUE (Blå) · 20.0% samlet (32 skins)
-    // Lidt sjældne skins. Små saves af din indsats eller små slurke-uddelinger
+    // RESTRICTED / BLUE (Blå) · 24.0% samlet (32 skins · 0.75% hver)
+    // Lidt sjældne skins. Saves af din indsats eller tåre-uddelinger
     // ══════════════════════════════════════════════════════
-    {name:"Glock-18 | Water Elemental",e:"🔹",cls:"blue",kind:"delta",mult:-.5,weight:0.625,desc:"Fjern 50% af indsatsen"},
-    {name:"M4A4 | Evil Daimyo",e:"⚡",cls:"blue",kind:"delta",mult:-.75,weight:0.625,desc:"Fjern 75% af indsatsen"},
-    {name:"USP-S | Guardian",e:"🛡️",cls:"blue",kind:"delta",mult:-1,weight:0.625,desc:"Fuld Save: Fjern 100% indsats"},
-    {name:"Desert Eagle | Light Rail",e:"🔹",cls:"blue",kind:"delta",mult:-.5,weight:0.625,desc:"Fjern 50% af indsatsen"},
-    {name:"MAC-10 | Ensnared",e:"🍻",cls:"blue",kind:"giveSips",amount:2,weight:0.625,desc:"Giv 2 slurke ud til andre"},
-    {name:"FAMAS | Valence",e:"🔹",cls:"blue",kind:"delta",mult:-.5,weight:0.625,desc:"Fjern 50% af indsatsen"},
-    {name:"Galil AR | Stone Cold",e:"🥂",cls:"blue",kind:"cheers",mult:-.5,weight:0.625,desc:"Fællesskål! Alle 1 slurk + 50% save"},
-    {name:"SSG 08 | Abyss",e:"⚡",cls:"blue",kind:"delta",mult:-.75,weight:0.625,desc:"Fjern 75% af indsatsen"},
-    {name:"M4A1-S | Flashback",e:"🍻",cls:"blue",kind:"giveSips",amount:2,mult:-.5,weight:0.625,desc:"Giv 2 slurke ud + 50% save"},
-    {name:"AK-47 | Safari Mesh",e:"🛡️",cls:"blue",kind:"delta",mult:-1,weight:0.625,desc:"Fuld Save: Fjern 100% indsats"},
-    {name:"AWP | Safari Mesh",e:"🍻",cls:"blue",kind:"giveSips",amount:3,weight:0.625,desc:"Giv 3 slurke ud til bordet"},
-    {name:"AK-47 | Slate",e:"🛡️",cls:"blue",kind:"delta",mult:-1,weight:0.625,desc:"Clean Slate: Fjern 100% indsats"},
-    {name:"M4A4 | Spider Lily",e:"⚡",cls:"blue",kind:"delta",mult:-.75,weight:0.625,desc:"Fjern 75% af indsatsen"},
-    {name:"Desert Eagle | Conspiracy",e:"🛡️",cls:"blue",kind:"delta",mult:-1,weight:0.625,desc:"Fuld Save: Fjern 100% indsats"},
-    {name:"AWP | Worm God",e:"🔹",cls:"blue",kind:"delta",mult:-.5,weight:0.625,desc:"Fjern 50% af indsatsen"},
-    {name:"Glock-18 | High Beam",e:"🍻",cls:"blue",kind:"giveSips",amount:2,weight:0.625,desc:"Giv 2 slurke ud til andre"},
-    {name:"USP-S | Cyrex",e:"⚡",cls:"blue",kind:"delta",mult:-.75,weight:0.625,desc:"Fjern 75% af indsatsen"},
-    {name:"M4A1-S | Night Terror",e:"🍻",cls:"blue",kind:"giveSips",amount:2,mult:-.5,weight:0.625,desc:"Giv 2 slurke ud + 50% save"},
-    {name:"P250 | Supernova",e:"🔹",cls:"blue",kind:"delta",mult:-.5,weight:0.625,desc:"Fjern 50% af indsatsen"},
-    {name:"MAC-10 | Disco Tech",e:"🥂",cls:"blue",kind:"cheers",mult:-.5,weight:0.625,desc:"Disko Skål! Alle 1 slurk + 50% save"},
-    {name:"Five-SeveN | Monkey Business",e:"🍌",cls:"blue",kind:"giveSips",amount:3,weight:0.625,desc:"Giv 3 banan-slurke ud!"},
-    {name:"P90 | Chopper",e:"⚡",cls:"blue",kind:"delta",mult:-.75,weight:0.625,desc:"Fjern 75% af indsatsen"},
-    {name:"Galil AR | Signal",e:"🔹",cls:"blue",kind:"delta",mult:-.5,weight:0.625,desc:"Fjern 50% af indsatsen"},
-    {name:"SSG 08 | Fever Dream",e:"🍻",cls:"blue",kind:"giveSips",amount:2,weight:0.625,desc:"Giv 2 slurke ud til bordet"},
-    {name:"UMP-45 | Primal Saber",e:"🛡️",cls:"blue",kind:"delta",mult:-1,weight:0.625,desc:"Fuld Save: Fjern 100% indsats"},
-    {name:"SG 553 | Darkwing",e:"🔹",cls:"blue",kind:"delta",mult:-.5,weight:0.625,desc:"Fjern 50% af indsatsen"},
-    {name:"FAMAS | Eye of Athena",e:"⚡",cls:"blue",kind:"delta",mult:-.75,weight:0.625,desc:"Fjern 75% af indsatsen"},
-    {name:"Nova | Hyper Beast",e:"🍻",cls:"blue",kind:"giveSips",amount:3,mult:-.5,weight:0.625,desc:"Giv 3 slurke ud + 50% save"},
-    {name:"CZ75-Auto | Red Astor",e:"🔹",cls:"blue",kind:"delta",mult:-.5,weight:0.625,desc:"Fjern 50% af indsatsen"},
-    {name:"Tec-9 | Isaac",e:"🛡️",cls:"blue",kind:"delta",mult:-1,weight:0.625,desc:"Fuld Save: Fjern 100% indsats"},
-    {name:"MP7 | Bloodsport",e:"🍻",cls:"blue",kind:"giveSips",amount:2,weight:0.625,desc:"Giv 2 slurke ud til en modstander"},
-    {name:"M4A4 | Magnesium",e:"🔹",cls:"blue",kind:"delta",mult:-.5,weight:0.625,desc:"Fjern 50% af indsatsen"},
+    {name:"Glock-18 | Water Elemental",e:"🔹",cls:"blue",kind:"delta",mult:-.5,weight:0.75,desc:"Fjern 50% af indsatsen"},
+    {name:"M4A4 | Evil Daimyo",e:"⚡",cls:"blue",kind:"delta",mult:-.75,weight:0.75,desc:"Fjern 75% af indsatsen"},
+    {name:"USP-S | Guardian",e:"🛡️",cls:"blue",kind:"delta",mult:-1,weight:0.75,desc:"Fuld Save: Fjern 100% indsats"},
+    {name:"Desert Eagle | Light Rail",e:"🔹",cls:"blue",kind:"delta",mult:-.5,weight:0.75,desc:"Fjern 50% af indsatsen"},
+    {name:"MAC-10 | Ensnared",e:"🍻",cls:"blue",kind:"giveSips",amount:2,weight:0.75,desc:"Giv 2 tårer ud til andre"},
+    {name:"FAMAS | Valence",e:"🔹",cls:"blue",kind:"delta",mult:-.5,weight:0.75,desc:"Fjern 50% af indsatsen"},
+    {name:"Galil AR | Stone Cold",e:"⚡",cls:"blue",kind:"delta",mult:-.75,weight:0.75,desc:"Fjern 75% af indsatsen fra puljen"},
+    {name:"SSG 08 | Abyss",e:"⚡",cls:"blue",kind:"delta",mult:-.75,weight:0.75,desc:"Fjern 75% af indsatsen"},
+    {name:"M4A1-S | Flashback",e:"🍻",cls:"blue",kind:"giveSips",amount:2,mult:-.5,weight:0.75,desc:"Giv 2 tårer ud + 50% save"},
+    {name:"AK-47 | Safari Mesh",e:"🛡️",cls:"blue",kind:"delta",mult:-1,weight:0.75,desc:"Fuld Save: Fjern 100% indsats"},
+    {name:"AWP | Safari Mesh",e:"🍻",cls:"blue",kind:"giveSips",amount:3,weight:0.75,desc:"Giv 3 tårer ud til bordet"},
+    {name:"AK-47 | Slate",e:"🛡️",cls:"blue",kind:"delta",mult:-1,weight:0.75,desc:"Clean Slate: Fjern 100% indsats"},
+    {name:"M4A4 | Spider Lily",e:"⚡",cls:"blue",kind:"delta",mult:-.75,weight:0.75,desc:"Fjern 75% af indsatsen"},
+    {name:"Desert Eagle | Conspiracy",e:"🛡️",cls:"blue",kind:"delta",mult:-1,weight:0.75,desc:"Fuld Save: Fjern 100% indsats"},
+    {name:"AWP | Worm God",e:"🔹",cls:"blue",kind:"delta",mult:-.5,weight:0.75,desc:"Fjern 50% af indsatsen"},
+    {name:"Glock-18 | High Beam",e:"🍻",cls:"blue",kind:"giveSips",amount:2,weight:0.75,desc:"Giv 2 tårer ud til andre"},
+    {name:"USP-S | Cyrex",e:"⚡",cls:"blue",kind:"delta",mult:-.75,weight:0.75,desc:"Fjern 75% af indsatsen"},
+    {name:"M4A1-S | Night Terror",e:"🍻",cls:"blue",kind:"giveSips",amount:2,mult:-.5,weight:0.75,desc:"Giv 2 tårer ud + 50% save"},
+    {name:"P250 | Supernova",e:"🔹",cls:"blue",kind:"delta",mult:-.5,weight:0.75,desc:"Fjern 50% af indsatsen"},
+    {name:"MAC-10 | Disco Tech",e:"🍻",cls:"blue",kind:"giveSips",amount:2,mult:-.5,weight:0.75,desc:"Giv 2 tårer ud + 50% save"},
+    {name:"Five-SeveN | Monkey Business",e:"🍌",cls:"blue",kind:"giveSips",amount:3,weight:0.75,desc:"Giv 3 banan-tårer ud!"},
+    {name:"P90 | Chopper",e:"⚡",cls:"blue",kind:"delta",mult:-.75,weight:0.75,desc:"Fjern 75% af indsatsen"},
+    {name:"Galil AR | Signal",e:"🔹",cls:"blue",kind:"delta",mult:-.5,weight:0.75,desc:"Fjern 50% af indsatsen"},
+    {name:"SSG 08 | Fever Dream",e:"🍻",cls:"blue",kind:"giveSips",amount:2,weight:0.75,desc:"Giv 2 tårer ud til bordet"},
+    {name:"UMP-45 | Primal Saber",e:"🛡️",cls:"blue",kind:"delta",mult:-1,weight:0.75,desc:"Fuld Save: Fjern 100% indsats"},
+    {name:"SG 553 | Darkwing",e:"🔹",cls:"blue",kind:"delta",mult:-.5,weight:0.75,desc:"Fjern 50% af indsatsen"},
+    {name:"FAMAS | Eye of Athena",e:"⚡",cls:"blue",kind:"delta",mult:-.75,weight:0.75,desc:"Fjern 75% af indsatsen"},
+    {name:"Nova | Hyper Beast",e:"🍻",cls:"blue",kind:"giveSips",amount:3,mult:-.5,weight:0.75,desc:"Giv 3 tårer ud + 50% save"},
+    {name:"CZ75-Auto | Red Astor",e:"🔹",cls:"blue",kind:"delta",mult:-.5,weight:0.75,desc:"Fjern 50% af indsatsen"},
+    {name:"Tec-9 | Isaac",e:"🛡️",cls:"blue",kind:"delta",mult:-1,weight:0.75,desc:"Fuld Save: Fjern 100% indsats"},
+    {name:"MP7 | Bloodsport",e:"🍻",cls:"blue",kind:"giveSips",amount:2,weight:0.75,desc:"Giv 2 tårer ud til en modstander"},
+    {name:"M4A4 | Magnesium",e:"🔹",cls:"blue",kind:"delta",mult:-.5,weight:0.75,desc:"Fjern 50% af indsatsen"},
 
     // ══════════════════════════════════════════════════════
-    // CLASSIFIED / PURPLE (Lilla) · 6.5% samlet (26 skins)
-    // Sjældne skins. Store saves (>1.0× indsats) og stærke uddelinger
+    // CLASSIFIED / PURPLE (Lilla) · 13.0% samlet (26 skins · 0.50% hver)
+    // Sjældne skins. Store saves (>1.0× indsats) og stærke tåre-uddelinger
     // ══════════════════════════════════════════════════════
-    {name:"AWP | Atheris",e:"🟣",cls:"purple",kind:"delta",mult:-1.5,weight:0.25,desc:"Fjern 1.5× indsatsen fra puljen!"},
-    {name:"M4A1-S | Leaded Glass",e:"🟣",cls:"purple",kind:"delta",mult:-1.75,weight:0.25,desc:"Fjern 1.75× indsatsen fra puljen!"},
-    {name:"AK-47 | Point Disarray",e:"🟣",cls:"purple",kind:"delta",mult:-2,weight:0.25,desc:"Fjern 2× indsatsen fra puljen!"},
-    {name:"Desert Eagle | Mecha Industries",e:"🟣",cls:"purple",kind:"delta",mult:-1.5,weight:0.25,desc:"Fjern 1.5× indsatsen fra puljen!"},
-    {name:"USP-S | Cortex",e:"🎁",cls:"purple",kind:"giveSips",amount:3,mult:-1,weight:0.25,desc:"Giv 3 slurke ud + fjern hele indsatsen!"},
-    {name:"Glock-18 | Bullet Queen",e:"🟣",cls:"purple",kind:"delta",mult:-2,weight:0.25,desc:"Fjern 2× indsatsen fra puljen!"},
-    {name:"AK-47 | Frontside Misty",e:"🎁",cls:"purple",kind:"giveSips",amount:4,mult:-1.5,weight:0.25,desc:"Giv 4 slurke ud + fjern 1.5× indsats!"},
-    {name:"SSG 08 | Dragonfire",e:"🔮",cls:"purple",kind:"delta",mult:-1.75,weight:0.25,desc:"Fjern 1.75× indsatsen fra puljen!"},
-    {name:"P90 | Asiimov",e:"🎁",cls:"purple",kind:"giveSips",amount:3,mult:-1.5,weight:0.25,desc:"Giv 3 slurke ud + fjern 1.5× indsats!"},
-    {name:"CZ75-Auto | Xiangliu",e:"🟣",cls:"purple",kind:"delta",mult:-2,weight:0.25,desc:"Fjern 2× indsatsen fra puljen!"},
-    {name:"AK-47 | Redline",e:"📜",cls:"purple",kind:"rule",mult:-1.5,weight:0.25,desc:"LAV EN REGEL! + fjern 1.5× indsats!"},
-    {name:"AWP | Mortis",e:"🟣",cls:"purple",kind:"delta",mult:-1.75,weight:0.25,desc:"Fjern 1.75× indsatsen fra puljen!"},
-    {name:"M4A4 | Neo-Noir",e:"🟣",cls:"purple",kind:"delta",mult:-2,weight:0.25,desc:"Fjern 2× indsatsen fra puljen!"},
-    {name:"USP-S | Neo-Noir",e:"🎁",cls:"purple",kind:"giveSips",amount:4,mult:-1,weight:0.25,desc:"Giv 4 slurke ud + fjern hele indsatsen!"},
-    {name:"Desert Eagle | Kumicho Dragon",e:"🟣",cls:"purple",kind:"delta",mult:-1.75,weight:0.25,desc:"Fjern 1.75× indsatsen fra puljen!"},
-    {name:"Glock-18 | Vogue",e:"🟣",cls:"purple",kind:"delta",mult:-1.5,weight:0.25,desc:"Fjern 1.5× indsatsen fra puljen!"},
-    {name:"M4A1-S | Hyper Beast",e:"🌊",cls:"purple",kind:"waterfall",mult:-2,weight:0.25,desc:"VANDFALD! Du starter + fjern 2× indsats!"},
-    {name:"Galil AR | Chatterbox",e:"🎁",cls:"purple",kind:"giveSips",amount:4,mult:-1,weight:0.25,desc:"Giv 4 slurke ud + fjern hele indsatsen!"},
-    {name:"SSG 08 | Blood in the Water",e:"🟣",cls:"purple",kind:"delta",mult:-2,weight:0.25,desc:"Fjern 2× indsatsen fra puljen!"},
-    {name:"P90 | Death by Kitty",e:"🐱",cls:"purple",kind:"giveSips",amount:4,mult:-1.5,weight:0.25,desc:"Giv 4 killinge-slurke ud + 1.5× save!"},
-    {name:"Five-SeveN | Hyper Beast",e:"🟣",cls:"purple",kind:"delta",mult:-1.75,weight:0.25,desc:"Fjern 1.75× indsatsen fra puljen!"},
-    {name:"MP9 | Hydra",e:"🟣",cls:"purple",kind:"delta",mult:-1.5,weight:0.25,desc:"Fjern 1.5× indsatsen fra puljen!"},
-    {name:"MAC-10 | Stalker",e:"🎁",cls:"purple",kind:"giveSips",amount:3,mult:-1.5,weight:0.25,desc:"Giv 3 slurke ud + 1.5× save!"},
-    {name:"AWP | Hyper Beast",e:"🟣",cls:"purple",kind:"delta",mult:-2,weight:0.25,desc:"Fjern 2× indsatsen fra puljen!"},
-    {name:"M4A4 | Desolate Space",e:"🟣",cls:"purple",kind:"delta",mult:-1.75,weight:0.25,desc:"Fjern 1.75× indsatsen fra puljen!"},
-    {name:"Desert Eagle | Code Red",e:"⚔️",cls:"purple",kind:"duel",amount:3,mult:-1.5,weight:0.25,desc:"DUEL! Taberen tager 3 slurke + 1.5× save!"},
+    {name:"AWP | Atheris",e:"🟣",cls:"purple",kind:"delta",mult:-1.5,weight:0.5,desc:"Fjern 1.5× indsatsen fra puljen!"},
+    {name:"M4A1-S | Leaded Glass",e:"🟣",cls:"purple",kind:"delta",mult:-1.75,weight:0.5,desc:"Fjern 1.75× indsatsen fra puljen!"},
+    {name:"AK-47 | Point Disarray",e:"🟣",cls:"purple",kind:"delta",mult:-2,weight:0.5,desc:"Fjern 2× indsatsen fra puljen!"},
+    {name:"Desert Eagle | Mecha Industries",e:"🟣",cls:"purple",kind:"delta",mult:-1.5,weight:0.5,desc:"Fjern 1.5× indsatsen fra puljen!"},
+    {name:"USP-S | Cortex",e:"🎁",cls:"purple",kind:"giveSips",amount:3,mult:-1,weight:0.5,desc:"Giv 3 tårer ud + fjern hele indsatsen!"},
+    {name:"Glock-18 | Bullet Queen",e:"🟣",cls:"purple",kind:"delta",mult:-2,weight:0.5,desc:"Fjern 2× indsatsen fra puljen!"},
+    {name:"AK-47 | Frontside Misty",e:"🎁",cls:"purple",kind:"giveSips",amount:4,mult:-1.5,weight:0.5,desc:"Giv 4 tårer ud + fjern 1.5× indsats!"},
+    {name:"SSG 08 | Dragonfire",e:"🔮",cls:"purple",kind:"delta",mult:-1.75,weight:0.5,desc:"Fjern 1.75× indsatsen fra puljen!"},
+    {name:"P90 | Asiimov",e:"🎁",cls:"purple",kind:"giveSips",amount:3,mult:-1.5,weight:0.5,desc:"Giv 3 tårer ud + fjern 1.5× indsats!"},
+    {name:"CZ75-Auto | Xiangliu",e:"🟣",cls:"purple",kind:"delta",mult:-2,weight:0.5,desc:"Fjern 2× indsatsen fra puljen!"},
+    {name:"AK-47 | Redline",e:"🟣",cls:"purple",kind:"delta",mult:-2,weight:0.5,desc:"Fjern 2× indsatsen fra puljen!"},
+    {name:"AWP | Mortis",e:"🟣",cls:"purple",kind:"delta",mult:-1.75,weight:0.5,desc:"Fjern 1.75× indsatsen fra puljen!"},
+    {name:"M4A4 | Neo-Noir",e:"🟣",cls:"purple",kind:"delta",mult:-2,weight:0.5,desc:"Fjern 2× indsatsen fra puljen!"},
+    {name:"USP-S | Neo-Noir",e:"🎁",cls:"purple",kind:"giveSips",amount:4,mult:-1,weight:0.5,desc:"Giv 4 tårer ud + fjern hele indsatsen!"},
+    {name:"Desert Eagle | Kumicho Dragon",e:"🟣",cls:"purple",kind:"delta",mult:-1.75,weight:0.5,desc:"Fjern 1.75× indsatsen fra puljen!"},
+    {name:"Glock-18 | Vogue",e:"🟣",cls:"purple",kind:"delta",mult:-1.5,weight:0.5,desc:"Fjern 1.5× indsatsen fra puljen!"},
+    {name:"M4A1-S | Hyper Beast",e:"🎁",cls:"purple",kind:"giveSips",amount:4,mult:-1.5,weight:0.5,desc:"Giv 4 tårer ud + fjern 1.5× indsats!"},
+    {name:"Galil AR | Chatterbox",e:"🎁",cls:"purple",kind:"giveSips",amount:4,mult:-1,weight:0.5,desc:"Giv 4 tårer ud + fjern hele indsatsen!"},
+    {name:"SSG 08 | Blood in the Water",e:"🟣",cls:"purple",kind:"delta",mult:-2,weight:0.5,desc:"Fjern 2× indsatsen fra puljen!"},
+    {name:"P90 | Death by Kitty",e:"🐱",cls:"purple",kind:"giveSips",amount:4,mult:-1.5,weight:0.5,desc:"Giv 4 killinge-tårer ud + 1.5× save!"},
+    {name:"Five-SeveN | Hyper Beast",e:"🟣",cls:"purple",kind:"delta",mult:-1.75,weight:0.5,desc:"Fjern 1.75× indsatsen fra puljen!"},
+    {name:"MP9 | Hydra",e:"🟣",cls:"purple",kind:"delta",mult:-1.5,weight:0.5,desc:"Fjern 1.5× indsatsen fra puljen!"},
+    {name:"MAC-10 | Stalker",e:"🎁",cls:"purple",kind:"giveSips",amount:3,mult:-1.5,weight:0.5,desc:"Giv 3 tårer ud + 1.5× save!"},
+    {name:"AWP | Hyper Beast",e:"🟣",cls:"purple",kind:"delta",mult:-2,weight:0.5,desc:"Fjern 2× indsatsen fra puljen!"},
+    {name:"M4A4 | Desolate Space",e:"🟣",cls:"purple",kind:"delta",mult:-1.75,weight:0.5,desc:"Fjern 1.75× indsatsen fra puljen!"},
+    {name:"Desert Eagle | Code Red",e:"🎁",cls:"purple",kind:"giveSips",amount:5,mult:-1,weight:0.5,desc:"Giv 5 tårer ud + fjern hele indsatsen!"},
 
     // ══════════════════════════════════════════════════════
-    // COVERT / PINK (Pink / Rød) · 2.5% samlet (20 skins)
+    // COVERT / PINK (Pink / Rød) · 6.0% samlet (20 skins · 0.30% hver)
     // Meget sjældne prestigefyldte skins! Kæmpe saves, halvering og SHOT uddelinger!
     // ══════════════════════════════════════════════════════
-    {name:"AK-47 | Vulcan",e:"💖",cls:"pink",kind:"delta",mult:-3.5,weight:0.125,desc:"Mega Save! Fjern 3.5× indsatsen!"},
-    {name:"M4A4 | The Emperor",e:"👑",cls:"pink",kind:"delta",mult:-4,weight:0.125,desc:"Mega Save! Fjern 4× indsatsen!"},
-    {name:"AWP | Asiimov",e:"🎁",cls:"pink",kind:"giveSips",amount:6,mult:-2.5,weight:0.125,desc:"Giv 6 slurke ud + fjern 2.5× indsats!"},
-    {name:"Desert Eagle | Printstream",e:"🥃",cls:"pink",kind:"giveShot",mult:-2,weight:0.125,desc:"UDDEL 1 SHOT til en modstander + 2× save!"},
-    {name:"USP-S | Kill Confirmed",e:"💀",cls:"pink",kind:"halve",weight:0.125,desc:"HALVER PULJEN! Fjern 50% af hele din pulje!"},
-    {name:"AK-47 | The Empress",e:"👑",cls:"pink",kind:"delta",mult:-4,weight:0.125,desc:"Mega Save! Fjern 4× indsatsen!"},
-    {name:"M4A1-S | Player Two",e:"🌟",cls:"pink",kind:"giveSips",amount:5,mult:-3,weight:0.125,desc:"Giv 5 slurke ud + fjern 3× indsats!"},
-    {name:"AK-47 | Bloodsport",e:"🥃",cls:"pink",kind:"giveShot",mult:-3,weight:0.125,desc:"UDDEL 1 SHOT til en modstander + 3× save!"},
-    {name:"AWP | Lightning Strike",e:"⚡",cls:"pink",kind:"delta",mult:-4,weight:0.125,desc:"Lynnedslag! Fjern 4× indsatsen!"},
-    {name:"AWP | Wildfire",e:"🔥",cls:"pink",kind:"giveShot",mult:-2.5,weight:0.125,desc:"UDDEL 1 SHOT til en modstander + 2.5× save!"},
-    {name:"AWP | Fade",e:"💖",cls:"pink",kind:"delta",mult:-4.5,weight:0.125,desc:"Fade Jackpot! Fjern 4.5× indsatsen!"},
-    {name:"AK-47 | Fire Serpent",e:"🐉",cls:"pink",kind:"halve",weight:0.125,desc:"DRAGE KRAFT! Fjern 50% af hele din pulje!"},
-    {name:"AK-47 | Gold Arabesque",e:"👑",cls:"pink",kind:"delta",mult:-4,weight:0.125,desc:"Guld Salg! Fjern 4× indsatsen!"},
-    {name:"AK-47 | Fuel Injector",e:"🎁",cls:"pink",kind:"giveSips",amount:6,mult:-3,weight:0.125,desc:"Giv 6 slurke ud + fjern 3× indsats!"},
-    {name:"AK-47 | Case Hardened (Blue Gem)",e:"💎",cls:"pink",kind:"halve",weight:0.125,desc:"BLUE GEM TIER 1! Fjern 50% af hele din pulje!"},
-    {name:"M4A4 | Howl (Contraband)",e:"🐺",cls:"pink",kind:"giveShot",mult:-3.5,weight:0.125,desc:"CONTRABAND HOWL! Uddel 1 SHOT + 3.5× save!"},
-    {name:"M4A4 | In Living Color",e:"🎨",cls:"pink",kind:"giveSips",amount:5,mult:-3,weight:0.125,desc:"Giv 5 slurke ud + fjern 3× indsats!"},
-    {name:"M4A1-S | Printstream",e:"🌟",cls:"pink",kind:"delta",mult:-4,weight:0.125,desc:"Perlemor Save! Fjern 4× indsatsen!"},
-    {name:"USP-S | Printstream",e:"🥃",cls:"pink",kind:"giveShot",mult:-2.5,weight:0.125,desc:"UDDEL 1 SHOT til en modstander + 2.5× save!"},
-    {name:"Glock-18 | Gamma Doppler",e:"💚",cls:"pink",kind:"delta",mult:-3.5,weight:0.125,desc:"Gamma Emerald Save! Fjern 3.5× indsatsen!"},
+    {name:"AK-47 | Vulcan",e:"💖",cls:"pink",kind:"delta",mult:-3.5,weight:0.3,desc:"Mega Save! Fjern 3.5× indsatsen!"},
+    {name:"M4A4 | The Emperor",e:"👑",cls:"pink",kind:"delta",mult:-4,weight:0.3,desc:"Mega Save! Fjern 4× indsatsen!"},
+    {name:"AWP | Asiimov",e:"🎁",cls:"pink",kind:"giveSips",amount:6,mult:-2.5,weight:0.3,desc:"Giv 6 tårer ud + fjern 2.5× indsats!"},
+    {name:"Desert Eagle | Printstream",e:"🥃",cls:"pink",kind:"giveShot",mult:-2,weight:0.3,desc:"UDDEL 1 SHOT til en modstander + 2× save!"},
+    {name:"USP-S | Kill Confirmed",e:"💀",cls:"pink",kind:"halve",weight:0.3,desc:"HALVER PULJEN! Fjern 50% af hele din pulje!"},
+    {name:"AK-47 | The Empress",e:"👑",cls:"pink",kind:"delta",mult:-4,weight:0.3,desc:"Mega Save! Fjern 4× indsatsen!"},
+    {name:"M4A1-S | Player Two",e:"🌟",cls:"pink",kind:"giveSips",amount:5,mult:-3,weight:0.3,desc:"Giv 5 tårer ud + fjern 3× indsats!"},
+    {name:"AK-47 | Bloodsport",e:"🥃",cls:"pink",kind:"giveShot",mult:-3,weight:0.3,desc:"UDDEL 1 SHOT til en modstander + 3× save!"},
+    {name:"AWP | Lightning Strike",e:"⚡",cls:"pink",kind:"delta",mult:-4,weight:0.3,desc:"Lynnedslag! Fjern 4× indsatsen!"},
+    {name:"AWP | Wildfire",e:"🔥",cls:"pink",kind:"giveShot",mult:-2.5,weight:0.3,desc:"UDDEL 1 SHOT til en modstander + 2.5× save!"},
+    {name:"AWP | Fade",e:"💖",cls:"pink",kind:"delta",mult:-4.5,weight:0.3,desc:"Fade Jackpot! Fjern 4.5× indsatsen!"},
+    {name:"AK-47 | Fire Serpent",e:"🐉",cls:"pink",kind:"halve",weight:0.3,desc:"DRAGE KRAFT! Fjern 50% af hele din pulje!"},
+    {name:"AK-47 | Gold Arabesque",e:"👑",cls:"pink",kind:"delta",mult:-4,weight:0.3,desc:"Guld Salg! Fjern 4× indsatsen!"},
+    {name:"AK-47 | Fuel Injector",e:"🎁",cls:"pink",kind:"giveSips",amount:6,mult:-3,weight:0.3,desc:"Giv 6 tårer ud + fjern 3× indsats!"},
+    {name:"AK-47 | Case Hardened (Blue Gem)",e:"💎",cls:"pink",kind:"halve",weight:0.3,desc:"BLUE GEM TIER 1! Fjern 50% af hele din pulje!"},
+    {name:"M4A4 | Howl (Contraband)",e:"🐺",cls:"pink",kind:"giveShot",mult:-3.5,weight:0.3,desc:"CONTRABAND HOWL! Uddel 1 SHOT + 3.5× save!"},
+    {name:"M4A4 | In Living Color",e:"🎨",cls:"pink",kind:"giveSips",amount:5,mult:-3,weight:0.3,desc:"Giv 5 tårer ud + fjern 3× indsats!"},
+    {name:"M4A1-S | Printstream",e:"🌟",cls:"pink",kind:"delta",mult:-4,weight:0.3,desc:"Perlemor Save! Fjern 4× indsatsen!"},
+    {name:"USP-S | Printstream",e:"🥃",cls:"pink",kind:"giveShot",mult:-2.5,weight:0.3,desc:"UDDEL 1 SHOT til en modstander + 2.5× save!"},
+    {name:"Glock-18 | Gamma Doppler",e:"💚",cls:"pink",kind:"delta",mult:-3.5,weight:0.3,desc:"Gamma Emerald Save! Fjern 3.5× indsatsen!"},
 
     // ══════════════════════════════════════════════════════
-    // SPECIAL RARE ★ / GOLD (Guld - Knive & Handsker) · 1.0% samlet (20 skins)
+    // SPECIAL RARE ★ / GOLD (Guld - Knive & Handsker) · 3.0% samlet (20 skins · 0.15% hver)
     // Det legendariske drop! ALLE knive clearer hele puljen til 0!
     // ══════════════════════════════════════════════════════
-    {name:"★ Karambit | Fade",e:"🔪",cls:"gold",kind:"clear",bonusShot:1,weight:0.05,desc:"CLEAR HELE PULJEN + Uddel 1 SHOT til en modstander!"},
-    {name:"★ Butterfly Knife | Doppler",e:"🔪",cls:"gold",kind:"clear",weight:0.05,desc:"CLEAR HELE PULJEN TIL 0! Direkte sejr!"},
-    {name:"★ M9 Bayonet | Lore",e:"🔪",cls:"gold",kind:"clear",bonusGive:6,weight:0.05,desc:"CLEAR HELE PULJEN + Giv 6 slurke ud!"},
-    {name:"★ Sport Gloves | Vice",e:"🧤",cls:"gold",kind:"clear",bonusAll:3,weight:0.05,desc:"CLEAR PULJEN + Alle andre drikker 3 slurke!"},
-    {name:"★ Skeleton Knife | Crimson Web",e:"🔪",cls:"gold",kind:"clear",bonusGive:5,weight:0.05,desc:"CLEAR HELE PULJEN + Giv 5 slurke ud!"},
-    {name:"★ AWP | Dragon Lore (Souvenir)",e:"🏆",cls:"gold",kind:"clear",bonusShot:2,weight:0.05,desc:"CLEAR PULJEN + Uddel 2 SHOTS til modstanderne!"},
-    {name:"★ Karambit | Blue Gem #387",e:"💎",cls:"gold",kind:"clear",bonusShot:1,bonusGive:4,weight:0.05,desc:"LEGENDARISK BLUE GEM! CLEAR PULJEN + 1 shot + 4 slurke ud!"},
-    {name:"★ Butterfly Knife | Gamma Doppler Emerald",e:"💚",cls:"gold",kind:"clear",bonusAll:3,weight:0.05,desc:"EMERALD SEJR! CLEAR PULJEN + Alle andre tager 3 slurke!"},
-    {name:"★ Butterfly Knife | Marble Fade",e:"🔪",cls:"gold",kind:"clear",bonusGive:7,weight:0.05,desc:"CLEAR HELE PULJEN + Giv 7 slurke ud!"},
-    {name:"★ M9 Bayonet | Slaughter",e:"🔪",cls:"gold",kind:"clear",bonusShot:1,weight:0.05,desc:"CLEAR HELE PULJEN + Uddel 1 SHOT til en modstander!"},
-    {name:"★ Bayonet | Tiger Tooth",e:"🐯",cls:"gold",kind:"clear",bonusGive:6,weight:0.05,desc:"TIGER STRIKE! CLEAR PULJEN + Giv 6 slurke ud!"},
-    {name:"★ Talon Knife | Doppler Ruby",e:"🩸",cls:"gold",kind:"clear",bonusShot:2,weight:0.05,desc:"RUBY JACKPOT! CLEAR PULJEN + Uddel 2 SHOTS til modstanderne!"},
-    {name:"★ Skeleton Knife | Fade",e:"🔪",cls:"gold",kind:"clear",bonusAll:2,weight:0.05,desc:"CLEAR HELE PULJEN + Alle andre drikker 2 slurke!"},
-    {name:"★ Nomad Knife | Case Hardened",e:"🔪",cls:"gold",kind:"clear",bonusGive:5,weight:0.05,desc:"CLEAR HELE PULJEN + Giv 5 slurke ud!"},
-    {name:"★ Stiletto Knife | Doppler",e:"🔪",cls:"gold",kind:"clear",bonusShot:1,weight:0.05,desc:"STILETTO CHOP! CLEAR PULJEN + Uddel 1 SHOT!"},
-    {name:"★ Sport Gloves | Pandora's Box",e:"🧤",cls:"gold",kind:"clear",bonusShot:1,bonusAll:2,weight:0.05,desc:"PANDORA'S BOX! CLEAR PULJEN + 1 shot ud + alle drikker 2!"},
-    {name:"★ Moto Gloves | Spearmint",e:"🧤",cls:"gold",kind:"clear",bonusGive:6,weight:0.05,desc:"MINT SEJR! CLEAR PULJEN + Giv 6 slurke ud!"},
-    {name:"★ Specialist Gloves | Crimson Kimono",e:"🧤",cls:"gold",kind:"clear",bonusAll:3,weight:0.05,desc:"KIMONO SEJR! CLEAR PULJEN + Alle andre drikker 3 slurke!"},
-    {name:"★ AWP | Gungnir",e:"⚡",cls:"gold",kind:"clear",bonusShot:2,weight:0.05,desc:"ODINS SPYD! CLEAR PULJEN + Uddel 2 SHOTS til modstanderne!"},
-    {name:"★ AWP | Medusa",e:"🐍",cls:"gold",kind:"clear",bonusShot:1,bonusGive:5,weight:0.05,desc:"MEDUSAS BLIK! CLEAR PULJEN + 1 shot ud + 5 slurke ud!"}
+    {name:"★ Karambit | Fade",e:"🔪",cls:"gold",kind:"clear",bonusShot:1,weight:0.15,desc:"CLEAR HELE PULJEN + Uddel 1 SHOT til en modstander!"},
+    {name:"★ Butterfly Knife | Doppler",e:"🔪",cls:"gold",kind:"clear",weight:0.15,desc:"CLEAR HELE PULJEN TIL 0! Direkte sejr!"},
+    {name:"★ M9 Bayonet | Lore",e:"🔪",cls:"gold",kind:"clear",bonusGive:6,weight:0.15,desc:"CLEAR HELE PULJEN + Giv 6 tårer ud!"},
+    {name:"★ Sport Gloves | Vice",e:"🧤",cls:"gold",kind:"clear",bonusGive:8,weight:0.15,desc:"CLEAR HELE PULJEN + Giv 8 tårer ud!"},
+    {name:"★ Skeleton Knife | Crimson Web",e:"🔪",cls:"gold",kind:"clear",bonusGive:5,weight:0.15,desc:"CLEAR HELE PULJEN + Giv 5 tårer ud!"},
+    {name:"★ AWP | Dragon Lore (Souvenir)",e:"🏆",cls:"gold",kind:"clear",bonusShot:2,weight:0.15,desc:"CLEAR PULJEN + Uddel 2 SHOTS til modstanderne!"},
+    {name:"★ Karambit | Blue Gem #387",e:"💎",cls:"gold",kind:"clear",bonusShot:1,bonusGive:4,weight:0.15,desc:"LEGENDARISK BLUE GEM! CLEAR PULJEN + 1 shot + 4 tårer ud!"},
+    {name:"★ Butterfly Knife | Gamma Doppler Emerald",e:"💚",cls:"gold",kind:"clear",bonusShot:1,bonusGive:6,weight:0.15,desc:"EMERALD JACKPOT! CLEAR PULJEN + 1 shot ud + 6 tårer ud!"},
+    {name:"★ Butterfly Knife | Marble Fade",e:"🔪",cls:"gold",kind:"clear",bonusGive:7,weight:0.15,desc:"CLEAR HELE PULJEN + Giv 7 tårer ud!"},
+    {name:"★ M9 Bayonet | Slaughter",e:"🔪",cls:"gold",kind:"clear",bonusShot:1,weight:0.15,desc:"CLEAR HELE PULJEN + Uddel 1 SHOT til en modstander!"},
+    {name:"★ Bayonet | Tiger Tooth",e:"🐯",cls:"gold",kind:"clear",bonusGive:6,weight:0.15,desc:"TIGER STRIKE! CLEAR PULJEN + Giv 6 tårer ud!"},
+    {name:"★ Talon Knife | Doppler Ruby",e:"🩸",cls:"gold",kind:"clear",bonusShot:2,weight:0.15,desc:"RUBY JACKPOT! CLEAR PULJEN + Uddel 2 SHOTS til modstanderne!"},
+    {name:"★ Skeleton Knife | Fade",e:"🔪",cls:"gold",kind:"clear",bonusGive:6,weight:0.15,desc:"CLEAR HELE PULJEN + Giv 6 tårer ud!"},
+    {name:"★ Nomad Knife | Case Hardened",e:"🔪",cls:"gold",kind:"clear",bonusGive:5,weight:0.15,desc:"CLEAR HELE PULJEN + Giv 5 tårer ud!"},
+    {name:"★ Stiletto Knife | Doppler",e:"🔪",cls:"gold",kind:"clear",bonusShot:1,weight:0.15,desc:"STILETTO CHOP! CLEAR PULJEN + Uddel 1 SHOT!"},
+    {name:"★ Sport Gloves | Pandora's Box",e:"🧤",cls:"gold",kind:"clear",bonusShot:2,bonusGive:4,weight:0.15,desc:"PANDORA'S BOX! CLEAR PULJEN + Uddel 2 shots + 4 tårer ud!"},
+    {name:"★ Moto Gloves | Spearmint",e:"🧤",cls:"gold",kind:"clear",bonusGive:6,weight:0.15,desc:"MINT SEJR! CLEAR PULJEN + Giv 6 tårer ud!"},
+    {name:"★ Specialist Gloves | Crimson Kimono",e:"🧤",cls:"gold",kind:"clear",bonusGive:8,weight:0.15,desc:"KIMONO SEJR! CLEAR PULJEN + Giv 8 tårer ud!"},
+    {name:"★ AWP | Gungnir",e:"⚡",cls:"gold",kind:"clear",bonusShot:2,weight:0.15,desc:"ODINS SPYD! CLEAR PULJEN + Uddel 2 SHOTS til modstanderne!"},
+    {name:"★ AWP | Medusa",e:"🐍",cls:"gold",kind:"clear",bonusShot:1,bonusGive:5,weight:0.15,desc:"MEDUSAS BLIK! CLEAR PULJEN + 1 shot ud + 5 tårer ud!"}
   ];
 
   function loot(){
@@ -2238,7 +2480,7 @@ button{cursor:pointer}
   }
   function lootChancePercent(x){
     const total=lootTable.reduce((s,item)=>s+item.weight,0);
-    return ((x.weight/total)*100).toFixed(1);
+    return ((x.weight/total)*100).toFixed(2);
   }
 
   function lootHtml(x){
@@ -2256,13 +2498,28 @@ button{cursor:pointer}
 
   function renderCase(a){
     a.innerHTML=`
-      ${titleBlock("📦 CS:GO Case Opening","Over 135 forskellige ikoniske skins og drops fordelt på 5 tiers! Træk alt fra P250 Sand Dune og straf-slurke til Covert AWP Asiimov, shot-uddelinger og ★ Guld Knive!")}
-      <div class="case-box">
-        <div class="case-pointer"></div>
-        <div class="case-track" id="caseTrack">${Array.from({length:20},()=>lootHtml(loot())).join("")}</div>
+      ${titleBlock("📦 CS:GO Case Opening","138 ikoniske CS:GO skins fordelt på 5 tiers med 3.0% kniv-chance! Åbn kassen, se lågen flyve op og rul efter saves, tåre-uddelinger, shots og ★ Guld knive!")}
+      <div class="cs-crate-container" id="csCrateContainer">
+        <div class="cs-crate-lid" id="csCrateLid">
+          <div class="cs-crate-lid-front">
+            <div class="cs-crate-stripes"></div>
+            <div class="cs-crate-title-plate">
+              <span class="cs-crate-series-badge">CS:GO WEAPON CRATE #1</span>
+              <div class="cs-crate-status" id="csCrateStatus">
+                <span class="cs-lock-icon" id="csLockIcon">🔒</span>
+                <span id="csLockText">KLAR TIL ÅBNING</span>
+              </div>
+            </div>
+            <div class="cs-crate-stripes"></div>
+          </div>
+        </div>
+        <div class="case-box cs-crate-body" id="csCrateBody">
+          <div class="cs-crate-glow-burst" id="csGlowBurst"></div>
+          <div class="case-pointer"></div>
+          <div class="case-track" id="caseTrack">${Array.from({length:20},()=>lootHtml(loot())).join("")}</div>
+        </div>
       </div>
       <button class="big-button" id="caseBtn">ÅBN CASE</button>
-      <div class="case-reveal" id="caseReveal"></div>
       <div id="gameResult"></div>`;
     $("#caseBtn").onclick=openCase;
   }
@@ -2271,6 +2528,38 @@ button{cursor:pointer}
     if(busy||balance<=0)return;
     const w=getWager();
     setBusy(true);
+
+    const container=$("#csCrateContainer");
+    const lockIcon=$("#csLockIcon");
+    const lockText=$("#csLockText");
+
+    // Fase 1: Unlock animation (Case ryster, nøgle drejes i låsen)
+    if(container){
+      container.classList.add("unlocking");
+      if(lockText) lockText.textContent="LÅSER OP...";
+    }
+    beep(480,.04,.02);
+    vibrate(30);
+    await sleep(350);
+
+    // Lås klikker op!
+    if(lockIcon) lockIcon.textContent="🔓";
+    if(lockText) lockText.textContent="UNLOCKED!";
+    beep(880,.06,.02);
+    await sleep(70);
+    beep(1150,.07,.025);
+    vibrate([30,25,40]);
+    await sleep(180);
+
+    // Fase 2: Låget åbner i 3D perspektiv med lys-eksplosion!
+    if(container){
+      container.classList.remove("unlocking");
+      container.classList.add("open");
+    }
+    beep(420,.12,.03);
+    await sleep(400);
+
+    // Klargør roulette-track og vælg vinder
     const win=loot();
     const items=Array.from({length:62},()=>loot());
     const target=46;items[target]=win;
@@ -2288,7 +2577,7 @@ button{cursor:pointer}
     const landingOffset=(Math.random()*2-1)*maxLandingOffset;
     const end=box.clientWidth/2-targetCenter+landingOffset;
 
-    // Spændingsfyldt, autentisk CS:GO rullekurve: 7 sekunder med konstant, jævn opbremsning
+    // Fase 3: Spændingsfyldt, autentisk CS:GO rullekurve: 7 sekunder med konstant opbremsning
     const spinDuration=7000;
     track.style.transition=`transform ${spinDuration/1000}s cubic-bezier(.08,.35,.50,1)`;
     track.style.transform=`translateX(${end}px)`;
@@ -2305,91 +2594,81 @@ button{cursor:pointer}
       await sleep(interval);
     }
 
-    // Afvent de sidste få millisekunder indtil hjulet lander præcist
+    // Afvent de sidste millisekunder indtil hjulet lander præcist
     const remaining=spinDuration - (performance.now() - startTime);
     if(remaining > 0) await sleep(remaining);
 
-    // Marker vinderen med det samme uden nogen ventepause
+    // Fase 4: Vinderen markeres på tracket
     const cards=[...track.children];
     if(cards[target]) cards[target].classList.add("winner");
-    beep(win.cls==="gold"?990:win.cls==="pink"?840:740, .18, .045);
-    if(win.cls==="gold"||win.cls==="pink") confetti();
 
-    const reveal=$("#caseReveal");
-    const meta=rarityMeta[win.cls] || {label:win.cls, quality:""};
-    reveal.innerHTML=`<div class="case-reveal-card" style="--rar:${meta.color}">
-      <div style="font-size:48px">${win.e}</div>
-      <div class="tier-line" style="color:${meta.color};font-weight:1000;letter-spacing:1px">${meta.label} · ${meta.quality}</div>
-      <div style="font-weight:1000;font-size:22px;margin-top:6px">${win.name}</div>
-      <div class="quality-line" style="margin-top:4px;font-size:13px;color:#dce5ef">${win.desc}</div>
-      <div class="chance-line" style="margin-top:8px;font-size:11px;color:var(--muted)">Sandsynlighed for dette drop: ${lootChancePercent(win)}%</div>
-    </div>`;
-    reveal.classList.add("show");
+    if(win.cls==="gold"){
+      beep(990, .25, .05);
+      await sleep(80);
+      beep(1320, .35, .05);
+      confetti();
+    }else if(win.cls==="pink"){
+      beep(840, .2, .04);
+      await sleep(80);
+      beep(1050, .25, .04);
+      confetti();
+    }else if(win.cls==="purple"){
+      beep(740, .18, .04);
+    }else{
+      beep(580, .15, .03);
+    }
+
+    // Lille pause så spilleren ser hjulet hvile under viseren
+    await sleep(350);
+
+    // Fase 5: Beregn gevinst / konsekvens og vis Case Reveal Modal
+    handleCaseOutcome(win, w);
+  }
+
+  function handleCaseOutcome(win, w){
+    const meta=rarityMeta[win.cls] || {label:win.cls, quality:"", color:"#ffc857", chance:""};
+    let actionTitle="";
+    let actionDesc="";
+    let extraRule="";
+    let actual=0;
 
     if(win.kind==="clear"){
-      const actual=updateBalance(-balance,`Case: ${win.name}. Hele puljen blev clearet.`,"auto",800);
-      let bonusText="";
-      if(win.bonusGive) bonusText=` Samtidig giver du ${win.bonusGive} slurke ud til de andre!`;
-      if(win.bonusAll) bonusText=` Samtidig skal alle andre drikke ${win.bonusAll} slurke!`;
-      if(win.bonusShot) bonusText=` Samtidig skal du uddele ${win.bonusShot} ${win.bonusShot>1?"shots":"shot"} til modstanderne!`;
-      showResult(`🔥 ${win.name.toUpperCase()} · ${meta.label}`,
-        `HELE PULJEN BLEV CLEARET! ${Math.abs(actual)} point forsvandt.${bonusText}`,
-        "good");
+      // zeroDelay=null forhindrer zeroOverlay i at afbryde Case Reveal Modalen for tidligt
+      actual=updateBalance(-balance,`Case: ${win.name}. Hele puljen clearet!`,"auto",null);
+      actionTitle="🏆 HELE PULJEN ER CLEARET TIL 0!";
+      actionDesc=`Du har vundet runden! ${Math.abs(actual)} point forsvandt fra puljen.`;
+      if(win.bonusShot && win.bonusGive){
+        extraRule=`🎉 Samtidig skal du uddele ${win.bonusShot} ${win.bonusShot>1?"shots":"shot"} OG give ${win.bonusGive} tårer ud!`;
+      }else if(win.bonusShot){
+        extraRule=`🎉 Samtidig skal du uddele ${win.bonusShot} ${win.bonusShot>1?"shots":"shot"} til modstanderne!`;
+      }else if(win.bonusGive){
+        extraRule=`🎉 Samtidig giver du ${win.bonusGive} tårer ud til de andre!`;
+      }
       confetti();
     }else if(win.kind==="halve"){
       const half=Math.max(1,Math.round(balance/2));
-      const actual=updateBalance(-half,`Case: ${win.name}. Puljen halveret!`,"auto",800);
-      showResult(`💀 PULJEN HALVERET · ${win.name}`,
-        `Halvdelen af din pulje forsvandt! ${Math.abs(actual)} point blev fjernet.`,
-        "good");
+      actual=updateBalance(-half,`Case: ${win.name}. Puljen halveret!`,"auto",null);
+      actionTitle="💀 HALVERING AF PULJEN!";
+      actionDesc=`Halvdelen af din pulje forsvandt! ${Math.abs(actual)} point blev fjernet.`;
       confetti();
     }else if(win.kind==="giveShot"){
       const amount=Math.max(1,Math.round(w*Math.abs(win.mult||1)));
-      const actual=updateBalance(-amount,`Case: ${win.name}. Uddel shot.`,"auto",800);
-      showResult(`🥃 UDDEL SHOT · ${win.name}`,
-        `Uddel 1 SHOT til en modstander! Samtidig forsvandt ${Math.abs(actual)} point fra din egen pulje.`,
-        "good");
+      actual=updateBalance(-amount,`Case: ${win.name}. Uddel shot.`,"auto",null);
+      actionTitle="🥃 UDDEL SHOT!";
+      actionDesc=`Uddel 1 SHOT til en modstander! Samtidig forsvandt ${Math.abs(actual)} point fra din pulje.`;
       confetti();
     }else if(win.kind==="giveSips"){
       let delta=0;
       if(win.mult) delta=-Math.max(1,Math.round(w*Math.abs(win.mult)));
-      const actual=delta!==0?updateBalance(delta,`Case: ${win.name}.`,"auto",800):0;
-      showResult(`🍻 GIV SLURKE UD · ${win.name}`,
-        `Giv ${win.amount} slurke ud til modstanderne!${actual<0?` Samtidig forsvandt ${Math.abs(actual)} point fra din pulje.`:""}`,
-        "good");
-    }else if(win.kind==="cheers"){
-      const amount=Math.max(1,Math.round(w*Math.abs(win.mult||1)));
-      const actual=updateBalance(-amount,`Case: ${win.name}. Fællesskål.`,"auto",800);
-      showResult(`🥂 FÆLLESSKÅL · ${win.name}`,
-        `Alle ved bordet skåler og tager 1 slurk! Samtidig forsvandt ${Math.abs(actual)} point fra din pulje.`,
-        "good");
-    }else if(win.kind==="rule"){
-      const amount=Math.max(1,Math.round(w*Math.abs(win.mult||1)));
-      const actual=updateBalance(-amount,`Case: ${win.name}. Lav en regel.`,"auto",800);
-      showResult(`📜 LAV EN REGEL · ${win.name}`,
-        `Lav 1 ny regel for bordet gældende resten af spillet! Samtidig forsvandt ${Math.abs(actual)} point fra din pulje.`,
-        "good");
-      confetti();
-    }else if(win.kind==="waterfall"){
-      const amount=Math.max(1,Math.round(w*Math.abs(win.mult||1)));
-      const actual=updateBalance(-amount,`Case: ${win.name}. Vandfald!`,"auto",800);
-      showResult(`🌊 VANDFALD · ${win.name}`,
-        `Vandfald starter med dig! Drik indtil du stopper, hvorefter næste må stoppe! Samtidig forsvandt ${Math.abs(actual)} point fra din pulje.`,
-        "good");
-      confetti();
-    }else if(win.kind==="duel"){
-      const amount=Math.max(1,Math.round(w*Math.abs(win.mult||1)));
-      const actual=updateBalance(-amount,`Case: ${win.name}. Duel!`,"auto",800);
-      showResult(`⚔️ DUEL · ${win.name}`,
-        `Udfordr en modstander i Sten-Saks-Papir! Taberen drikker ${win.amount||3} slurke! Samtidig forsvandt ${Math.abs(actual)} point fra din pulje.`,
-        "good");
+      actual=delta!==0?updateBalance(delta,`Case: ${win.name}.`,"auto",null):0;
+      actionTitle=`🍻 GIV ${win.amount} TÅRER UD!`;
+      actionDesc=`Uddel ${win.amount} tårer til modstanderne!${actual<0?` Samtidig forsvandt ${Math.abs(actual)} point fra din pulje.`:""}`;
     }else if(win.kind==="sips"){
       let delta=0;
       if(win.mult&&win.mult>0) delta=Math.max(1,Math.ceil(w*win.mult));
-      const actual=delta!==0?updateBalance(delta,`Case: ${win.name}.`,"bad",800):0;
-      showResult(`🍻 ${win.amount} SLURKE TIL DIG · ${win.name}`,
-        `Tag ${win.amount} ${win.amount>1?"slurke":"slurk"}!${actual>0?` Samtidig blev ${actual} point lagt til din pulje.`:""}`,
-        "bad");
+      actual=delta!==0?updateBalance(delta,`Case: ${win.name}.`,"bad",null):0;
+      actionTitle=`🍻 ${win.amount} TÅRER TIL DIG!`;
+      actionDesc=`Tag ${win.amount} ${win.amount>1?"tårer":"tåre"} selv!${actual>0?` Samtidig blev ${actual} point lagt til din pulje.`:""}`;
       vibrate([40,40,40]);
     }else{
       let delta;
@@ -2397,12 +2676,94 @@ button{cursor:pointer}
       else if(win.mult===0) delta=0;
       else delta=-Math.max(1,Math.round(w*Math.abs(win.mult)));
 
-      const actual=updateBalance(delta,`Case: ${win.name} (${meta.label}).`,"auto",800);
-      showResult(`${win.name} · ${meta.label}`,
-        actual<0?`${Math.abs(actual)} point forsvandt fra puljen!`:`${actual>0?actual+" point blev lagt oveni puljen.":"Ingen ændring i puljen (Dud)."}` ,
-        actual<0?"good":actual>0?"bad":"special");
+      actual=updateBalance(delta,`Case: ${win.name} (${meta.label}).`,"auto",null);
+      if(actual<0){
+        actionTitle=`🛡️ SAVE: ${Math.abs(actual)} POINT REDDET!`;
+        actionDesc=`${Math.abs(actual)} point blev fjernet fra din pulje!`;
+      }else if(actual>0){
+        actionTitle=`📈 STRAF: +${actual} POINT TIL PULJEN!`;
+        actionDesc=`${actual} point blev lagt oveni din pulje.`;
+      }else{
+        actionTitle=`➖ DUD: INGEN ÆNDRING`;
+        actionDesc=`Ingen point lagt til eller trukket fra.`;
+      }
     }
-    setBusy(false);
+
+    // Backup i gameResult under boksen så historikken altid kan ses
+    showResult(
+      `${win.name} · ${meta.label}`,
+      `${actionTitle}: ${actionDesc}${extraRule?" "+extraRule:""}`,
+      actual<0||win.kind==="clear"?"good":actual>0?"bad":"special"
+    );
+
+    // Åbn den fremhævede Case Reveal Modal
+    showCaseModal(win, meta, actionTitle, actionDesc, extraRule);
+  }
+
+  function showCaseModal(win, meta, actionTitle, actionDesc, extraRule){
+    const modal=$("#caseModal");
+    if(!modal) return;
+
+    const card=$("#caseModalCard");
+    if(card) card.style.setProperty("--rar", meta.color);
+
+    $("#caseModalBadge").textContent=`${meta.label} · ${meta.quality}`;
+    $("#caseModalIcon").textContent=win.e;
+    $("#caseModalName").textContent=win.name;
+    $("#caseModalTierSub").textContent=win.desc || meta.quality;
+    $("#caseModalActionTitle").textContent=actionTitle;
+    $("#caseModalActionDesc").textContent=actionDesc;
+
+    const extraEl=$("#caseModalExtraRule");
+    if(extraRule){
+      extraEl.textContent=extraRule;
+      extraEl.style.display="block";
+    }else{
+      extraEl.style.display="none";
+    }
+
+    $("#caseModalPoolVal").textContent=`${balance} tårer`;
+    $("#caseModalChanceVal").textContent=`${lootChancePercent(win)}% (Tier: ${meta.chance})`;
+
+    const btn=$("#caseModalCloseBtn");
+    if(balance===0){
+      btn.innerHTML="🏆 DU VANDT RUNDEN! SE VINDERSKÆRM";
+      btn.className="btn primary case-modal-btn";
+    }else if(debtBusted){
+      btn.innerHTML="💀 GÆLDSGRÆNSE NÅET · FORTSÆT TIL CASHOUT";
+      btn.className="btn bad case-modal-btn";
+    }else{
+      btn.innerHTML="FORTSÆT TIL NÆSTE CASE ➔";
+      btn.className="btn primary case-modal-btn";
+    }
+
+    modal.classList.add("show");
+  }
+
+  function dismissCaseModal(){
+    const modal=$("#caseModal");
+    if(modal) modal.classList.remove("show");
+
+    // Nulstil kassen til lukket/klar tilstand
+    const container=$("#csCrateContainer");
+    if(container){
+      container.classList.remove("open","unlocking");
+      const lockIcon=$("#csLockIcon");
+      const lockText=$("#csLockText");
+      if(lockIcon) lockIcon.textContent="🔒";
+      if(lockText) lockText.textContent="KLAR TIL ÅBNING";
+    }
+
+    if(balance===0){
+      $("#zeroOverlay").classList.add("show");
+      beep(780,.25,.05);
+    }else if(debtBusted){
+      $("#debtBustAmount").textContent=balance;
+      $("#debtOverlay").classList.add("show");
+      beep(145,.28,.055);
+    }else{
+      setBusy(false);
+    }
   }
 
 
