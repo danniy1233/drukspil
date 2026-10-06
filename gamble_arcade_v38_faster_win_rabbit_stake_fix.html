@@ -369,8 +369,11 @@ button{cursor:pointer}
 .play-card.face-down{transform:rotateY(180deg)}
 .play-card.flip{animation:cardFlip .65s ease forwards}
 .play-card.deal{animation:deal .55s cubic-bezier(.2,.8,.2,1)}
-@keyframes cardFlip{to{transform:rotateY(0)}}
-@keyframes deal{from{transform:translateY(-160px) rotate(18deg) scale(.6);opacity:0}to{transform:none;opacity:1}}
+@keyframes deal{
+  0%{opacity:0;transform:translateY(-36px) translateX(18px) rotate(6deg) scale(.9)}
+  70%{opacity:1;transform:translateY(2px) translateX(-1px) rotate(-1deg) scale(1.02)}
+  100%{opacity:1;transform:none}
+}
 
 /* SLOTS */
 .slot-machine{
@@ -683,7 +686,8 @@ button{cursor:pointer}
   width:76px;height:108px;border-radius:11px;background:#f6f7f9;color:#11151b;
   display:grid;place-items:center;font-size:27px;font-weight:1000;
   border:1px solid #d5dbe3;box-shadow:0 12px 25px rgba(0,0,0,.3);
-  animation:deal .42s cubic-bezier(.2,.8,.2,1)
+  animation:deal .36s cubic-bezier(.16,.82,.25,1);
+  will-change:transform,opacity
 }
 .mini-card.red{color:#c6293b}
 .mini-card.hidden-card{
@@ -716,15 +720,9 @@ button{cursor:pointer}
   transform:rotateY(180deg);background:#f6f7f9;color:#11151b
 }
 .bj-hole-front.red{color:#c6293b}
-.mini-card.bj-dealer-new{animation:bjDealerDeal .52s cubic-bezier(.16,.82,.25,1)}
 @keyframes bjHoleFlip{
   0%{transform:rotateY(0deg)}
   100%{transform:rotateY(180deg)}
-}
-@keyframes bjDealerDeal{
-  0%{opacity:0;transform:translateY(-24px) translateX(18px) rotate(7deg) scale(.88)}
-  68%{opacity:1;transform:translateY(3px) translateX(-2px) rotate(-1deg) scale(1.03)}
-  100%{opacity:1;transform:none}
 }
 .score-bubble{
   display:inline-block;margin:4px auto 8px;padding:5px 9px;border-radius:999px;
@@ -2815,6 +2813,12 @@ button{cursor:pointer}
     $("#bjDeal").onclick=blackjackDeal;
   }
 
+  function createCardElement(c, hidden=false){
+    const t=document.createElement("template");
+    t.innerHTML=cardHtml(c, hidden).trim();
+    return t.content.firstElementChild;
+  }
+
   function paintBlackjack(revealDealer=false){
     if(!bjState)return;
     $("#dealerHand").innerHTML=bjState.dealer.map((c,i)=>cardHtml(c,!revealDealer&&i===1)).join("");
@@ -2833,17 +2837,12 @@ button{cursor:pointer}
       return;
     }
 
-    // Ét sammenhængende flip. Begge sider af kortet findes allerede i DOM'en,
-    // så vi undgår den tidligere "ud + ind" dobbeltanimation.
-    hole.classList.remove("revealed");
-    void hole.offsetWidth;
     hole.classList.add("revealed");
     beep(470,.06,.02);
 
-    await sleep(300);
+    await sleep(350);
     $("#dealerScore").textContent=blackjackValue(bjState.dealer);
-
-    await sleep(300);
+    await sleep(250);
   }
 
   async function blackjackDealerDrawCard(){
@@ -2852,15 +2851,12 @@ button{cursor:pointer}
     bjState.dealer.push(card);
 
     const hand=$("#dealerHand");
-    const el=document.createElement("div");
-    el.className=`mini-card ${card.red?"red":""} bj-dealer-new`;
-    el.textContent=`${card.label}${card.suit}`;
+    const el=createCardElement(card);
     hand.appendChild(el);
 
     $("#dealerScore").textContent=blackjackValue(bjState.dealer);
-    beep(470,.055,.02);
-    await sleep(620);
-    el.classList.remove("bj-dealer-new");
+    beep(470,.05,.02);
+    await sleep(450);
   }
 
   async function blackjackDeal(){
@@ -2869,8 +2865,36 @@ button{cursor:pointer}
     setBusy(true);
     bjState={w,player:[casinoCard(),casinoCard()],dealer:[casinoCard(),casinoCard()],resolving:false};
     $("#bjDeal").style.display="none";
-    paintBlackjack(false);
-    beep(520,.05,.02);await sleep(160);beep(600,.05,.02);
+
+    const dHand=$("#dealerHand");
+    const pHand=$("#playerHand");
+    dHand.innerHTML="";
+    pHand.innerHTML="";
+    $("#dealerScore").textContent="?";
+    $("#playerScore").textContent="0";
+
+    // Deal 1: Spiller kort 1
+    pHand.appendChild(createCardElement(bjState.player[0]));
+    $("#playerScore").textContent=bjState.player[0].value;
+    beep(520,.04,.015);
+    await sleep(180);
+
+    // Deal 2: Dealer kort 1 (face up)
+    dHand.appendChild(createCardElement(bjState.dealer[0]));
+    $("#dealerScore").textContent=bjState.dealer[0].value;
+    beep(560,.04,.015);
+    await sleep(180);
+
+    // Deal 3: Spiller kort 2
+    pHand.appendChild(createCardElement(bjState.player[1]));
+    $("#playerScore").textContent=blackjackValue(bjState.player);
+    beep(600,.04,.015);
+    await sleep(180);
+
+    // Deal 4: Dealer kort 2 (face down hole card)
+    dHand.appendChild(createCardElement(bjState.dealer[1], true));
+    beep(640,.04,.015);
+    await sleep(220);
 
     const controls=$("#bjControls");
     controls.innerHTML=`<button class="btn primary" id="bjHit">HIT</button><button class="btn" id="bjStand">STAND</button>`;
@@ -2886,15 +2910,12 @@ button{cursor:pointer}
     bjState.player.push(card);
 
     const hand=$("#playerHand");
-    const el=document.createElement("div");
-    el.className=`mini-card ${card.red?"red":""} bj-dealer-new`;
-    el.textContent=`${card.label}${card.suit}`;
+    const el=createCardElement(card);
     hand.appendChild(el);
     $("#playerScore").textContent=blackjackValue(bjState.player);
 
-    beep(620,.06,.025);
-    await sleep(430);
-    el.classList.remove("bj-dealer-new");
+    beep(620,.05,.02);
+    await sleep(350);
 
     if(blackjackValue(bjState.player)>21){
       bjState.resolving=true;
