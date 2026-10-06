@@ -779,14 +779,143 @@ button{cursor:pointer}
   box-shadow:0 8px 24px rgba(0,0,0,.4);
   cursor:pointer;
 }
+
+/* UNIVERSAL GAME OUTCOME MODAL */
+.outcome-modal-card{
+  width:min(480px,94vw);
+  background:linear-gradient(180deg,#151e2b 0%,#0c1219 100%);
+  border:2px solid var(--outcome-color,#ffc857);
+  border-radius:24px;
+  padding:26px 20px 22px;
+  text-align:center;
+  position:relative;
+  overflow:hidden;
+  box-shadow:0 0 55px color-mix(in srgb, var(--outcome-color,#ffc857) 35%, transparent), 0 20px 45px rgba(0,0,0,.75);
+  animation:modalPop .42s cubic-bezier(.15,.85,.25,1.15) forwards;
+}
+.outcome-modal-halo{
+  position:absolute;top:-60px;left:50%;transform:translateX(-50%);
+  width:260px;height:260px;border-radius:50%;
+  background:radial-gradient(circle, var(--outcome-color,#ffc857) 0%, transparent 70%);
+  opacity:.25;filter:blur(30px);pointer-events:none;
+}
+.outcome-badge{
+  display:inline-block;
+  padding:5px 14px;
+  border-radius:999px;
+  background:color-mix(in srgb, var(--outcome-color,#ffc857) 18%, rgba(0,0,0,.6));
+  border:1px solid var(--outcome-color,#ffc857);
+  color:var(--outcome-color,#ffc857);
+  font-size:12px;
+  font-weight:1000;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  margin-bottom:10px;
+}
+.outcome-icon{
+  font-size:56px;
+  line-height:1;
+  margin:4px 0;
+  filter:drop-shadow(0 0 16px var(--outcome-color,#ffc857));
+}
+.outcome-title{
+  font-size:23px;
+  font-weight:1000;
+  letter-spacing:-.02em;
+  line-height:1.2;
+  color:#fff;
+  margin-bottom:3px;
+}
+.outcome-game-sub{
+  font-size:11.5px;
+  font-weight:800;
+  letter-spacing:.09em;
+  text-transform:uppercase;
+  color:var(--muted);
+  margin-bottom:15px;
+}
+.outcome-action-box{
+  background:rgba(0,0,0,.45);
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:16px;
+  padding:15px 14px;
+  margin-bottom:15px;
+  text-align:center;
+}
+.outcome-action-headline{
+  font-size:16px;
+  font-weight:1000;
+  letter-spacing:.02em;
+  margin-bottom:5px;
+}
+.outcome-action-desc{
+  font-size:13.5px;
+  color:#d5e0ee;
+  line-height:1.4;
+}
+.outcome-extra-rule{
+  margin-top:8px;
+  padding-top:8px;
+  border-top:1px dashed rgba(255,255,255,.15);
+  font-size:13px;
+  font-weight:900;
+  color:var(--gold);
+}
+.outcome-stats-row{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin-bottom:18px;
+}
+.outcome-stat{
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:12px;
+  padding:8px 10px;
+  text-align:center;
+}
+.outcome-stat-label{
+  display:block;
+  font-size:10.5px;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+  color:var(--muted);
+  margin-bottom:2px;
+}
+.outcome-stat-val{
+  font-size:15px;
+  font-weight:1000;
+  color:#fff;
+}
+.outcome-btn-group, .modal-btn-row{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+.outcome-modal-btn{
+  width:100%;
+  padding:14px;
+  font-size:15px;
+  font-weight:1000;
+  letter-spacing:.06em;
+  border-radius:14px;
+  cursor:pointer;
+  transition:transform .12s ease, filter .12s ease;
+}
+.outcome-modal-btn:hover{
+  transform:translateY(-1px);
+}
+.outcome-modal-btn:active{
+  transform:scale(.98);
+}
 @media (max-width: 480px){
   .cs-crate-stencil-col{display:none;}
   .cs-crate-title{font-size:16px;}
-  .case-modal-card{padding:20px 16px;}
-  .case-modal-name{font-size:20px;}
-  .case-modal-icon{font-size:50px;}
-  .case-modal-action-title{font-size:15px;}
-  .case-modal-action-desc{font-size:13px;}
+  .case-modal-card, .outcome-modal-card{padding:20px 16px;}
+  .case-modal-name, .outcome-title{font-size:20px;}
+  .case-modal-icon, .outcome-icon{font-size:50px;}
+  .case-modal-action-title, .outcome-action-headline{font-size:15px;}
+  .case-modal-action-desc, .outcome-action-desc{font-size:13px;}
 }
 
 /* DOUBLE */
@@ -1540,7 +1669,42 @@ button{cursor:pointer}
       </div>
     </div>
 
-    <button class="btn primary case-modal-btn" id="caseModalCloseBtn">FORTSÆT</button>
+    <div class="outcome-btn-group">
+      <button class="btn primary case-modal-btn" id="caseModalCloseBtn">FORTSÆT TIL NÆSTE CASE ➔</button>
+      <button class="btn ghost case-modal-btn" id="caseModalSwitchBtn">VÆLG ET ANDET SPIL 🎮</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="outcomeModal">
+  <div class="overlay-card outcome-modal-card" id="outcomeModalCard">
+    <div class="outcome-modal-halo" id="outcomeModalHalo"></div>
+    <div class="outcome-badge" id="outcomeBadge">🎉 VUNDET</div>
+    <div class="outcome-icon" id="outcomeIcon">🎰</div>
+    <div class="outcome-title" id="outcomeTitle">Tre Citroner!</div>
+    <div class="outcome-game-sub" id="outcomeGameSub">SLOTS MASKINE</div>
+
+    <div class="outcome-action-box" id="outcomeActionBox">
+      <div class="outcome-action-headline" id="outcomeHeadline">🛡️ -2 POINT REDDET</div>
+      <div class="outcome-action-desc" id="outcomeDesc">Du ramte 3 ens! 2 point blev fjernet fra puljen.</div>
+      <div class="outcome-extra-rule" id="outcomeExtraRule" style="display:none"></div>
+    </div>
+
+    <div class="outcome-stats-row">
+      <div class="outcome-stat">
+        <span class="outcome-stat-label">Pulje nu</span>
+        <strong class="outcome-stat-val" id="outcomePoolVal">2 tårer</strong>
+      </div>
+      <div class="outcome-stat">
+        <span class="outcome-stat-label">Ændring</span>
+        <strong class="outcome-stat-val" id="outcomeChangeVal">-2 tårer</strong>
+      </div>
+    </div>
+
+    <div class="outcome-btn-group">
+      <button class="btn primary outcome-modal-btn" id="outcomeMainBtn">SPIL IGEN ↺</button>
+      <button class="btn ghost outcome-modal-btn" id="outcomeSwitchBtn">VÆLG ET ANDET SPIL 🎮</button>
+    </div>
   </div>
 </div>
 
@@ -1602,7 +1766,7 @@ button{cursor:pointer}
     </aside>
 
     <main class="card main" id="mainCard">
-      <div class="games">
+      <div class="games" id="gameTabs">
         <button class="game-tab active" data-game="wheel"><div class="ico">🎡</div><strong>Risk Wheel</strong><span>Rigtigt roterende hjul</span></button>
         <button class="game-tab" data-game="case"><div class="ico">📦</div><strong>Case Opening</strong><span>CS inspireret rul</span></button>
         <button class="game-tab" data-game="coin"><div class="ico">🪙</div><strong>Coin Flip</strong><span>3D flip</span></button>
@@ -1753,10 +1917,14 @@ button{cursor:pointer}
     },Math.max(2400,delay));
   }
 
-  function updateBalance(delta, reason="", feedbackMode="auto", zeroDelay=350){
+  let lastBalanceDelta = 0;
+  let outcomeModalTimer = null;
+
+  function updateBalance(delta, reason="", feedbackMode="auto", zeroDelay=null){
     const before=balance;
     balance=clamp(balance+delta,0,99);
     const actual=balance-before;
+    lastBalanceDelta=actual;
     $("#balance").textContent=balance;
     updateDebtUI();
     const maxAllowed=Math.max(1,balance);
@@ -1783,16 +1951,14 @@ button{cursor:pointer}
     }
 
     if(balance>=DEBT_BUST_AT){
+      debtBusted=true;
+      setBusy(true);
+      updateDebtUI();
       if(zeroDelay!==null && zeroDelay>=0){
         scheduleDebtBust(zeroDelay);
-      }else{
-        debtBusted=true;
-        setBusy(true);
-        updateDebtUI();
       }
     }else if(balance===0){
-      // Lås runden MED DET SAMME, men vent med vinderskærmen,
-      // så resultatet fra det sidste spil stadig kan nå at blive set.
+      // Lås runden MED DET SAMME, men vent med vinderskærmen så resultatet kan ses i modalen
       roundEnding=true;
       setBusy(false);
       const arena=$("#arena");
@@ -1830,7 +1996,163 @@ button{cursor:pointer}
     }
   }
 
-  function showResult(title,text,type=""){
+  const gameMeta = {
+    wheel: { name: "Risk Wheel", icon: "🎡" },
+    case: { name: "Case Opening", icon: "📦" },
+    coin: { name: "Coin Flip", icon: "🪙" },
+    dice: { name: "Dice Risk", icon: "🎲" },
+    higher: { name: "Higher / Lower", icon: "🃏" },
+    slots: { name: "Slots", icon: "🎰" },
+    double: { name: "Double or Nothing", icon: "🔮" },
+    blackjack: { name: "Blackjack", icon: "🃏" },
+    roulette: { name: "Casino Roulette", icon: "🎯" },
+    redblack: { name: "Red / Black", icon: "♦️" },
+    war: { name: "War", icon: "⚔️" },
+    plinko: { name: "Plinko", icon: "🔻" },
+    boxes: { name: "Safe Boxes", icon: "💣" },
+    lucky7: { name: "Lucky 7", icon: "7️⃣" },
+    overunder: { name: "Over / Under 7", icon: "↕️" },
+    tridice: { name: "Triple Dice", icon: "🎲" },
+    baccarat: { name: "Baccarat Lite", icon: "🎴" },
+    poker: { name: "Poker Draw", icon: "🃏" },
+    cups: { name: "Three Cups", icon: "🥤" },
+    picknumber: { name: "Pick a Number", icon: "🔢" },
+    rps: { name: "Rock Paper Scissors", icon: "✊" },
+    crash: { name: "Crash", icon: "📈" },
+    queen: { name: "Royal Draw", icon: "👑" },
+    rabbit: { name: "Rabbit Adventure", icon: "🐇" }
+  };
+
+  function showOutcomeModal(cfg = {}){
+    const modal=$("#outcomeModal");
+    if(!modal) return;
+
+    const gameInfo = gameMeta[game] || { name: "Arcade Spil", icon: "🎲" };
+    const type = cfg.type || (lastBalanceDelta < 0 ? "good" : lastBalanceDelta > 0 ? "bad" : "special");
+    const delta = typeof cfg.delta === "number" ? cfg.delta : lastBalanceDelta;
+
+    let color = "#ffc857";
+    let badgeText = cfg.badge || "";
+    let headlineText = cfg.headline || "";
+
+    if(balance === 0){
+      color = "#45d483";
+      badgeText = badgeText || "🏆 RUNDEN ER VUNDET!";
+      headlineText = headlineText || "PULJEN ER NÅET TIL 0 TÅRER!";
+    }else if(debtBusted){
+      color = "#ff6475";
+      badgeText = badgeText || "💀 GÆLDSGRÆNSE NÅET!";
+      headlineText = headlineText || `PULJEN HAR RAMT ${balance} POINT (11+)`;
+    }else if(type === "good"){
+      color = "#45d483";
+      badgeText = badgeText || "🎉 VUNDET!";
+      if(!headlineText){
+        headlineText = delta < 0 ? `🛡️ ${Math.abs(delta)} POINT REDDET FRA PULJEN` : "🛡️ GEVINST!";
+      }
+    }else if(type === "bad"){
+      color = "#ff6475";
+      badgeText = badgeText || "💀 TABT";
+      if(!headlineText){
+        headlineText = delta > 0 ? `📈 +${delta} POINT LAGT TIL PULJEN` : "📈 STRAF TIL PULJEN";
+      }
+    }else{
+      color = "#ffc857";
+      badgeText = badgeText || "🤝 UAFGJORT / BONUS";
+      headlineText = headlineText || "➖ INGEN POINT-ÆNDRING";
+    }
+
+    const card = $("#outcomeModalCard");
+    if(card) card.style.setProperty("--outcome-color", color);
+
+    const badgeEl = $("#outcomeBadge");
+    if(badgeEl){
+      badgeEl.textContent = badgeText;
+      badgeEl.style.color = color;
+      badgeEl.style.borderColor = color;
+    }
+
+    $("#outcomeIcon").textContent = cfg.icon || gameInfo.icon;
+    $("#outcomeTitle").textContent = cfg.title || "Spil Afsluttet";
+    $("#outcomeGameSub").textContent = cfg.sub || gameInfo.name.toUpperCase();
+
+    const headEl = $("#outcomeHeadline");
+    if(headEl){
+      headEl.textContent = headlineText;
+      headEl.style.color = color;
+    }
+    $("#outcomeDesc").textContent = cfg.text || "";
+
+    const extraRuleEl = $("#outcomeExtraRule");
+    if(cfg.extraRule){
+      extraRuleEl.textContent = cfg.extraRule;
+      extraRuleEl.style.display = "block";
+    }else{
+      extraRuleEl.style.display = "none";
+    }
+
+    $("#outcomePoolVal").textContent = `${balance} tårer`;
+    const changeEl = $("#outcomeChangeVal");
+    changeEl.textContent = `${delta > 0 ? "+" : ""}${delta} tårer`;
+    changeEl.style.color = delta < 0 ? "var(--green)" : delta > 0 ? "var(--red)" : "#fff";
+
+    const mainBtn = $("#outcomeMainBtn");
+    const switchBtn = $("#outcomeSwitchBtn");
+
+    if(balance === 0){
+      mainBtn.innerHTML = "🏆 DU VANDT RUNDEN! SE VINDERSKÆRM ➔";
+      mainBtn.className = "btn primary outcome-modal-btn";
+      switchBtn.style.display = "none";
+    }else if(debtBusted){
+      mainBtn.innerHTML = "💀 GÆLDSGRÆNSE NÅET · FORTSÆT TIL CASHOUT ➔";
+      mainBtn.className = "btn bad outcome-modal-btn";
+      switchBtn.style.display = "none";
+    }else{
+      mainBtn.innerHTML = "SPIL IGEN ↺";
+      mainBtn.className = "btn primary outcome-modal-btn";
+      switchBtn.style.display = "block";
+      switchBtn.innerHTML = "VÆLG ET ANDET SPIL 🎮";
+      switchBtn.className = "btn ghost outcome-modal-btn";
+    }
+
+    if(balance === 0){
+      beep(920, .22, .05);
+      confetti();
+    }else if(debtBusted){
+      beep(150, .25, .05);
+    }else if(type === "good"){
+      beep(840, .09, .025);
+    }else if(type === "bad"){
+      beep(230, .12, .035);
+    }else{
+      beep(560, .08, .025);
+    }
+
+    modal.classList.add("show");
+  }
+
+  function dismissOutcomeModal(action = "stay"){
+    const modal = $("#outcomeModal");
+    if(modal) modal.classList.remove("show");
+
+    if(balance === 0){
+      $("#zeroOverlay").classList.add("show");
+      beep(780, .25, .05);
+    }else if(debtBusted){
+      $("#debtBustAmount").textContent = balance;
+      $("#debtOverlay").classList.add("show");
+      beep(145, .28, .055);
+    }else{
+      setBusy(false);
+      if(action === "switch"){
+        const tabs = $("#gameTabs") || $(".games");
+        if(tabs){
+          tabs.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      }
+    }
+  }
+
+  function showResult(title, text, type="", meta={}){
     const el=$("#gameResult");
     if(el){
       el.className=`result ${type}`;
@@ -1846,6 +2168,20 @@ button{cursor:pointer}
 
     clearTimeout(resultHudTimer);
     resultHudTimer=setTimeout(()=>hud.classList.remove("show"),4300);
+
+    // Hvis dette er et del-trin undervejs (fx Higher/Lower streak eller War uafgjort)
+    // eller spillet er CS:GO Case (som har sit eget unbox-reveal modal), vis ikke standard modal
+    if(meta.skipModal || game === "case") return;
+
+    clearTimeout(outcomeModalTimer);
+    outcomeModalTimer=setTimeout(()=>{
+      showOutcomeModal({
+        title,
+        text,
+        type,
+        ...meta
+      });
+    }, 420);
   }
 
   $("#resultHudClose").onclick=()=>{
@@ -1873,6 +2209,8 @@ button{cursor:pointer}
     $("#zeroOverlay").classList.remove("show");
     $("#debtOverlay").classList.remove("show");
     $("#caseModal")?.classList.remove("show");
+    $("#outcomeModal")?.classList.remove("show");
+    clearTimeout(outcomeModalTimer);
     $("#resultHud").classList.remove("show");
     $("#debtHud").classList.remove("hidden");
     $("#arena").classList.remove("round-ending");
@@ -1898,6 +2236,7 @@ button{cursor:pointer}
     if(busy && !debtBusted && !roundEnding) return;
     clearTimeout(zeroOverlayTimer);
     clearTimeout(debtBustTimer);
+    clearTimeout(outcomeModalTimer);
     debtBusted=false;
     roundEnding=false;
     busy=false;
@@ -1910,6 +2249,7 @@ button{cursor:pointer}
     $("#zeroOverlay").classList.remove("show");
     $("#debtOverlay").classList.remove("show");
     $("#caseModal")?.classList.remove("show");
+    $("#outcomeModal")?.classList.remove("show");
     const csStage=$("#csCaseStage");
     if(csStage){
       csStage.classList.remove("opening","unlocking");
@@ -1955,11 +2295,26 @@ button{cursor:pointer}
   $("#newRoundBtn").onclick=resetToStart;
   $("#newRoundOverlay").onclick=resetToStart;
   $("#debtCashoutBtn").onclick=resetToStart;
-  $("#caseModalCloseBtn").onclick=dismissCaseModal;
-  $("#caseModal").onclick=e=>{if(e.target===$("#caseModal"))dismissCaseModal()};
+  $("#caseModalCloseBtn").onclick=()=>dismissCaseModal("stay");
+  $("#caseModalSwitchBtn").onclick=()=>dismissCaseModal("switch");
+  $("#caseModal").onclick=e=>{if(e.target===$("#caseModal")&&balance>0&&!debtBusted)dismissCaseModal("stay")};
+  $("#outcomeMainBtn").onclick=()=>dismissOutcomeModal("stay");
+  $("#outcomeSwitchBtn").onclick=()=>dismissOutcomeModal("switch");
+  $("#outcomeModal").onclick=e=>{if(e.target===$("#outcomeModal")&&balance>0&&!debtBusted)dismissOutcomeModal("stay")};
   window.addEventListener("keydown",e=>{
-    if(e.key==="Escape" && $("#caseModal") && $("#caseModal").classList.contains("show")){
-      dismissCaseModal();
+    if(e.key==="Escape" || e.key==="Enter"){
+      const outModal=$("#outcomeModal");
+      if(outModal && outModal.classList.contains("show")){
+        e.preventDefault();
+        dismissOutcomeModal("stay");
+        return;
+      }
+      const cModal=$("#caseModal");
+      if(cModal && cModal.classList.contains("show")){
+        e.preventDefault();
+        dismissCaseModal("stay");
+        return;
+      }
     }
   });
   $("#takeBtn").onclick=()=>{
@@ -2164,7 +2519,7 @@ button{cursor:pointer}
       }else{
         showResult("🔁 RE-SPIN",
           "Ingen ændring endnu. Hjulet spinner automatisk én gang til.",
-          "special");
+          "special", { skipModal: true });
         await sleep(900);
         return spinWheel(true);
       }
@@ -2364,7 +2719,7 @@ button{cursor:pointer}
         $("#lastAction").textContent=`Higher / Lower: ${higherStreak}/3 rigtige i træk.`;
         showResult(`✅ KORREKT · ${higherStreak}/3`,
           `${cardText(previous)} → ${cardText(next)}. Du kan nu cashe ud (-${cashVal} point) eller fortsætte for større gevinst!`,
-          "good");
+          "good", { skipModal: true });
       }
     }else{
       const penalty = higherStreak === 0 ? Math.max(1, Math.ceil(w/2)) : w;
@@ -2871,21 +3226,29 @@ button{cursor:pointer}
     $("#caseModalChanceVal").textContent=`${lootChancePercent(win)}% (Tier: ${meta.chance})`;
 
     const btn=$("#caseModalCloseBtn");
+    const switchBtn=$("#caseModalSwitchBtn");
     if(balance===0){
-      btn.innerHTML="🏆 DU VANDT RUNDEN! SE VINDERSKÆRM";
+      btn.innerHTML="🏆 DU VANDT RUNDEN! SE VINDERSKÆRM ➔";
       btn.className="btn primary case-modal-btn";
+      if(switchBtn) switchBtn.style.display="none";
     }else if(debtBusted){
-      btn.innerHTML="💀 GÆLDSGRÆNSE NÅET · FORTSÆT TIL CASHOUT";
+      btn.innerHTML="💀 GÆLDSGRÆNSE NÅET · FORTSÆT TIL CASHOUT ➔";
       btn.className="btn bad case-modal-btn";
+      if(switchBtn) switchBtn.style.display="none";
     }else{
       btn.innerHTML="FORTSÆT TIL NÆSTE CASE ➔";
       btn.className="btn primary case-modal-btn";
+      if(switchBtn){
+        switchBtn.style.display="block";
+        switchBtn.innerHTML="VÆLG ET ANDET SPIL 🎮";
+        switchBtn.className="btn ghost case-modal-btn";
+      }
     }
 
     modal.classList.add("show");
   }
 
-  function dismissCaseModal(){
+  function dismissCaseModal(action="stay"){
     const modal=$("#caseModal");
     if(modal) modal.classList.remove("show");
 
@@ -2907,6 +3270,10 @@ button{cursor:pointer}
       beep(145,.28,.055);
     }else{
       setBusy(false);
+      if(action==="switch"){
+        const tabs=$("#gameTabs") || $(".games");
+        if(tabs) tabs.scrollIntoView({behavior:"smooth",block:"start"});
+      }
     }
   }
 
@@ -3659,7 +4026,7 @@ button{cursor:pointer}
     if(pWar===dWar){
       beep(780,.15,.04);
       $("#warExtra").innerHTML=`<div class="war-banner">⚔️ KRIG ER ERKLÆRET! (WAR) · 2× INDSATS I PULJEN</div>`;
-      showResult("⚔️ KRIG ER ERKLÆRET!", "Lige kort! Begge spillere brænder 3 kort og trækker et afgørende krigskort!", "special");
+      showResult("⚔️ KRIG ER ERKLÆRET!", "Lige kort! Begge spillere brænder 3 kort og trækker et afgørende krigskort!", "special", { skipModal: true });
       await sleep(1100);
 
       const pWarCard=casinoCard(), dWarCard=casinoCard();
