@@ -170,9 +170,10 @@
 
     if (isDrink) {
       const stake = modes.state.turnStake || 1;
+      const maxS = modes.state.drinkMaxStake || 5;
       if ($("#hudPoolVal")) $("#hudPoolVal").textContent = stake;
       if ($("#hudPoolLimit")) $("#hudPoolLimit").textContent = stake === 1 ? "tår" : "tårer";
-      if ($("#debtMeterFill")) $("#debtMeterFill").style.width = clamp((stake / 5) * 100, 12, 100) + "%";
+      if ($("#debtMeterFill")) $("#debtMeterFill").style.width = clamp((stake / maxS) * 100, 12, 100) + "%";
       if (hud) hud.classList.remove("caution", "danger", "critical", "busted");
       if (vig) vig.classList.remove("caution", "danger", "critical");
       if (typeof modes.renderHudExtras === "function") {
@@ -386,6 +387,79 @@
     });
   }
 
+  function paintDrinkOutcomeModal(dr, modes) {
+    let color = "#ffc857";
+    let badgeText = "🤝 UAFGJORT";
+    let headlineText = "🤝 SLAP FRI · 0 TÅRER";
+
+    if (dr.shotsToGive > 0) {
+      color = "#ffd86b";
+      badgeText = "🥃 MEGA-JACKPOT!";
+      headlineText = `🥃 UDDEL 1 SHOT + ${dr.giveAmt} ${dr.giveAmt === 1 ? "TÅR" : "TÅRER"}!`;
+    } else if (dr.doubleUsed) {
+      if (dr.doubleWon && dr.giveAmt > 0) {
+        color = "#45d483";
+        badgeText = "⚡ DOUBLE VUNDET!";
+        headlineText = `🎁 DOUBLE! GIV ${dr.giveAmt} ${dr.giveAmt === 1 ? "TÅR" : "TÅRER"} UD!`;
+      } else if (!dr.doubleWon && dr.drinkAmt > 0) {
+        color = "#ff6475";
+        badgeText = "⚡ DOUBLE STRAF!";
+        headlineText = `🍻 DOUBLE! DRIK ${dr.drinkAmt} ${dr.drinkAmt === 1 ? "TÅR" : "TÅRER"} NU!`;
+      } else if (dr.doubleWon) {
+        color = "#45d483";
+        badgeText = "🛡️ SLAP FRI!";
+        headlineText = "🛡️ DOUBLE VUNDET · 0 TÅRER!";
+      } else {
+        color = "#ffc857";
+        badgeText = "💨 NOTHING!";
+        headlineText = "💨 NOTHING · 0 TÅRER AT GIVE UD";
+      }
+    } else if (dr.outcomeType === "good") {
+      color = "#45d483";
+      badgeText = "🎁 DU VANDT!";
+      headlineText = `🎁 GIV ${dr.giveAmt} ${dr.giveAmt === 1 ? "TÅR" : "TÅRER"} UD!`;
+    } else if (dr.outcomeType === "bad") {
+      color = "#ff6475";
+      badgeText = "🍻 DU TABTE!";
+      headlineText = `🍻 DRIK ${dr.drinkAmt} ${dr.drinkAmt === 1 ? "TÅR" : "TÅRER"} NU!`;
+    }
+
+    const card = $("#outcomeModalCard");
+    if (card) card.style.setProperty("--outcome-color", color);
+    $("#outcomeBadge").textContent = badgeText;
+    $("#outcomeHeadline").textContent = headlineText;
+    $("#outcomeHeadline").style.color = color;
+
+    if (dr.doubleUsed) {
+      $("#outcomeDesc").textContent = dr.historyText;
+    }
+
+    const curP = modes.currentPlayer();
+    const changeEl = $("#outcomeChangeVal");
+    $("#outcomePoolVal").textContent = `${dr.stake} ${dr.stake === 1 ? "tår" : "tårer"}`;
+    changeEl.textContent = curP ? `🍻 ${curP.drunk} · 🎁 ${curP.given}` : "🍻 0 · 🎁 0";
+    changeEl.style.color = dr.outcomeType === "good" ? "var(--green)" : dr.outcomeType === "bad" ? "var(--red)" : "#fff";
+
+    const dblBtn = $("#outcomeDoubleBtn");
+    if (dblBtn) {
+      if (dr.doubleOffered && !dr.doubleUsed) {
+        dblBtn.classList.remove("hidden");
+        dblBtn.textContent = dr.outcomeType === "good"
+          ? `⚡ DOUBLE OR NOTHING (${dr.giveAmt * 2} eller 0)`
+          : `⚡ DOUBLE OR NOTHING (0 eller ${dr.drinkAmt * 2})`;
+        dblBtn.onclick = () => {
+          const updated = modes.resolveDrinkDoubleOrNothing();
+          if (!updated) return;
+          paintDrinkOutcomeModal(updated, modes);
+          if (updated.doubleWon) { beep(920, 0.2, 0.05); confetti(); }
+          else { beep(170, 0.25, 0.05); vibrate([50, 40, 60]); }
+        };
+      } else {
+        dblBtn.classList.add("hidden");
+      }
+    }
+  }
+
   function showOutcomeModal(cfg = {}) {
     const modal = $("#outcomeModal");
     if (!modal) return;
@@ -402,59 +476,43 @@
     let badgeText = cfg.badge || "";
     let headlineText = cfg.headline || "";
 
-    if (dr) {
-      if (dr.shotsToGive > 0) {
-        color = "#ffd86b";
-        badgeText = "🥃 MEGA-JACKPOT!";
-        headlineText = `🥃 UDDEL 1 SHOT + ${dr.giveAmt} ${dr.giveAmt === 1 ? "TÅR" : "TÅRER"}!`;
-      } else if (dr.outcomeType === "good") {
+    if (!dr) {
+      if (state.balance === 0) {
         color = "#45d483";
-        badgeText = "🎁 DU VANDT!";
-        headlineText = `🎁 GIV ${dr.giveAmt} ${dr.giveAmt === 1 ? "TÅR" : "TÅRER"} UD!`;
-      } else if (dr.outcomeType === "bad") {
+        badgeText = badgeText || "🏆 PULJE RAMTE 0!";
+        headlineText = headlineText || "DU ER I 0 TÅRER!";
+      } else if (state.debtBusted) {
         color = "#ff6475";
-        badgeText = "🍻 DU TABTE!";
-        headlineText = `🍻 DRIK ${dr.drinkAmt} ${dr.drinkAmt === 1 ? "TÅR" : "TÅRER"} NU!`;
+        badgeText = badgeText || "💀 GÆLDSGRÆNSE NÅET!";
+        headlineText = headlineText || `PULJEN RAMTE ${state.balance} POINT`;
+      } else if (type === "good") {
+        color = "#45d483";
+        badgeText = badgeText || "🎉 VUNDET!";
+        if (!headlineText) {
+          headlineText = delta < 0 ? `🛡️ ${Math.abs(delta)} POINT REDDET` : "🛡️ GEVINST!";
+        }
+      } else if (type === "bad") {
+        color = "#ff6475";
+        badgeText = badgeText || "💀 TABT";
+        if (!headlineText) {
+          headlineText = delta > 0 ? `📈 +${delta} POINT TIL PULJEN` : "📈 STRAF TIL PULJEN";
+        }
       } else {
         color = "#ffc857";
-        badgeText = "🤝 UAFGJORT";
-        headlineText = "🤝 SLAP FRI · 0 TÅRER";
+        badgeText = badgeText || "🤝 UAFGJORT / SPECIAL";
+        headlineText = headlineText || "➖ INGEN POINT-ÆNDRING";
       }
-    } else if (state.balance === 0) {
-      color = "#45d483";
-      badgeText = badgeText || "🏆 PULJE RAMTE 0!";
-      headlineText = headlineText || "DU ER I 0 TÅRER!";
-    } else if (state.debtBusted) {
-      color = "#ff6475";
-      badgeText = badgeText || "💀 GÆLDSGRÆNSE NÅET!";
-      headlineText = headlineText || `PULJEN RAMTE ${state.balance} POINT`;
-    } else if (type === "good") {
-      color = "#45d483";
-      badgeText = badgeText || "🎉 VUNDET!";
-      if (!headlineText) {
-        headlineText = delta < 0 ? `🛡️ ${Math.abs(delta)} POINT REDDET` : "🛡️ GEVINST!";
-      }
-    } else if (type === "bad") {
-      color = "#ff6475";
-      badgeText = badgeText || "💀 TABT";
-      if (!headlineText) {
-        headlineText = delta > 0 ? `📈 +${delta} POINT TIL PULJEN` : "📈 STRAF TIL PULJEN";
-      }
-    } else {
-      color = "#ffc857";
-      badgeText = badgeText || "🤝 UAFGJORT / SPECIAL";
-      headlineText = headlineText || "➖ INGEN POINT-ÆNDRING";
+
+      const card = $("#outcomeModalCard");
+      if (card) card.style.setProperty("--outcome-color", color);
+      $("#outcomeBadge").textContent = badgeText;
+      $("#outcomeHeadline").textContent = headlineText;
+      $("#outcomeHeadline").style.color = color;
     }
 
-    const card = $("#outcomeModalCard");
-    if (card) card.style.setProperty("--outcome-color", color);
-
-    $("#outcomeBadge").textContent = badgeText;
     $("#outcomeIcon").textContent = cfg.icon || gInfo.icon;
     $("#outcomeTitle").textContent = cfg.title || "Udfald";
     $("#outcomeGameSub").textContent = modeInfo.playerLabel ? `${gInfo.name} · ${modeInfo.playerLabel}` : gInfo.name;
-    $("#outcomeHeadline").textContent = headlineText;
-    $("#outcomeHeadline").style.color = color;
     $("#outcomeDesc").textContent = cfg.text || "";
 
     const extraRuleEl = $("#outcomeExtraRule");
@@ -470,13 +528,12 @@
     if ($("#outcomePoolLabel")) $("#outcomePoolLabel").textContent = dr ? "På højkant" : "Pulje nu";
     if ($("#outcomeChangeLabel")) $("#outcomeChangeLabel").textContent = dr ? "Samlet stilling" : "Ændring";
 
-    const changeEl = $("#outcomeChangeVal");
+    const dblBtn = $("#outcomeDoubleBtn");
     if (dr) {
-      const curP = modes.currentPlayer();
-      $("#outcomePoolVal").textContent = `${dr.stake} ${dr.stake === 1 ? "tår" : "tårer"}`;
-      changeEl.textContent = curP ? `🍻 ${curP.drunk} · 🎁 ${curP.given}` : "🍻 0 · 🎁 0";
-      changeEl.style.color = dr.outcomeType === "good" ? "var(--green)" : dr.outcomeType === "bad" ? "var(--red)" : "#fff";
+      paintDrinkOutcomeModal(dr, modes);
     } else {
+      if (dblBtn) dblBtn.classList.add("hidden");
+      const changeEl = $("#outcomeChangeVal");
       $("#outcomePoolVal").textContent = `${state.balance} tårer`;
       changeEl.textContent = `${delta > 0 ? "+" : ""}${delta} tårer`;
       changeEl.style.color = delta < 0 ? "var(--green)" : delta > 0 ? "var(--red)" : "#fff";

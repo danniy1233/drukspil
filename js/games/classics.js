@@ -523,6 +523,36 @@
     $("#caseModalPoolVal").textContent = isDrink ? `${modes.state.turnStake || 1} ${(modes.state.turnStake || 1) === 1 ? "tår" : "tårer"}` : `${state.balance} tårer`;
     $("#caseModalChanceVal").textContent = `${lootChancePercent(win)}% (${meta.chance})`;
 
+    const caseDblBtn = $("#caseDoubleBtn");
+    const dr = isDrink ? modes.state.lastDrinkResult : null;
+    if (caseDblBtn) {
+      if (dr && dr.doubleOffered && !dr.doubleUsed) {
+        caseDblBtn.classList.remove("hidden");
+        caseDblBtn.textContent = dr.outcomeType === "good"
+          ? `⚡ DOUBLE OR NOTHING (${dr.giveAmt * 2} eller 0)`
+          : `⚡ DOUBLE OR NOTHING (0 eller ${dr.drinkAmt * 2})`;
+        caseDblBtn.onclick = () => {
+          const updated = modes.resolveDrinkDoubleOrNothing();
+          if (!updated) return;
+          caseDblBtn.classList.add("hidden");
+          if (updated.doubleWon && updated.giveAmt > 0) {
+            $("#caseModalActionTitle").textContent = `🎁 DOUBLE! GIV ${updated.giveAmt} TÅRER UD!`;
+          } else if (!updated.doubleWon && updated.drinkAmt > 0) {
+            $("#caseModalActionTitle").textContent = `🍻 DOUBLE! DRIK ${updated.drinkAmt} TÅRER NU!`;
+          } else if (updated.doubleWon) {
+            $("#caseModalActionTitle").textContent = "🛡️ SLAP FRI · 0 TÅRER!";
+          } else {
+            $("#caseModalActionTitle").textContent = "💨 NOTHING · 0 TÅRER AT GIVE UD";
+          }
+          $("#caseModalActionDesc").textContent = updated.historyText;
+          if (updated.doubleWon) { beep(920, 0.2, 0.05); confetti(); }
+          else { beep(170, 0.25, 0.05); vibrate([50, 40, 60]); }
+        };
+      } else {
+        caseDblBtn.classList.add("hidden");
+      }
+    }
+
     const btn = $("#caseModalCloseBtn");
     const switchBtn = $("#caseModalSwitchBtn");
     const modeInfo = modes ? modes.getModeOutcomeConfig() : {};

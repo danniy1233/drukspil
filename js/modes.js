@@ -3,7 +3,7 @@
 
   const MODES = {
     classic: { id: "classic", name: "Classic Solo", icon: "🎲", desc: "1 spiller · Start 1–10 · Bust ved 11" },
-    drink:   { id: "drink",   name: "Drukspil",     icon: "🍻", desc: "Ingen pulje · Spillet ruller 1–5 tårer & spil" },
+    drink:   { id: "drink",   name: "Drukspil",     icon: "🍻", desc: "Ingen pulje · Spillet ruller tårer & spil" },
     party:   { id: "party",   name: "Party",        icon: "👥", desc: "2–8 spillere · Pass-the-phone & giv ud" },
     duel:    { id: "duel",    name: "Duel 1v1",     icon: "⚔️", desc: "2 spillere kæmper direkte mod hinanden" },
     hardcore:{ id: "hardcore",name: "Hardcore",     icon: "🔥", desc: "Start 1–20 · Bust ved 21 · Hårdere straf" },
@@ -23,6 +23,7 @@
     mode: "classic",
     chaosSubMode: "solo", // "solo" | "party"
     drinkSubMode: "solo", // "solo" | "party"
+    drinkMaxStake: 5,
     duelSubMode: "pools", // "pools" | "quick"
     players: [],
     turnIndex: 0,
@@ -128,8 +129,8 @@
     const pickId = allIds[Math.floor(Math.random() * allIds.length)] || "wheel";
     state.game = pickId;
     state.higherStreak = 0;
-    const pool = [1, 2, 2, 3, 3, 4, 4, 5];
-    modeState.turnStake = pool[Math.floor(Math.random() * pool.length)];
+    const maxS = clamp(parseInt(modeState.drinkMaxStake || 5, 10), 1, 20);
+    modeState.turnStake = 1 + Math.floor(Math.random() * maxS);
     modeState.lastDrinkResult = null;
     state.balance = 10;
     state.desiredWager = modeState.turnStake;
@@ -225,8 +226,57 @@
       };
     }
 
+    res.doubleUsed = false;
+    res.doubleWon = null;
+    res.doubleOffered = !res.isJackpotClear && !opts.giveShot
+      && ((res.outcomeType === "good" && res.giveAmt > 0) || (res.outcomeType === "bad" && res.drinkAmt > 0))
+      && Math.random() < 0.4;
+
     modeState.lastDrinkResult = res;
     return res;
+  }
+
+  function resolveDrinkDoubleOrNothing() {
+    const dr = modeState.lastDrinkResult;
+    if (!dr || !dr.doubleOffered || dr.doubleUsed) return null;
+    dr.doubleUsed = true;
+    const cur = currentPlayer();
+    const won = Math.random() < 0.5;
+    dr.doubleWon = won;
+
+    if (dr.outcomeType === "good") {
+      const orig = dr.giveAmt;
+      if (won) {
+        if (cur) cur.given += orig;
+        dr.giveAmt = orig * 2;
+        dr.signedAmount = -dr.giveAmt;
+        dr.historyText = `⚡ ${cur ? cur.name : "Du"}: Double or Nothing VANDT! Giv ${dr.giveAmt} tårer ud!`;
+      } else {
+        if (cur) cur.given = Math.max(0, cur.given - orig);
+        dr.giveAmt = 0;
+        dr.outcomeType = "special";
+        dr.signedAmount = 0;
+        dr.historyText = `💨 ${cur ? cur.name : "Du"}: Double or Nothing tabt → 0 tårer at give ud.`;
+      }
+    } else if (dr.outcomeType === "bad") {
+      const orig = dr.drinkAmt;
+      if (won) {
+        if (cur) cur.drunk = Math.max(0, cur.drunk - orig);
+        dr.drinkAmt = 0;
+        dr.outcomeType = "special";
+        dr.signedAmount = 0;
+        dr.historyText = `🛡️ ${cur ? cur.name : "Du"}: Double or Nothing VANDT → Slap fri (0 tårer)!`;
+      } else {
+        if (cur) cur.drunk += orig;
+        dr.drinkAmt = orig * 2;
+        dr.signedAmount = dr.drinkAmt;
+        dr.historyText = `⚡ ${cur ? cur.name : "Du"}: Double or Nothing TABT → DRIK ${dr.drinkAmt} TÅRER!`;
+      }
+    }
+
+    pushHistory(dr.historyText);
+    updateDebtUI();
+    return dr;
   }
 
   function findNextActivePlayerIndex(fromIdx) {
@@ -470,6 +520,7 @@
     modeState.mode = config.mode || "classic";
     modeState.chaosSubMode = config.chaosSubMode || "solo";
     modeState.drinkSubMode = config.drinkSubMode || "solo";
+    modeState.drinkMaxStake = clamp(parseInt(config.drinkMaxStake || 5, 10), 1, 20);
     modeState.duelSubMode = config.duelSubMode || "pools";
 
     if (modeState.mode === "drink" && modeState.drinkSubMode === "solo") {
@@ -975,6 +1026,7 @@
     isDrinkMode,
     rollDrinkTurn,
     applyDrinkOutcome,
+    resolveDrinkDoubleOrNothing,
     currentPlayer,
     activePlayers,
     getBustLimit,

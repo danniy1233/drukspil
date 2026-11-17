@@ -3,6 +3,7 @@
 
   let selectedMode = "classic";
   let drinkSub = "solo";
+  let drinkMax = 5;
   let chaosSub = "solo";
   let duelSub = "pools";
   let setupPlayers = [
@@ -27,7 +28,6 @@
             <strong>${m.name}</strong>
             <span>${m.desc}</span>
           </div>
-          ${id === "classic" ? `<span class="mode-badge">Default</span>` : ""}
         </button>`;
     }).join("");
 
@@ -114,9 +114,27 @@
           <button type="button" class="toggle-pill ${drinkSub === "solo" ? "active" : ""}" data-drsub="solo">Solo Drukspil</button>
           <button type="button" class="toggle-pill ${drinkSub === "party" ? "active" : ""}" data-drsub="party">Party Drukspil (2–8)</button>
         </div>
-        <p class="setup-rule-note">Ingen startpulje! Spillet vælger et tilfældigt minispil og sætter <strong>1–5 tårer</strong> på højkant hver tur. Tab → <strong>Drik!</strong> · Vinder → <strong>Giv ud!</strong></p>
+        <span class="setup-label" style="margin-top:4px">Maks tårer pr. tur (1–20)</span>
+        <div class="start-input-row" style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+          <input id="drinkMaxAmount" type="number" min="1" max="20" value="${drinkMax}" style="flex:1">
+          <span id="drinkRangePreview" style="font-size:12px;color:var(--muted);font-weight:800;white-space:nowrap">Random: 1–${drinkMax}</span>
+        </div>
+        <p class="setup-rule-note">Ingen startpulje! Spillet vælger et tilfældigt minispil med <strong>1–${drinkMax} tårer</strong> på højkant. Tab → <strong>Drik!</strong> · Vinder → <strong>Giv ud!</strong></p>
         ${drinkSub === "party" ? renderPlayerInputs(10, true) : ""}`;
       $$("[data-drsub]").forEach(b => b.onclick = () => { drinkSub = b.dataset.drsub; renderModeSetup(); });
+      if ($("#drinkMaxAmount")) {
+        $("#drinkMaxAmount").oninput = () => {
+          const raw = parseInt($("#drinkMaxAmount").value || "1", 10);
+          if (!isNaN(raw) && raw >= 1) {
+            drinkMax = clamp(raw, 1, 20);
+            if ($("#drinkRangePreview")) $("#drinkRangePreview").textContent = `Random: 1–${drinkMax}`;
+          }
+        };
+        $("#drinkMaxAmount").onchange = () => {
+          drinkMax = clamp(parseInt($("#drinkMaxAmount").value || "5", 10), 1, 20);
+          renderModeSetup();
+        };
+      }
       if (drinkSub === "party") wirePlayerInputs(10);
     } else if (selectedMode === "hardcore") {
       box.innerHTML = `
@@ -315,7 +333,8 @@
     const rulesEl = $("#statusRulesText");
     if (rulesEl) {
       if (isDrink) {
-        rulesEl.textContent = "🍻 Drukspil: Ingen startpulje og ingen gældsgrænse. Hver tur vælger spillet et tilfældigt minispil med 1–5 tårer på højkant. Taber du → drik! Vinder du → giv ud!";
+        const maxS = modes.state.drinkMaxStake || 5;
+        rulesEl.textContent = `🍻 Drukspil: Ingen startpulje og ingen gældsgrænse. Hver tur vælger spillet et tilfældigt minispil med 1–${maxS} tårer på højkant. Taber du → drik! Vinder du → giv ud!`;
       } else {
         const m = modes.MODES[modes.state.mode];
         const bust = modes.getBustLimit();
@@ -338,9 +357,14 @@
       soloAmt = clamp(parseInt($("#startAmount").value || "4", 10), 1, maxP);
     }
 
+    if ($("#drinkMaxAmount")) {
+      drinkMax = clamp(parseInt($("#drinkMaxAmount").value || "5", 10), 1, 20);
+    }
+
     modes.startModeSession({
       mode: selectedMode,
       drinkSubMode: drinkSub,
+      drinkMaxStake: drinkMax,
       chaosSubMode: chaosSub,
       duelSubMode: duelSub,
       soloAmount: soloAmt,
@@ -355,6 +379,7 @@
     $("#caseModal")?.classList.remove("show");
     $("#outcomeModal")?.classList.remove("show");
     $("#duelPrivacyOverlay")?.classList.remove("show");
+    $("#confirmLeaveModal")?.classList.remove("show");
     clearTimeout(state.outcomeModalTimer);
 
     const gamesNavBtn = $(`.nav-tab[data-nav="games"]`);
@@ -400,11 +425,25 @@
     $("#caseModal")?.classList.remove("show");
     $("#outcomeModal")?.classList.remove("show");
     $("#duelPrivacyOverlay")?.classList.remove("show");
+    $("#confirmLeaveModal")?.classList.remove("show");
     $("#debtVignette").className = "debt-vignette";
+    if ($("#balanceChange")) {
+      $("#balanceChange").textContent = "";
+      $("#balanceChange").classList.remove("fly");
+    }
 
     setBusy(false);
     renderModeCards();
     renderModeSetup();
+  }
+
+  function openLeaveConfirm(title, desc) {
+    const modal = $("#confirmLeaveModal");
+    if (!modal) { resetToStart(); return; }
+    if ($("#confirmLeaveTitle")) $("#confirmLeaveTitle").textContent = title;
+    if ($("#confirmLeaveDesc")) $("#confirmLeaveDesc").textContent = desc;
+    modal.classList.add("show");
+    beep(440, 0.04, 0.02);
   }
 
   // ==========================================================
@@ -418,12 +457,33 @@
     $("#startScreen").addEventListener("keydown", e => {
       if (e.key === "Enter" && e.target.id === "startAmount") $("#startBtn").click();
     });
-    $("#newRoundBtn").onclick = resetToStart;
+    $("#newRoundBtn").onclick = () => {
+      if (state.busy) return;
+      openLeaveConfirm("Forlad spillet?", "Er du sikker på, at du vil forlade det nuværende spil og skifte gamemode?");
+    };
     $("#newRoundOverlay").onclick = resetToStart;
     $("#debtCashoutBtn").onclick = resetToStart;
     $("#takeBtn").onclick = () => {
       if (state.busy) return;
+      const isDrink = modes.isDrinkMode();
+      openLeaveConfirm(
+        isDrink ? "Afslut drukspil?" : "Tag puljen & afslut?",
+        isDrink ? "Er du sikker på, at du vil forlade drukspillet og gå tilbage til start?" : "Er du sikker på, at du vil tage puljen og forlade det nuværende spil?"
+      );
+    };
+
+    $("#confirmLeaveYesBtn").onclick = () => {
+      $("#confirmLeaveModal")?.classList.remove("show");
       resetToStart();
+    };
+    $("#confirmLeaveCancelBtn").onclick = () => {
+      $("#confirmLeaveModal")?.classList.remove("show");
+      beep(520, 0.03, 0.015);
+    };
+    $("#confirmLeaveModal").onclick = e => {
+      if (e.target === $("#confirmLeaveModal")) {
+        $("#confirmLeaveModal").classList.remove("show");
+      }
     };
 
     // Phone bottom nav
@@ -486,6 +546,12 @@
 
     window.addEventListener("keydown", e => {
       if (e.key === "Escape") {
+        const leaveM = $("#confirmLeaveModal");
+        if (leaveM && leaveM.classList.contains("show")) {
+          e.preventDefault();
+          leaveM.classList.remove("show");
+          return;
+        }
         const outModal = $("#outcomeModal");
         if (outModal && outModal.classList.contains("show") && modes.state.mode !== "duel") {
           e.preventDefault();

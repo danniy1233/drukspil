@@ -43,6 +43,19 @@
   </div>
 </div>
 
+<!-- CONFIRM LEAVE MODAL -->
+<div class="overlay" id="confirmLeaveModal">
+  <div class="overlay-card">
+    <div class="emoji">⚠️</div>
+    <h2 id="confirmLeaveTitle">Forlad spillet?</h2>
+    <p id="confirmLeaveDesc">Er du sikker på, at du vil forlade det nuværende spil?</p>
+    <div class="outcome-btn-group" style="margin-top:16px">
+      <button type="button" class="btn bad" id="confirmLeaveYesBtn">Ja, forlad spillet</button>
+      <button type="button" class="btn ghost" id="confirmLeaveCancelBtn">Nej, bliv i spillet</button>
+    </div>
+  </div>
+</div>
+
 <!-- CS:GO CASE REVEAL MODAL -->
 <div class="overlay" id="caseModal">
   <div class="overlay-card case-modal-card" id="caseModalCard">
@@ -72,6 +85,7 @@
     </div>
 
     <div class="outcome-btn-group">
+      <button class="btn primary case-modal-btn hidden" id="caseDoubleBtn" style="background:linear-gradient(135deg,#f59e0b,#ef4444);color:#fff"></button>
       <button class="btn primary case-modal-btn" id="caseModalCloseBtn">FORTSÆT TIL NÆSTE CASE ➔</button>
       <button class="btn ghost case-modal-btn" id="caseModalSwitchBtn">VÆLG ET ANDET SPIL 🎮</button>
     </div>
@@ -107,6 +121,7 @@
     </div>
 
     <div class="outcome-btn-group">
+      <button class="btn primary outcome-modal-btn hidden" id="outcomeDoubleBtn" style="background:linear-gradient(135deg,#f59e0b,#ef4444);color:#fff"></button>
       <button class="btn primary outcome-modal-btn" id="outcomeMainBtn">SPIL IGEN ↺</button>
       <button class="btn ghost outcome-modal-btn" id="outcomeSwitchBtn">VÆLG ET ANDET SPIL 🎮</button>
     </div>
@@ -127,7 +142,7 @@
     <div class="start-hero">
       <div class="start-icon">🎲</div>
       <h2>Vælg Gamemode</h2>
-      <p class="start-sub">Classic Solo er klar som standard – eller prøv Drukspil, Party, Duel, Hardcore eller Kaos.</p>
+      <p class="start-sub">Vælg mellem Classic Solo, Drukspil, Party, Duel, Hardcore eller Kaos.</p>
     </div>
 
     <div class="mode-grid" id="modeGrid"></div>
