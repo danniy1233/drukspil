@@ -616,23 +616,14 @@
   ];
 
   const SOCIAL_PROMPTS = [
-    // Brugerens egne udfordringer & spørgsmål + flere sjove uskyldige
-    {
-      id: "coolest",
-      kind: "question",
-      icon: "😎",
-      title: "Dagens Spørgsmål",
-      text: "Fortæl de andre i selskabet, hvorfor du er den sejeste!",
-      sub: "Giv et godt bud til bordet — eller spring over mod en lille straf.",
-      skipDrink: 2
-    },
+    // 9 hurtige gætte- & sidekammerat-opgaver (uden akavet teater)
     {
       id: "left_drink",
       kind: "challenge",
       icon: "🍹",
-      title: "Bartender-udfordring",
+      title: "Bartender-test",
       text: "Lav en drink til personen til venstre for dig!",
-      sub: "Hvis personen kan lide den → giv 2 tårer ud! Hvis personen ikke kan lide den → tag selv 2 tårer.",
+      sub: "Hvis personen kan lide den → giv 2 tårer ud! Hvis ikke → tag selv 2 tårer.",
       winGive: 2,
       failDrink: 2
     },
@@ -642,77 +633,17 @@
       icon: "🎨",
       title: "Umuligt Gæt!",
       text: "På en skala fra 1–10: Hvad er personen til venstres yndlingsfarve i alfabetet?",
-      sub: "Svarer du rigtigt (eller får bordet til at grine nok!) → giv 2 tårer ud! Forkert → tag 1 tår selv.",
+      sub: "Svarer du rigtigt (eller får selskabet til at godkende svaret) → giv 2 tårer ud! Forkert → tag 1 tår selv.",
       winGive: 2,
       failDrink: 1
     },
     {
-      id: "rps_side",
+      id: "battery_guess",
       kind: "challenge",
-      icon: "✊",
-      title: "Lyn-duel ved bordet",
-      text: "Spil én hurtig runde Sten-Saks-Papir mod personen til højre for dig!",
-      sub: "Vinder du → giv 2 tårer ud. Taber du → tag 1 tår selv.",
-      winGive: 2,
-      failDrink: 1
-    },
-    {
-      id: "ad_spot",
-      kind: "challenge",
-      icon: "📺",
-      title: "5-Sekunders Reklame",
-      text: "Lav en 5-sekunders TV-reklame for din egen drink lige nu!",
-      sub: "Stemmes reklamen godkendt af selskabet → giv 2 tårer ud, ellers tag 1 tår selv.",
-      winGive: 2,
-      failDrink: 1
-    },
-    {
-      id: "eye_contact",
-      kind: "challenge",
-      icon: "👀",
-      title: "Stirrekonkurrence",
-      text: "Hold øjenkontakt med personen overfor dig i 10 sekunder uden at grine eller smile!",
-      sub: "Klarer I begge 10 sek → giv 2 tårer ud! Griner du først → tag 1 tår selv.",
-      winGive: 2,
-      failDrink: 1
-    },
-    {
-      id: "bathroom_5",
-      kind: "challenge",
-      icon: "⏱️",
-      title: "8-Sekunders Blitz",
-      text: "Nævn 5 ting man finder på et badeværelse på under 8 sekunder!",
-      sub: "Klarer du alle 5 i tide → giv 2 tårer ud! Ellers tag 2 tårer selv.",
-      winGive: 2,
-      failDrink: 2
-    },
-    {
-      id: "hum_song",
-      kind: "challenge",
-      icon: "🎵",
-      title: "Gæt Nynneriet",
-      text: "Nyn omkvædet på en kendt sang i 10 sekunder!",
-      sub: "Gætter nogen ved bordet sangen → giv 2 tårer ud! Gætter ingen → tag 1 tår selv.",
-      winGive: 2,
-      failDrink: 1
-    },
-    {
-      id: "spell_back",
-      kind: "challenge",
-      icon: "🔤",
-      title: "Hjernevrider",
-      text: "Stav dit eget fornavn bagfra højt uden at tøve eller kigge!",
-      sub: "Fejlfrit → giv 1 tår ud! Kløjs i et bogstav → tag 1 tår selv.",
-      winGive: 1,
-      failDrink: 1
-    },
-    {
-      id: "epic_compliment",
-      kind: "challenge",
-      icon: "🎭",
-      title: "Film-kompliment",
-      text: "Giv personen til højre for dig det mest dramatiske film-kompliment du kan finde på!",
-      sub: "Godkender bordet præstationen → giv 2 tårer ud! Ellers tag 1 tår selv.",
+      icon: "🔋",
+      title: "Batteri-gæt",
+      text: "Gæt hvor mange % batteri personen til højre for dig har på sin telefon lige nu (inden for ±8%)!",
+      sub: "Rammer du inden for ±8% → giv 2 tårer ud! Ved siden af → tag 1 tår selv.",
       winGive: 2,
       failDrink: 1
     },
@@ -721,100 +652,141 @@
       kind: "challenge",
       icon: "⌚",
       title: "Indre Ur",
-      text: "Gæt hvad klokken er lige nu inden for ±3 minutter (uden at kigge på skærmen)!",
+      text: "Gæt hvad klokken er lige nu inden for ±3 minutter (uden at kigge på nogen skærm)!",
       sub: "Rammer du inden for 3 min → giv 2 tårer ud! Ved siden af → tag 1 tår selv.",
       winGive: 2,
       failDrink: 1
     },
     {
-      id: "balance_5",
+      id: "notif_guess",
       kind: "challenge",
-      icon: "⚖️",
-      title: "Balance-kunstner",
-      text: "Balancér en coaster, serviet eller ske på hovedet i 5 sekunder uden hænder!",
-      sub: "Bliver den liggende → giv 2 tårer ud! Falder den ned → tag 2 tårer selv.",
+      icon: "📩",
+      title: "Låseskærm-gæt",
+      text: "Gæt hvor mange ulæste beskeder eller notifikationer personen til venstre har på skærmen lige nu (inden for ±3)!",
+      sub: "Rammer du inden for ±3 → giv 2 tårer ud! Ellers → tag 1 tår selv.",
       winGive: 2,
-      failDrink: 2
+      failDrink: 1
     },
     {
-      id: "one_food",
-      kind: "question",
+      id: "pizza_guess",
+      kind: "challenge",
       icon: "🍕",
+      title: "Pizza-profil",
+      text: "Gæt hvilken pizza personen til højre for dig næsten altid bestiller!",
+      sub: "Rigtigt → giv 2 tårer ud! Forkert → tag 1 tår selv.",
+      winGive: 2,
+      failDrink: 1
+    },
+    {
+      id: "rps_side",
+      kind: "challenge",
+      icon: "✊",
+      title: "Lyn-duel",
+      text: "Spil én hurtig runde Sten-Saks-Papir mod personen til venstre for dig!",
+      sub: "Vinder du → giv 2 tårer ud! Taber du → tag 1 tår selv.",
+      winGive: 2,
+      failDrink: 1
+    },
+    {
+      id: "mobilepay_guess",
+      kind: "challenge",
+      icon: "💸",
+      title: "MobilePay-gæt",
+      text: "Gæt ca. hvor meget personen overfor dig sidst sendte eller betalte på MobilePay (inden for ±50 kr.)!",
+      sub: "Inden for ±50 kr. → giv 2 tårer ud! Ellers → tag 1 tår selv.",
+      winGive: 2,
+      failDrink: 1
+    },
+    {
+      id: "last_app",
+      kind: "challenge",
+      icon: "📱",
+      title: "Sidste App",
+      text: "Gæt den sidste app personen til venstre for dig havde åben før dette spil!",
+      sub: "Rigtigt → giv 2 tårer ud! Forkert → tag 1 tår selv.",
+      winGive: 2,
+      failDrink: 1
+    },
+    // 9 skøre & ironiske spørgsmål
+    {
+      id: "coolest",
+      kind: "question",
+      icon: "😎",
       title: "Dagens Spørgsmål",
-      text: "Hvis du kun måtte spise én madret resten af livet, hvad skulle det være — og hvorfor?",
-      sub: "Del dit svar med selskabet!",
+      text: "Fortæl de andre i selskabet, hvorfor du er den sejeste!",
+      sub: "Giv dit bedste bud — eller spring over for 2 tårer.",
       skipDrink: 2
     },
     {
-      id: "weird_buy",
+      id: "animal_fight",
+      kind: "question",
+      icon: "🐻",
+      title: "Skørt Spørgsmål",
+      text: "Hvad er det største dyr, du er 100% sikker på du kunne tæske i en slåskamp — uden våben?",
+      sub: "Bordet vurderer om du overdriver!",
+      skipDrink: 2
+    },
+    {
+      id: "five_year_olds",
+      kind: "question",
+      icon: "🥊",
+      title: "Skørt Spørgsmål",
+      text: "Hvor mange 5-årige kunne du realistisk set kæmpe imod på én gang, før de fik dig ned?",
+      sub: "Forklar din taktik kort!",
+      skipDrink: 2
+    },
+    {
+      id: "one_fastfood",
+      kind: "question",
+      icon: "🍔",
+      title: "Skørt Spørgsmål",
+      text: "Hvis du kun måtte spise én ret resten af livet — og kun fra én fastfood-kæde — hvad vælger du?",
+      sub: "Står du ved dit valg?",
+      skipDrink: 2
+    },
+    {
+      id: "night_buy",
       kind: "question",
       icon: "🛒",
-      title: "Dagens Spørgsmål",
-      text: "Hvad er den sjoveste eller mærkeligste ting du nogensinde har købt sent om aftenen?",
+      title: "Natte-indkøb",
+      text: "Hvad er det dummeste eller mærkeligste impulskøb, du har lavet sent om natten?",
       sub: "Fortæl historien kort!",
-      skipDrink: 2
-    },
-    {
-      id: "desert_island",
-      kind: "question",
-      icon: "🏝️",
-      title: "Dagens Spørgsmål",
-      text: "Hvis hele selskabet strandede på en øde ø — hvem ville bygge lejren, og hvem ville først fare vild?",
-      sub: "Udpeg personerne og forklar hvorfor!",
-      skipDrink: 2
-    },
-    {
-      id: "useless_talent",
-      kind: "question",
-      icon: "✨",
-      title: "Dagens Spørgsmål",
-      text: "Hvad er en helt ubrugelig ting eller 'superkraft', som du faktisk er overraskende god til?",
-      sub: "Vis eller fortæl om dit talent!",
-      skipDrink: 2
-    },
-    {
-      id: "quiz_partner",
-      kind: "question",
-      icon: "🧠",
-      title: "Dagens Spørgsmål",
-      text: "Hvis du skulle vinde 1 million kr. i et quiz-show med én her fra bordet — hvem vælger du og hvorfor?",
-      sub: "Forklar dit taktiske valg!",
-      skipDrink: 2
-    },
-    {
-      id: "mayor_day",
-      kind: "question",
-      icon: "🏛️",
-      title: "Dagens Spørgsmål",
-      text: "Hvis du blev borgmester i byen i én dag, hvad er den første sjove regel du indfører?",
-      sub: "Fremlæg dit bedste lovforslag!",
-      skipDrink: 2
-    },
-    {
-      id: "praise_left",
-      kind: "question",
-      icon: "🌟",
-      title: "Dagens Spørgsmål",
-      text: "Nævn 3 ting som personen til venstre for dig er mega god til!",
-      sub: "Spred god stemning ved bordet!",
       skipDrink: 2
     },
     {
       id: "food_opinion",
       kind: "question",
       icon: "🍍",
-      title: "Dagens Spørgsmål",
-      text: "Hvad er din mest kontroversielle mad-holdning (fx ananas på pizza eller ketchup på pasta)?",
+      title: "Upopulær Holdning",
+      text: "Hvad er din mest kontroversielle holdning til mad eller drikkelse (fx ananas på pizza eller lunkent øl)?",
       sub: "Forsvar din smag for bordet!",
       skipDrink: 2
     },
     {
-      id: "movie_title",
+      id: "roadtrip_12h",
       kind: "question",
-      icon: "🎬",
-      title: "Dagens Spørgsmål",
-      text: "Hvis dit liv lige nu havde en filmtitel, hvad skulle filmen hedde?",
-      sub: "Giv dit bedste bud!",
+      icon: "🚗",
+      title: "12-Timers Bil-tur",
+      text: "Hvis du kun måtte tage én person her fra bordet med på et 12-timers roadtrip — hvem vælger du og hvorfor?",
+      sub: "Vælg taktisk!",
+      skipDrink: 2
+    },
+    {
+      id: "ten_mil",
+      kind: "question",
+      icon: "💰",
+      title: "10 Mio. På Kontoen",
+      text: "Hvis du vågnede op med 10 millioner kr. i morgen, hvad er den første totalt ligegyldige ting du køber?",
+      sub: "Ingen fornuftige svar som 'investere i aktier'!",
+      skipDrink: 2
+    },
+    {
+      id: "worst_at_left",
+      kind: "question",
+      icon: "😂",
+      title: "Ironisk Spørgsmål",
+      text: "Hvad tror du personen til venstre for dig er absolut værst til her i livet?",
+      sub: "Gæt med et smil!",
       skipDrink: 2
     }
   ];
