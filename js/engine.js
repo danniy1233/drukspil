@@ -150,6 +150,9 @@
   }
 
   function getWager() {
+    if (window.Arcade && Arcade.modes && typeof Arcade.modes.isDrinkMode === "function" && Arcade.modes.isDrinkMode()) {
+      return Arcade.modes.state.turnStake || 1;
+    }
     const isQuickDuel = window.Arcade && Arcade.modes && Arcade.modes.state.mode === "duel" && Arcade.modes.state.duelSubMode === "quick";
     if (!isQuickDuel && state.balance <= 0) return 0;
     syncWagerUI();
@@ -159,16 +162,33 @@
   function updateDebtUI() {
     const hud = $("#phoneHud");
     const vig = $("#debtVignette");
-    const isQuickDuel = window.Arcade && Arcade.modes && Arcade.modes.state.mode === "duel" && Arcade.modes.state.duelSubMode === "quick";
+    const modes = window.Arcade && Arcade.modes;
+    const isDrink = modes && typeof modes.isDrinkMode === "function" && modes.isDrinkMode();
+    const isQuickDuel = modes && modes.state.mode === "duel" && modes.state.duelSubMode === "quick";
     const bustAt = getBustLimit();
+    if ($("#hudPoolLabel")) $("#hudPoolLabel").textContent = isDrink ? "Højkant" : "Pulje";
+
+    if (isDrink) {
+      const stake = modes.state.turnStake || 1;
+      if ($("#hudPoolVal")) $("#hudPoolVal").textContent = stake;
+      if ($("#hudPoolLimit")) $("#hudPoolLimit").textContent = stake === 1 ? "tår" : "tårer";
+      if ($("#debtMeterFill")) $("#debtMeterFill").style.width = clamp((stake / 5) * 100, 12, 100) + "%";
+      if (hud) hud.classList.remove("caution", "danger", "critical", "busted");
+      if (vig) vig.classList.remove("caution", "danger", "critical");
+      if (typeof modes.renderHudExtras === "function") {
+        modes.renderHudExtras();
+      }
+      return;
+    }
+
     if (isQuickDuel) {
       if ($("#hudPoolVal")) $("#hudPoolVal").textContent = "⚔️";
       if ($("#hudPoolLimit")) $("#hudPoolLimit").textContent = "Hurtig";
       if ($("#debtMeterFill")) $("#debtMeterFill").style.width = "50%";
       if (hud) hud.classList.remove("caution", "danger", "critical", "busted");
       if (vig) vig.classList.remove("caution", "danger", "critical");
-      if (window.Arcade && Arcade.modes && typeof Arcade.modes.renderHudExtras === "function") {
-        Arcade.modes.renderHudExtras();
+      if (typeof modes.renderHudExtras === "function") {
+        modes.renderHudExtras();
       }
       return;
     }
@@ -212,6 +232,33 @@
 
   function updateBalance(rawDelta, reason = "", feedbackMode = "auto", zeroDelay = null, opts = {}) {
     const modes = window.Arcade && Arcade.modes;
+    if (modes && typeof modes.isDrinkMode === "function" && modes.isDrinkMode()) {
+      const dr = modes.applyDrinkOutcome(rawDelta, state.balance, opts);
+      state.balance = 10;
+      state.debtBusted = false;
+      state.lastBalanceDelta = dr.signedAmount;
+      state.pendingGiveAmount = 0;
+      state.pendingGiveLabel = "";
+      state.pendingGiveTransferDone = false;
+      updateDebtUI();
+
+      const c = $("#balanceChange");
+      if (c) {
+        c.textContent = dr.flyText;
+        c.style.color = dr.outcomeType === "good" ? "var(--green)" : dr.outcomeType === "bad" ? "var(--red)" : "var(--muted)";
+        c.classList.remove("fly");
+        void c.offsetWidth;
+        c.classList.add("fly");
+      }
+
+      pushHistory(dr.historyText);
+      if (feedbackMode === "auto") {
+        if (dr.outcomeType === "good") feedback("good");
+        if (dr.outcomeType === "bad") feedback("bad");
+      }
+      return dr.signedAmount;
+    }
+
     const delta = modes && typeof modes.transformDelta === "function"
       ? modes.transformDelta(rawDelta, state.balance)
       : rawDelta;
@@ -347,13 +394,33 @@
     const type = cfg.type || (state.lastBalanceDelta < 0 ? "good" : state.lastBalanceDelta > 0 ? "bad" : "special");
     const delta = typeof cfg.delta === "number" ? cfg.delta : state.lastBalanceDelta;
     const modes = window.Arcade && Arcade.modes;
+    const isDrink = modes && typeof modes.isDrinkMode === "function" && modes.isDrinkMode();
+    const dr = isDrink ? modes.state.lastDrinkResult : null;
     const modeInfo = modes ? modes.getModeOutcomeConfig() : { mode: "classic" };
 
     let color = "#ffc857";
     let badgeText = cfg.badge || "";
     let headlineText = cfg.headline || "";
 
-    if (state.balance === 0) {
+    if (dr) {
+      if (dr.shotsToGive > 0) {
+        color = "#ffd86b";
+        badgeText = "🥃 MEGA-JACKPOT!";
+        headlineText = `🥃 UDDEL 1 SHOT + ${dr.giveAmt} ${dr.giveAmt === 1 ? "TÅR" : "TÅRER"}!`;
+      } else if (dr.outcomeType === "good") {
+        color = "#45d483";
+        badgeText = "🎁 DU VANDT!";
+        headlineText = `🎁 GIV ${dr.giveAmt} ${dr.giveAmt === 1 ? "TÅR" : "TÅRER"} UD!`;
+      } else if (dr.outcomeType === "bad") {
+        color = "#ff6475";
+        badgeText = "🍻 DU TABTE!";
+        headlineText = `🍻 DRIK ${dr.drinkAmt} ${dr.drinkAmt === 1 ? "TÅR" : "TÅRER"} NU!`;
+      } else {
+        color = "#ffc857";
+        badgeText = "🤝 UAFGJORT";
+        headlineText = "🤝 SLAP FRI · 0 TÅRER";
+      }
+    } else if (state.balance === 0) {
       color = "#45d483";
       badgeText = badgeText || "🏆 PULJE RAMTE 0!";
       headlineText = headlineText || "DU ER I 0 TÅRER!";
@@ -400,10 +467,20 @@
 
     renderTransferBox($("#outcomeTransferBox"));
 
-    $("#outcomePoolVal").textContent = `${state.balance} tårer`;
+    if ($("#outcomePoolLabel")) $("#outcomePoolLabel").textContent = dr ? "På højkant" : "Pulje nu";
+    if ($("#outcomeChangeLabel")) $("#outcomeChangeLabel").textContent = dr ? "Samlet stilling" : "Ændring";
+
     const changeEl = $("#outcomeChangeVal");
-    changeEl.textContent = `${delta > 0 ? "+" : ""}${delta} tårer`;
-    changeEl.style.color = delta < 0 ? "var(--green)" : delta > 0 ? "var(--red)" : "#fff";
+    if (dr) {
+      const curP = modes.currentPlayer();
+      $("#outcomePoolVal").textContent = `${dr.stake} ${dr.stake === 1 ? "tår" : "tårer"}`;
+      changeEl.textContent = curP ? `🍻 ${curP.drunk} · 🎁 ${curP.given}` : "🍻 0 · 🎁 0";
+      changeEl.style.color = dr.outcomeType === "good" ? "var(--green)" : dr.outcomeType === "bad" ? "var(--red)" : "#fff";
+    } else {
+      $("#outcomePoolVal").textContent = `${state.balance} tårer`;
+      changeEl.textContent = `${delta > 0 ? "+" : ""}${delta} tårer`;
+      changeEl.style.color = delta < 0 ? "var(--green)" : delta > 0 ? "var(--red)" : "#fff";
+    }
 
     const mainBtn = $("#outcomeMainBtn");
     const switchBtn = $("#outcomeSwitchBtn");

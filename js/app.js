@@ -2,6 +2,7 @@
   const { $, $$, clamp, state, registry, categories, modes, caseModal, beep, setBusy, getMinWager, syncWagerUI, updateDebtUI, dismissOutcomeModal } = window.Arcade;
 
   let selectedMode = "classic";
+  let drinkSub = "solo";
   let chaosSub = "solo";
   let duelSub = "pools";
   let setupPlayers = [
@@ -15,7 +16,7 @@
   function renderModeCards() {
     const grid = $("#modeGrid");
     if (!grid) return;
-    const order = ["classic", "party", "duel", "hardcore", "chaos"];
+    const order = ["classic", "drink", "party", "duel", "hardcore", "chaos"];
     grid.innerHTML = order.map(id => {
       const m = modes.MODES[id];
       const active = selectedMode === id;
@@ -51,7 +52,10 @@
           </div>
         `).join("")}
       </div>
-      ${selectedMode !== "duel" && setupPlayers.length < 8 ? `<button type="button" class="btn small" id="addPlayerBtn" style="width:100%;margin-bottom:8px">+ Tilføj spiller (${setupPlayers.length}/8)</button>` : ""}
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        ${selectedMode !== "duel" && setupPlayers.length < 8 ? `<button type="button" class="btn small" id="addPlayerBtn" style="flex:1">+ Tilføj (${setupPlayers.length}/8)</button>` : ""}
+        ${!hidePools ? `<button type="button" class="btn small" id="randPoolsBtn" style="flex:1">🎲 Tilfældige puljer</button>` : ""}
+      </div>
     `;
   }
 
@@ -80,6 +84,15 @@
         renderModeSetup();
       };
     }
+    if ($("#randPoolsBtn")) {
+      $("#randPoolsBtn").onclick = () => {
+        setupPlayers.forEach(p => {
+          p.balance = clamp(2 + Math.floor(Math.random() * 7), 1, maxPool);
+        });
+        beep(640, 0.04, 0.02);
+        renderModeSetup();
+      };
+    }
   }
 
   function renderModeSetup() {
@@ -90,15 +103,28 @@
       box.innerHTML = `
         <span class="setup-label">Startpulje (1–10 tårer)</span>
         <p class="setup-rule-note">Spil alle 27 minispil alene. Ram <strong>0</strong> for at vinde – rammer puljen <strong>11</strong> taber du.</p>
-        <div class="start-input-row">
-          <input id="startAmount" type="number" min="1" max="10" value="4">
+        <div class="start-input-row" style="display:flex;gap:8px;align-items:center">
+          <input id="startAmount" type="number" min="1" max="10" value="4" style="flex:1">
+          <button type="button" class="btn small" id="randStartBtn">🎲 Tilfældig</button>
         </div>`;
+    } else if (selectedMode === "drink") {
+      box.innerHTML = `
+        <span class="setup-label">🍻 Drukspil Format (Ingen pulje)</span>
+        <div class="toggle-row">
+          <button type="button" class="toggle-pill ${drinkSub === "solo" ? "active" : ""}" data-drsub="solo">Solo Drukspil</button>
+          <button type="button" class="toggle-pill ${drinkSub === "party" ? "active" : ""}" data-drsub="party">Party Drukspil (2–8)</button>
+        </div>
+        <p class="setup-rule-note">Ingen startpulje! Spillet vælger et tilfældigt minispil og sætter <strong>1–5 tårer</strong> på højkant hver tur. Tab → <strong>Drik!</strong> · Vinder → <strong>Giv ud!</strong></p>
+        ${drinkSub === "party" ? renderPlayerInputs(10, true) : ""}`;
+      $$("[data-drsub]").forEach(b => b.onclick = () => { drinkSub = b.dataset.drsub; renderModeSetup(); });
+      if (drinkSub === "party") wirePlayerInputs(10);
     } else if (selectedMode === "hardcore") {
       box.innerHTML = `
         <span class="setup-label">🔥 Hardcore Startpulje (1–20 tårer)</span>
         <p class="setup-rule-note">Hårdere indsats: Minimumsindsats er <strong>50% af din pulje</strong> (min. 2), og hvert tab giver <strong>+1 ekstra straftår</strong>. Bust ved 21!</p>
-        <div class="start-input-row">
-          <input id="startAmount" type="number" min="1" max="20" value="8">
+        <div class="start-input-row" style="display:flex;gap:8px;align-items:center">
+          <input id="startAmount" type="number" min="1" max="20" value="8" style="flex:1">
+          <button type="button" class="btn small" id="randStartBtn">🎲 Tilfældig</button>
         </div>`;
     } else if (selectedMode === "party") {
       box.innerHTML = `
@@ -129,10 +155,19 @@
         </div>
         <p class="setup-rule-note">Appen trækker et tilfældigt spil + en vild Kaos-modifier til hver tur!</p>
         ${chaosSub === "solo"
-          ? `<span class="setup-label">Startpulje (1–10)</span><div class="start-input-row"><input id="startAmount" type="number" min="1" max="10" value="4"></div>`
+          ? `<span class="setup-label">Startpulje (1–10)</span><div class="start-input-row" style="display:flex;gap:8px;align-items:center"><input id="startAmount" type="number" min="1" max="10" value="4" style="flex:1"><button type="button" class="btn small" id="randStartBtn">🎲 Tilfældig</button></div>`
           : renderPlayerInputs(10, false)}`;
       $$("[data-csub]").forEach(b => b.onclick = () => { chaosSub = b.dataset.csub; renderModeSetup(); });
       if (chaosSub === "party") wirePlayerInputs(10);
+    }
+
+    if ($("#randStartBtn") && $("#startAmount")) {
+      $("#randStartBtn").onclick = () => {
+        const isHc = selectedMode === "hardcore";
+        const val = isHc ? (4 + Math.floor(Math.random() * 13)) : (2 + Math.floor(Math.random() * 8));
+        $("#startAmount").value = val;
+        beep(640, 0.04, 0.02);
+      };
     }
   }
 
@@ -140,15 +175,15 @@
   // NAVIGATION & VIEWS (PHONE BOTTOM NAV)
   // ==========================================================
   function switchView(viewName) {
-    if (viewName === "games" && modes.state.mode === "chaos") return;
+    if (viewName === "games" && (modes.state.mode === "chaos" || modes.state.mode === "drink")) return;
     state.activeView = viewName;
     $$(".phone-view").forEach(v => v.classList.toggle("active", v.dataset.view === viewName));
     $$(".nav-tab").forEach(t => t.classList.toggle("active", t.dataset.nav === viewName));
 
-    // Vis kun wager-strip når man er i Arena (eller Quick Duel)
+    // Vis kun wager-strip når man er i Arena (og ikke i Drukspil-mode)
     const wagerStrip = $("#hudWagerStrip");
     if (wagerStrip) {
-      wagerStrip.classList.toggle("hidden", viewName !== "arena");
+      wagerStrip.classList.toggle("hidden", viewName !== "arena" || modes.isDrinkMode());
     }
 
     if (viewName === "games") renderGamesGrid();
@@ -232,11 +267,28 @@
   function renderStatusView() {
     const sbCard = $("#statusScoreboardCard");
     const sbList = $("#statusScoreboardList");
+    const isDrink = modes.isDrinkMode();
     const isMulti = modes.isMultiplayer() || modes.state.mode === "duel";
 
     if (sbCard && sbList) {
-      sbCard.classList.toggle("hidden", !isMulti);
-      if (isMulti) {
+      sbCard.classList.toggle("hidden", !isMulti && !isDrink);
+      const sbHeading = sbCard.querySelector("h3");
+      if (isDrink) {
+        if (sbHeading) sbHeading.textContent = "🍻 Drukket & Givet ud";
+        const cur = modes.currentPlayer();
+        sbList.innerHTML = modes.state.players.map(p => {
+          const isCur = isMulti && cur && cur.id === p.id;
+          return `
+            <div class="scoreboard-item ${isCur ? "current" : ""}">
+              <div>
+                <strong>${isCur ? "▶ " : ""}${p.name}</strong>
+                <small>${isMulti ? (isCur ? "Spiller nu" : "Venter på tur") : "Solo statistik"}</small>
+              </div>
+              <div class="scoreboard-pts">🍻 ${p.drunk || 0} · 🎁 ${p.given || 0}</div>
+            </div>`;
+        }).join("");
+      } else if (isMulti) {
+        if (sbHeading) sbHeading.textContent = "👥 Spillere & Stilling";
         const cur = modes.currentPlayer();
         sbList.innerHTML = modes.state.players.map(p => {
           const isCur = modes.isMultiplayer() && cur && cur.id === p.id;
@@ -262,9 +314,17 @@
 
     const rulesEl = $("#statusRulesText");
     if (rulesEl) {
-      const m = modes.MODES[modes.state.mode];
-      const bust = modes.getBustLimit();
-      rulesEl.textContent = `${m.icon} ${m.name}: Gældsgrænse er ${bust}. Indsats stiger ikke automatisk ved tab. MAX sætter hele din aktuelle pulje.`;
+      if (isDrink) {
+        rulesEl.textContent = "🍻 Drukspil: Ingen startpulje og ingen gældsgrænse. Hver tur vælger spillet et tilfældigt minispil med 1–5 tårer på højkant. Taber du → drik! Vinder du → giv ud!";
+      } else {
+        const m = modes.MODES[modes.state.mode];
+        const bust = modes.getBustLimit();
+        rulesEl.textContent = `${m.icon} ${m.name}: Gældsgrænse er ${bust}. Indsats stiger ikke automatisk ved tab. MAX sætter hele din aktuelle pulje.`;
+      }
+    }
+
+    if ($("#takeBtn")) {
+      $("#takeBtn").textContent = isDrink ? "Afslut drukspil & gå til start" : "Tag puljen & afslut runde";
     }
   }
 
@@ -280,6 +340,7 @@
 
     modes.startModeSession({
       mode: selectedMode,
+      drinkSubMode: drinkSub,
       chaosSubMode: chaosSub,
       duelSubMode: duelSub,
       soloAmount: soloAmt,
@@ -298,14 +359,18 @@
 
     const gamesNavBtn = $(`.nav-tab[data-nav="games"]`);
     if (gamesNavBtn) {
-      const locked = modes.state.mode === "chaos";
+      const isChaos = modes.state.mode === "chaos";
+      const isDrink = modes.isDrinkMode();
+      const locked = isChaos || isDrink;
       const duelCount = [...registry.values()].filter(g => g.duel).length;
       gamesNavBtn.style.opacity = locked ? "0.35" : "1";
-      gamesNavBtn.querySelector("span:last-child").textContent = locked
+      gamesNavBtn.querySelector("span:last-child").textContent = isChaos
         ? "Kaos vælger"
-        : modes.state.mode === "duel"
-          ? `Duel (${duelCount})`
-          : `Spil (${registry.size})`;
+        : isDrink
+          ? "Drukspil vælger"
+          : modes.state.mode === "duel"
+            ? `Duel (${duelCount})`
+            : `Spil (${registry.size})`;
     }
 
     setBusy(false);
@@ -406,7 +471,7 @@
     $("#caseModalCloseBtn").onclick = () => caseModal.dismissCaseModal("stay");
     $("#caseModalSwitchBtn").onclick = () => caseModal.dismissCaseModal("switch");
     $("#caseModal").onclick = e => {
-      if (e.target === $("#caseModal") && state.balance > 0 && !state.debtBusted && !modes.isMultiplayer() && modes.state.mode !== "chaos") {
+      if (e.target === $("#caseModal") && state.balance > 0 && !state.debtBusted && !modes.isMultiplayer() && modes.state.mode !== "chaos" && !modes.isDrinkMode()) {
         caseModal.dismissCaseModal("stay");
       }
     };
@@ -414,7 +479,7 @@
     $("#outcomeMainBtn").onclick = () => dismissOutcomeModal("stay");
     $("#outcomeSwitchBtn").onclick = () => dismissOutcomeModal("switch");
     $("#outcomeModal").onclick = e => {
-      if (e.target === $("#outcomeModal") && state.balance > 0 && !state.debtBusted && !modes.isMultiplayer() && modes.state.mode !== "chaos" && modes.state.mode !== "duel") {
+      if (e.target === $("#outcomeModal") && state.balance > 0 && !state.debtBusted && !modes.isMultiplayer() && modes.state.mode !== "chaos" && modes.state.mode !== "duel" && !modes.isDrinkMode()) {
         dismissOutcomeModal("stay");
       }
     };
@@ -436,7 +501,7 @@
     });
 
     if ($("#topGameBadge")) {
-      $("#topGameBadge").textContent = `${registry.size} spil · 5 modes`;
+      $("#topGameBadge").textContent = `${registry.size} spil · 6 modes`;
     }
   }
 

@@ -62,7 +62,7 @@
 
     <div class="case-modal-stats-row">
       <div class="case-stat">
-        <span class="case-stat-label">Pulje nu</span>
+        <span class="case-stat-label" id="casePoolLabel">Pulje nu</span>
         <strong class="case-stat-val" id="caseModalPoolVal">0 tårer</strong>
       </div>
       <div class="case-stat">
@@ -97,11 +97,11 @@
 
     <div class="outcome-stats-row">
       <div class="outcome-stat">
-        <span class="outcome-stat-label">Pulje nu</span>
+        <span class="outcome-stat-label" id="outcomePoolLabel">Pulje nu</span>
         <strong class="outcome-stat-val" id="outcomePoolVal">0 tårer</strong>
       </div>
       <div class="outcome-stat">
-        <span class="outcome-stat-label">Ændring</span>
+        <span class="outcome-stat-label" id="outcomeChangeLabel">Ændring</span>
         <strong class="outcome-stat-val" id="outcomeChangeVal">0 tårer</strong>
       </div>
     </div>
@@ -119,7 +119,7 @@
       <h1>🎰 Penalty Gamble</h1>
       <p>Mobil-optimeret drukspil · flere gamemodes</p>
     </div>
-    <div class="badge" id="topGameBadge">27 spil · 5 modes</div>
+    <div class="badge" id="topGameBadge">27 spil · 6 modes</div>
   </div>
 
   <!-- START SCREEN -->
@@ -127,7 +127,7 @@
     <div class="start-hero">
       <div class="start-icon">🎲</div>
       <h2>Vælg Gamemode</h2>
-      <p class="start-sub">Classic Solo er klar som standard – eller prøv Party, Duel, Hardcore eller Kaos.</p>
+      <p class="start-sub">Classic Solo er klar som standard – eller prøv Drukspil, Party, Duel, Hardcore eller Kaos.</p>
     </div>
 
     <div class="mode-grid" id="modeGrid"></div>
@@ -147,7 +147,7 @@
           <span class="hud-player-name" id="hudPlayerName">Solo</span>
         </div>
         <div class="hud-pool-wrap">
-          <span class="hud-pool-label">Pulje</span>
+          <span class="hud-pool-label" id="hudPoolLabel">Pulje</span>
           <span class="hud-pool-val" id="hudPoolVal">4</span>
           <span class="hud-pool-limit" id="hudPoolLimit">/ 11</span>
           <div class="balance-change" id="balanceChange"></div>

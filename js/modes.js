@@ -3,6 +3,7 @@
 
   const MODES = {
     classic: { id: "classic", name: "Classic Solo", icon: "🎲", desc: "1 spiller · Start 1–10 · Bust ved 11" },
+    drink:   { id: "drink",   name: "Drukspil",     icon: "🍻", desc: "Ingen pulje · Spillet ruller 1–5 tårer & spil" },
     party:   { id: "party",   name: "Party",        icon: "👥", desc: "2–8 spillere · Pass-the-phone & giv ud" },
     duel:    { id: "duel",    name: "Duel 1v1",     icon: "⚔️", desc: "2 spillere kæmper direkte mod hinanden" },
     hardcore:{ id: "hardcore",name: "Hardcore",     icon: "🔥", desc: "Start 1–20 · Bust ved 21 · Hårdere straf" },
@@ -21,15 +22,24 @@
   const modeState = {
     mode: "classic",
     chaosSubMode: "solo", // "solo" | "party"
+    drinkSubMode: "solo", // "solo" | "party"
     duelSubMode: "pools", // "pools" | "quick"
     players: [],
     turnIndex: 0,
+    turnStake: 2,
+    lastDrinkResult: null,
     activeModifier: null,
     duelSession: null
   };
 
+  function isDrinkMode() {
+    return modeState.mode === "drink";
+  }
+
   function isMultiplayer() {
-    return modeState.mode === "party" || (modeState.mode === "chaos" && modeState.chaosSubMode === "party");
+    return modeState.mode === "party"
+      || (modeState.mode === "chaos" && modeState.chaosSubMode === "party")
+      || (modeState.mode === "drink" && modeState.drinkSubMode === "party");
   }
 
   function currentPlayer() {
@@ -84,7 +94,7 @@
   }
 
   function canTransferSips() {
-    return isMultiplayer() && activePlayers().filter(p => p.id !== currentPlayer()?.id).length > 0;
+    return !isDrinkMode() && isMultiplayer() && activePlayers().filter(p => p.id !== currentPlayer()?.id).length > 0;
   }
 
   function getTransferTargets() {
@@ -113,6 +123,112 @@
     }
   }
 
+  function rollDrinkTurn() {
+    const allIds = [...registry.keys()];
+    const pickId = allIds[Math.floor(Math.random() * allIds.length)] || "wheel";
+    state.game = pickId;
+    state.higherStreak = 0;
+    const pool = [1, 2, 2, 3, 3, 4, 4, 5];
+    modeState.turnStake = pool[Math.floor(Math.random() * pool.length)];
+    modeState.lastDrinkResult = null;
+    state.balance = 10;
+    state.desiredWager = modeState.turnStake;
+  }
+
+  function applyDrinkOutcome(rawDelta, currentBal, opts = {}) {
+    const cur = currentPlayer();
+    const stake = modeState.turnStake || 2;
+    const isClear = rawDelta <= -currentBal && currentBal > 0;
+    let res;
+
+    if (isClear) {
+      const giveAmt = stake + 2 + (opts.giveAmount || 0);
+      if (cur) cur.given += giveAmt;
+      res = {
+        outcomeType: "good",
+        isJackpotClear: true,
+        giveAmt,
+        drinkAmt: 0,
+        shotsToGive: 1,
+        stake,
+        signedAmount: -giveAmt,
+        flyText: "🥃 SHOT!",
+        historyText: `🥃 ${cur ? cur.name : "Du"}: Uddel 1 SHOT + ${giveAmt} tårer!`
+      };
+    } else if (opts.drinkSelf) {
+      const drinkAmt = opts.drinkSelf + (rawDelta > 0 ? Math.max(1, Math.round(rawDelta)) : 0);
+      if (cur) cur.drunk += drinkAmt;
+      res = {
+        outcomeType: "bad",
+        isJackpotClear: false,
+        giveAmt: 0,
+        drinkAmt,
+        shotsToGive: 0,
+        stake,
+        signedAmount: drinkAmt,
+        flyText: `🍻 +${drinkAmt}`,
+        historyText: `🍻 ${cur ? cur.name : "Du"}: Drik ${drinkAmt} tårer!`
+      };
+    } else if (opts.giveShot) {
+      const giveAmt = Math.max(1, Math.abs(Math.round(rawDelta || stake)));
+      if (cur) cur.given += giveAmt;
+      res = {
+        outcomeType: "good",
+        isJackpotClear: true,
+        giveAmt,
+        drinkAmt: 0,
+        shotsToGive: 1,
+        stake,
+        signedAmount: -giveAmt,
+        flyText: "🥃 SHOT!",
+        historyText: `🥃 ${cur ? cur.name : "Du"}: Uddel 1 SHOT + ${giveAmt} tårer!`
+      };
+    } else if (rawDelta < 0 || opts.giveAmount) {
+      const giveAmt = Math.max(opts.giveAmount || 0, Math.abs(Math.round(rawDelta)));
+      if (cur) cur.given += giveAmt;
+      res = {
+        outcomeType: "good",
+        isJackpotClear: false,
+        giveAmt,
+        drinkAmt: 0,
+        shotsToGive: 0,
+        stake,
+        signedAmount: -giveAmt,
+        flyText: `🎁 ${giveAmt}`,
+        historyText: `🎁 ${cur ? cur.name : "Du"}: Giv ${giveAmt} ${giveAmt === 1 ? "tår" : "tårer"} ud!`
+      };
+    } else if (rawDelta > 0) {
+      const drinkAmt = Math.max(1, Math.round(rawDelta));
+      if (cur) cur.drunk += drinkAmt;
+      res = {
+        outcomeType: "bad",
+        isJackpotClear: false,
+        giveAmt: 0,
+        drinkAmt,
+        shotsToGive: 0,
+        stake,
+        signedAmount: drinkAmt,
+        flyText: `🍻 ${drinkAmt}`,
+        historyText: `🍻 ${cur ? cur.name : "Du"}: Drik ${drinkAmt} ${drinkAmt === 1 ? "tår" : "tårer"}!`
+      };
+    } else {
+      res = {
+        outcomeType: "special",
+        isJackpotClear: false,
+        giveAmt: 0,
+        drinkAmt: 0,
+        shotsToGive: 0,
+        stake,
+        signedAmount: 0,
+        flyText: "0",
+        historyText: `🤝 ${cur ? cur.name : "Du"}: Slap fri (0 tårer)`
+      };
+    }
+
+    modeState.lastDrinkResult = res;
+    return res;
+  }
+
   function findNextActivePlayerIndex(fromIdx) {
     const n = modeState.players.length;
     for (let step = 1; step <= n; step++) {
@@ -123,7 +239,7 @@
   }
 
   function shouldEndMultiplayerSession() {
-    if (!isMultiplayer()) return false;
+    if (!isMultiplayer() || isDrinkMode()) return false;
     const active = activePlayers();
     // Stopper når 0 aktive eller kun 1 aktiv tilbage mens alle andre enten er sikre/busted (hvis >=2 spillere)
     if (active.length === 0) return true;
@@ -135,6 +251,27 @@
 
   function getModeOutcomeConfig() {
     const cur = currentPlayer();
+    if (isDrinkMode()) {
+      if (isMultiplayer()) {
+        const nextIdx = (modeState.turnIndex + 1) % modeState.players.length;
+        const nextP = modeState.players[nextIdx];
+        return {
+          mode: "drink",
+          playerLabel: cur ? cur.name : "",
+          isPartyOrChaosNext: true,
+          nextBtnText: `🍻 NÆSTE SPILLER: ${nextP.name} ➔`,
+          showSwitch: false
+        };
+      }
+      return {
+        mode: "drink",
+        playerLabel: "Drukspil Solo",
+        isPartyOrChaosNext: true,
+        nextBtnText: "🍻 NÆSTE TUR (NYT SPIL) ➔",
+        showSwitch: false
+      };
+    }
+
     if (isMultiplayer()) {
       const ended = shouldEndMultiplayerSession();
       if (ended) {
@@ -212,6 +349,19 @@
   }
 
   function handleAfterOutcome(action) {
+    if (isDrinkMode()) {
+      if (isMultiplayer()) {
+        modeState.turnIndex = (modeState.turnIndex + 1) % modeState.players.length;
+      }
+      rollDrinkTurn();
+      setBusy(false);
+      updateDebtUI();
+      syncWagerUI();
+      Arcade.app.renderActiveGame();
+      Arcade.app.switchView("arena");
+      return true;
+    }
+
     if (isMultiplayer()) {
       if (shouldEndMultiplayerSession()) {
         showPartyFinalSummary();
@@ -271,7 +421,10 @@
     }
 
     if (nameEl) {
-      if (isMultiplayer()) {
+      if (isDrinkMode()) {
+        const p = currentPlayer();
+        nameEl.textContent = isMultiplayer() ? `${p.name}s tur` : `${p.drunk} 🍻 · ${p.given} 🎁`;
+      } else if (isMultiplayer()) {
         const p = currentPlayer();
         nameEl.textContent = p ? `${p.name}s tur` : "Party";
       } else if (modeState.mode === "duel") {
@@ -288,7 +441,13 @@
     }
 
     if (ctxBanner) {
-      if (modeState.mode === "chaos" && modeState.activeModifier) {
+      if (isDrinkMode()) {
+        const p = currentPlayer();
+        const s = modeState.turnStake;
+        ctxBanner.className = "context-banner drink";
+        ctxBanner.innerHTML = `<span>🍻 DENNE TUR: ${s} ${s === 1 ? "TÅR" : "TÅRER"} PÅ HØJKANT</span><small style="opacity:.88;font-weight:800">${p.drunk} 🍻 · ${p.given} 🎁</small>`;
+        ctxBanner.classList.remove("hidden");
+      } else if (modeState.mode === "chaos" && modeState.activeModifier) {
         ctxBanner.className = "context-banner chaos";
         ctxBanner.innerHTML = `<span>${modeState.activeModifier.label}</span><small style="opacity:.85;font-weight:700">${modeState.activeModifier.desc}</small>`;
         ctxBanner.classList.remove("hidden");
@@ -310,22 +469,30 @@
   function startModeSession(config) {
     modeState.mode = config.mode || "classic";
     modeState.chaosSubMode = config.chaosSubMode || "solo";
+    modeState.drinkSubMode = config.drinkSubMode || "solo";
     modeState.duelSubMode = config.duelSubMode || "pools";
-    modeState.players = (config.players || []).map((p, idx) => ({
-      id: idx + 1,
-      name: p.name.trim() || `Spiller ${idx + 1}`,
-      balance: clamp(parseInt(p.balance || 4, 10), 1, getMaxStartPool()),
-      status: "active"
-    }));
+
+    if (modeState.mode === "drink" && modeState.drinkSubMode === "solo") {
+      modeState.players = [{ id: 1, name: "Dig", balance: 10, status: "active", drunk: 0, given: 0 }];
+    } else {
+      modeState.players = (config.players || []).map((p, idx) => ({
+        id: idx + 1,
+        name: p.name.trim() || `Spiller ${idx + 1}`,
+        balance: clamp(parseInt(p.balance || 4, 10), 1, getMaxStartPool()),
+        status: "active",
+        drunk: 0,
+        given: 0
+      }));
+    }
     modeState.turnIndex = 0;
     modeState.activeModifier = null;
+    modeState.lastDrinkResult = null;
 
-    if (modeState.mode === "duel") {
-      // Sørg for at spillet er duel-kompatibelt
+    if (modeState.mode === "drink") {
+      rollDrinkTurn();
+    } else if (modeState.mode === "duel") {
       const curDef = registry.get(state.game);
-      if (!curDef || !curDef.duel) {
-        state.game = "rps";
-      }
+      if (!curDef || !curDef.duel) state.game = "rps";
       state.balance = modeState.players[0].balance;
     } else if (isMultiplayer()) {
       state.balance = modeState.players[0].balance;
@@ -333,12 +500,14 @@
       state.balance = clamp(parseInt(config.soloAmount || 4, 10), 1, getMaxStartPool());
     }
 
-    state.initialStakeCap = state.balance;
-    state.desiredWager = modeState.mode === "hardcore"
-      ? getMinWager(state.balance)
-      : isMultiplayer()
-        ? Math.min(2, state.balance)
-        : state.balance;
+    if (modeState.mode !== "drink") {
+      state.initialStakeCap = state.balance;
+      state.desiredWager = modeState.mode === "hardcore"
+        ? getMinWager(state.balance)
+        : isMultiplayer()
+          ? Math.min(2, state.balance)
+          : state.balance;
+    }
     state.debtBusted = false;
     state.roundEnding = false;
     state.higherStreak = 0;
@@ -803,6 +972,9 @@
     CHAOS_MODIFIERS,
     state: modeState,
     isMultiplayer,
+    isDrinkMode,
+    rollDrinkTurn,
+    applyDrinkOutcome,
     currentPlayer,
     activePlayers,
     getBustLimit,

@@ -147,11 +147,10 @@ button{cursor:pointer}
   color:var(--text);
   display:flex;
   flex-direction:column;
-  gap:3px;
+  gap:4px;
   transition:border-color .15s,background .15s,transform .12s;
   position:relative;
 }
-.mode-card:first-child{grid-column:1/-1;flex-direction:row;align-items:center;gap:10px;padding:12px}
 .mode-card .mode-ico{font-size:24px;line-height:1}
 .mode-card strong{font-size:13.5px;display:block}
 .mode-card span{font-size:10.5px;color:var(--muted);line-height:1.25;display:block}
@@ -323,6 +322,7 @@ button{cursor:pointer}
 .hud-mode-pill.chaos{background:rgba(165,120,255,.18);border-color:rgba(165,120,255,.45);color:#d3b8ff}
 .hud-mode-pill.duel{background:rgba(94,161,255,.18);border-color:rgba(94,161,255,.45);color:#9cc7ff}
 .hud-mode-pill.party{background:rgba(69,212,131,.16);border-color:rgba(69,212,131,.4);color:#9cf2c1}
+.hud-mode-pill.drink{background:rgba(255,175,64,.18);border-color:rgba(255,175,64,.48);color:#ffd280}
 
 .hud-player-name{
   font-size:13.5px;
@@ -444,6 +444,11 @@ button{cursor:pointer}
   background:linear-gradient(135deg,rgba(94,161,255,.16),rgba(255,200,87,.09));
   border:1px solid rgba(94,161,255,.42);
   color:#dbeafe;
+}
+.context-banner.drink{
+  background:linear-gradient(135deg,rgba(255,175,64,.18),rgba(69,212,131,.1));
+  border:1px solid rgba(255,175,64,.46);
+  color:#ffebc2;
 }
 
 /* VIEWS */

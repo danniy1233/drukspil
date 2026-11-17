@@ -438,51 +438,57 @@
 
   function handleCaseOutcome(win, w) {
     const meta = rarityMeta[win.cls] || { label: win.cls, quality: "", color: "#ffc857", chance: "" };
+    const modes = window.Arcade && Arcade.modes;
+    const isDrink = modes && typeof modes.isDrinkMode === "function" && modes.isDrinkMode();
     let actionTitle = "", actionDesc = "", extraRule = "", actual = 0;
 
     if (win.kind === "clear") {
-      actual = updateBalance(-state.balance, `Case: ${win.name}. Hele puljen clearet!`, "auto", null, win.bonusGive ? { giveAmount: win.bonusGive, giveLabel: `${win.bonusGive} tårer` } : {});
-      actionTitle = "🏆 HELE PULJEN ER CLEARET TIL 0!";
-      actionDesc = `Du har vundet runden! ${Math.abs(actual)} point forsvandt fra puljen.`;
+      actual = updateBalance(-state.balance, `Case: ${win.name}.`, "auto", null, { isClear: true, giveAmount: win.bonusGive || 0, giveLabel: win.bonusGive ? `${win.bonusGive} tårer` : "" });
+      actionTitle = isDrink ? "🥃 MEGA-JACKPOT: UDDEL 1 SHOT!" : "🏆 HELE PULJEN ER CLEARET TIL 0!";
+      actionDesc = isDrink ? `Vildt drop! Uddel 1 SHOT + ${Math.abs(actual)} tårer til bordet!` : `Du har vundet runden! ${Math.abs(actual)} point forsvandt fra puljen.`;
       if (win.bonusShot && win.bonusGive) extraRule = `🎉 Samtidig skal du uddele ${win.bonusShot} shot OG give ${win.bonusGive} tårer ud!`;
       else if (win.bonusShot) extraRule = `🎉 Samtidig skal du uddele ${win.bonusShot} ${win.bonusShot > 1 ? "shots" : "shot"} til modstanderne!`;
       else if (win.bonusGive) extraRule = `🎉 Samtidig giver du ${win.bonusGive} tårer ud til de andre!`;
       confetti();
     } else if (win.kind === "halve") {
       const half = Math.max(1, Math.round(state.balance / 2));
-      actual = updateBalance(-half, `Case: ${win.name}. Puljen halveret!`, "auto", null);
-      actionTitle = "💀 HALVERING AF PULJEN!";
-      actionDesc = `Halvdelen af din pulje forsvandt! ${Math.abs(actual)} point blev fjernet.`;
+      actual = updateBalance(-half, `Case: ${win.name}.`, "auto", null);
+      actionTitle = isDrink ? `🎁 GIV ${Math.abs(actual)} TÅRER UD!` : "💀 HALVERING AF PULJEN!";
+      actionDesc = isDrink ? `Du trak et stærkt skin! Uddel ${Math.abs(actual)} tårer!` : `Halvdelen af din pulje forsvandt! ${Math.abs(actual)} point blev fjernet.`;
       confetti();
     } else if (win.kind === "giveShot") {
       const amount = Math.max(1, Math.round(w * Math.abs(win.mult || 1)));
-      actual = updateBalance(-amount, `Case: ${win.name}. Uddel shot.`, "auto", null);
-      actionTitle = "🥃 UDDEL SHOT!";
-      actionDesc = `Uddel 1 SHOT til en modstander! Samtidig forsvandt ${Math.abs(actual)} point fra din pulje.`;
+      actual = updateBalance(-amount, `Case: ${win.name}. Uddel shot.`, "auto", null, { giveShot: true });
+      actionTitle = isDrink ? `🥃 UDDEL 1 SHOT + ${Math.abs(actual)} TÅRER!` : "🥃 UDDEL SHOT!";
+      actionDesc = isDrink ? `Kæmpe gevinst! Uddel 1 SHOT og ${Math.abs(actual)} tårer!` : `Uddel 1 SHOT til en modstander! Samtidig forsvandt ${Math.abs(actual)} point fra din pulje.`;
       confetti();
     } else if (win.kind === "giveSips") {
       let delta = win.mult ? -Math.max(1, Math.round(w * Math.abs(win.mult))) : 0;
-      actual = delta !== 0 ? updateBalance(delta, `Case: ${win.name}.`, "auto", null, { giveAmount: win.amount, giveLabel: `${win.amount} tårer` }) : 0;
-      actionTitle = `🍻 GIV ${win.amount} TÅRER UD!`;
-      actionDesc = `Uddel ${win.amount} tårer til modstanderne!${actual < 0 ? ` Samtidig forsvandt ${Math.abs(actual)} point fra din pulje.` : ""}`;
+      actual = (delta !== 0 || isDrink) ? updateBalance(delta, `Case: ${win.name}.`, "auto", null, { giveAmount: win.amount, giveLabel: `${win.amount} tårer` }) : 0;
+      actionTitle = isDrink ? `🎁 GIV ${Math.abs(actual || win.amount)} TÅRER UD!` : `🍻 GIV ${win.amount} TÅRER UD!`;
+      actionDesc = isDrink
+        ? `Uddel ${Math.abs(actual || win.amount)} tårer til hvem du vil!`
+        : `Uddel ${win.amount} tårer til modstanderne!${actual < 0 ? ` Samtidig forsvandt ${Math.abs(actual)} point fra din pulje.` : ""}`;
     } else if (win.kind === "sips") {
       let delta = (win.mult && win.mult > 0) ? Math.max(1, Math.ceil(w * win.mult)) : 0;
-      actual = delta !== 0 ? updateBalance(delta, `Case: ${win.name}.`, "bad", null) : 0;
-      actionTitle = `🍻 ${win.amount} TÅRER TIL DIG!`;
-      actionDesc = `Tag ${win.amount} ${win.amount > 1 ? "tårer" : "tåre"} selv!${actual > 0 ? ` Samtidig blev ${actual} point lagt til din pulje.` : ""}`;
+      actual = (delta !== 0 || isDrink) ? updateBalance(delta, `Case: ${win.name}.`, "bad", null, { drinkSelf: win.amount }) : 0;
+      actionTitle = isDrink ? `🍻 DRIK ${Math.abs(actual || win.amount)} TÅRER NU!` : `🍻 ${win.amount} TÅRER TIL DIG!`;
+      actionDesc = isDrink
+        ? `Du trak en strafting – tag ${Math.abs(actual || win.amount)} tårer selv!`
+        : `Tag ${win.amount} ${win.amount > 1 ? "tårer" : "tåre"} selv!${actual > 0 ? ` Samtidig blev ${actual} point lagt til din pulje.` : ""}`;
       vibrate([40, 40, 40]);
     } else {
       let delta = win.mult > 0 ? Math.max(1, Math.ceil(w * win.mult)) : win.mult === 0 ? 0 : -Math.max(1, Math.round(w * Math.abs(win.mult)));
       actual = updateBalance(delta, `Case: ${win.name} (${meta.label}).`, "auto", null);
       if (actual < 0) {
-        actionTitle = `🛡️ SAVE: ${Math.abs(actual)} POINT REDDET!`;
-        actionDesc = `${Math.abs(actual)} point blev fjernet fra din pulje!`;
+        actionTitle = isDrink ? `🎁 GIV ${Math.abs(actual)} TÅRER UD!` : `🛡️ SAVE: ${Math.abs(actual)} POINT REDDET!`;
+        actionDesc = isDrink ? `Flot skin! Uddel ${Math.abs(actual)} tårer til bordet!` : `${Math.abs(actual)} point blev fjernet fra din pulje!`;
       } else if (actual > 0) {
-        actionTitle = `📈 STRAF: +${actual} POINT TIL PULJEN!`;
-        actionDesc = `${actual} point blev lagt oveni din pulje.`;
+        actionTitle = isDrink ? `🍻 DRIK ${actual} TÅRER NU!` : `📈 STRAF: +${actual} POINT TIL PULJEN!`;
+        actionDesc = isDrink ? `Øv drop – drik ${actual} ${actual > 1 ? "tårer" : "tår"} selv!` : `${actual} point blev lagt oveni din pulje.`;
       } else {
-        actionTitle = `➖ DUD: INGEN ÆNDRING`;
-        actionDesc = `Ingen point lagt til eller trukket fra.`;
+        actionTitle = isDrink ? `🤝 SLAP FRI · 0 TÅRER` : `➖ DUD: INGEN ÆNDRING`;
+        actionDesc = isDrink ? `Ingen tårer denne gang!` : `Ingen point lagt til eller trukket fra.`;
       }
     }
 
@@ -511,12 +517,14 @@
 
     renderTransferBox($("#caseTransferBox"));
 
-    $("#caseModalPoolVal").textContent = `${state.balance} tårer`;
+    const modes = window.Arcade && Arcade.modes;
+    const isDrink = modes && typeof modes.isDrinkMode === "function" && modes.isDrinkMode();
+    if ($("#casePoolLabel")) $("#casePoolLabel").textContent = isDrink ? "På højkant" : "Pulje nu";
+    $("#caseModalPoolVal").textContent = isDrink ? `${modes.state.turnStake || 1} ${(modes.state.turnStake || 1) === 1 ? "tår" : "tårer"}` : `${state.balance} tårer`;
     $("#caseModalChanceVal").textContent = `${lootChancePercent(win)}% (${meta.chance})`;
 
     const btn = $("#caseModalCloseBtn");
     const switchBtn = $("#caseModalSwitchBtn");
-    const modes = window.Arcade && Arcade.modes;
     const modeInfo = modes ? modes.getModeOutcomeConfig() : {};
 
     if (modeInfo.isPartyOrChaosNext) {
