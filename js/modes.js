@@ -2,12 +2,10 @@
   const { $, $$, clamp, sleep, state, registry, beep, vibrate, confetti, setBusy, getWager, updateDebtUI, syncWagerUI, pushHistory } = window.Arcade;
 
   const MODES = {
-    classic: { id: "classic", name: "Classic Solo", icon: "🎲", desc: "1 spiller · Start 1–10 · Bust ved 11" },
-    drink:   { id: "drink",   name: "Drukspil",     icon: "🍻", desc: "Ingen pulje · Spillet ruller tårer & spil" },
-    party:   { id: "party",   name: "Party",        icon: "👥", desc: "2–8 spillere · Pass-the-phone & giv ud" },
-    duel:    { id: "duel",    name: "Duel 1v1",     icon: "⚔️", desc: "2 spillere kæmper direkte mod hinanden" },
-    hardcore:{ id: "hardcore",name: "Hardcore",     icon: "🔥", desc: "Start 1–20 · Bust ved 21 · Hårdere straf" },
-    chaos:   { id: "chaos",   name: "Kaos",         icon: "🌪️", desc: "Tilfældigt spil & vilde modifiers pr. tur" }
+    classic: { id: "classic", name: "Classic",  icon: "🎲", desc: "Solo eller Party · Start 1–10 · Bust 11" },
+    hardcore:{ id: "hardcore",name: "Hardcore", icon: "🔥", desc: "Solo eller Party · Start 1–20 · Bust 21" },
+    drink:   { id: "drink",   name: "Drukspil", icon: "🍻", desc: "Ingen pulje · Spillet ruller tårer & spil" },
+    duel:    { id: "duel",    name: "Duel 1v1", icon: "⚔️", desc: "2 spillere kæmper direkte mod hinanden" }
   };
 
   const CHAOS_MODIFIERS = [
@@ -16,15 +14,17 @@
     { id: "shield",     label: "🛡️ KAOS-SKJOLD (-1)",     desc: "Taber du, slipper du med 1 point mindre i straf." },
     { id: "extra_save", label: "✨ GULD-BOOST (-1 EKSTRA)", desc: "Vinder du, fjerner du 1 ekstra point fra puljen!" },
     { id: "sip_first",  label: "🍻 DRIK 1 TÅR FØR SPIL",  desc: "Tag 1 tår inden du starter spillet. Normale point!" },
-    { id: "normal",     label: "🎲 REN KAOS-TUR",         desc: "Tilfældigt udtrukket spil med standard odds." }
+    { id: "normal",     label: "🎲 REN KAOS-TUR",         desc: "Standard odds på denne tur." }
   ];
 
   const modeState = {
     mode: "classic",
-    chaosSubMode: "solo", // "solo" | "party"
-    drinkSubMode: "solo", // "solo" | "party"
+    classicSubMode: "solo",  // "solo" | "party"
+    hardcoreSubMode: "solo", // "solo" | "party"
+    drinkSubMode: "solo",    // "solo" | "party"
     drinkMaxStake: 5,
-    duelSubMode: "pools", // "pools" | "quick"
+    duelSubMode: "pools",    // "pools" | "quick"
+    chaosEnabled: false,
     surprisesEnabled: true,
     challengesEnabled: true,
     turnCount: 0,
@@ -45,9 +45,13 @@
     return modeState.mode === "drink";
   }
 
+  function isChaosEnabled() {
+    return Boolean(modeState.chaosEnabled && (modeState.mode === "classic" || modeState.mode === "hardcore"));
+  }
+
   function isMultiplayer() {
-    return modeState.mode === "party"
-      || (modeState.mode === "chaos" && modeState.chaosSubMode === "party")
+    return (modeState.mode === "classic" && modeState.classicSubMode === "party")
+      || (modeState.mode === "hardcore" && modeState.hardcoreSubMode === "party")
       || (modeState.mode === "drink" && modeState.drinkSubMode === "party");
   }
 
@@ -73,7 +77,7 @@
     if (modeState.mode === "hardcore") {
       return Math.max(2, Math.ceil(pool * 0.5));
     }
-    if (modeState.mode === "chaos" && modeState.activeModifier && modeState.activeModifier.id === "forced_max") {
+    if (isChaosEnabled() && modeState.activeModifier && modeState.activeModifier.id === "forced_max") {
       return pool;
     }
     return 1;
@@ -84,7 +88,7 @@
     if (modeState.mode === "hardcore" && d > 0) {
       d += 1; // Hardcore: +1 ekstra straftår ved tab
     }
-    if (modeState.mode === "chaos" && modeState.activeModifier) {
+    if (isChaosEnabled() && modeState.activeModifier) {
       const m = modeState.activeModifier.id;
       if (m === "double" && d !== 0) d = d * 2;
       else if (m === "shield" && d > 0) d = Math.max(0, d - 1);
@@ -139,8 +143,7 @@
     return pickId;
   }
 
-  function rollChaosTurn() {
-    state.game = pickFreshGameId();
+  function rollChaosModifier() {
     modeState.activeModifier = CHAOS_MODIFIERS[Math.floor(Math.random() * CHAOS_MODIFIERS.length)];
     if (modeState.activeModifier.id === "forced_max") {
       state.desiredWager = Math.max(1, state.balance);
@@ -390,10 +393,12 @@
         mode: modeState.mode,
         playerLabel: cur ? cur.name : "",
         isPartyOrChaosNext: true,
-        nextBtnText: modeState.mode === "chaos"
+        nextBtnText: isChaosEnabled()
           ? `🌪️ NÆSTE KAOS-TUR: ${nextP.name} ➔`
-          : `👥 NÆSTE SPILLER: ${nextP.name} ➔`,
-        showSwitch: modeState.mode !== "chaos",
+          : modeState.mode === "hardcore"
+            ? `🔥 NÆSTE SPILLER: ${nextP.name} ➔`
+            : `👥 NÆSTE SPILLER: ${nextP.name} ➔`,
+        showSwitch: true,
         extraNote: state.balance === 0
           ? `🏆 ${cur.name} er ude & sikker på 0 tårer!`
           : state.debtBusted
@@ -402,20 +407,15 @@
       };
     }
 
-    if (modeState.mode === "chaos" && state.balance > 0 && !state.debtBusted) {
-      return {
-        mode: "chaos",
-        isPartyOrChaosNext: true,
-        nextBtnText: "🌪️ RUL NÆSTE KAOS-SPIL ➔",
-        showSwitch: false
-      };
-    }
+    const soloBadges = [];
+    if (modeState.mode === "hardcore") soloBadges.push("🔥 Hardcore");
+    if (isChaosEnabled()) soloBadges.push("🌪️ Kaos");
 
     return {
       mode: modeState.mode,
-      playerLabel: modeState.mode === "hardcore" ? "🔥 Hardcore" : "",
+      playerLabel: soloBadges.join(" · "),
       isPartyOrChaosNext: false,
-      showSwitch: modeState.mode !== "chaos"
+      showSwitch: true
     };
   }
 
@@ -842,7 +842,7 @@
     setBusy(false);
     updateDebtUI();
     syncWagerUI();
-    if (forceArena || isDrinkMode() || modeState.mode === "chaos" || action === "stay") {
+    if (forceArena || isDrinkMode() || action === "stay") {
       Arcade.app.renderActiveGame();
       Arcade.app.switchView("arena");
     } else if (action === "switch") {
@@ -1031,14 +1031,14 @@
         const arena = $("#arena");
         if (arena) arena.classList.remove("round-ending");
 
-        if (modeState.mode === "chaos") {
-          rollChaosTurn();
+        if (isChaosEnabled()) {
+          rollChaosModifier();
         }
-        if (maybeTriggerSurprise(action, modeState.mode === "chaos")) return true;
+        if (maybeTriggerSurprise(action, false)) return true;
         setBusy(false);
         updateDebtUI();
         syncWagerUI();
-        if (action === "switch" && modeState.mode !== "chaos") {
+        if (action === "switch") {
           Arcade.app.switchView("games");
         } else {
           Arcade.app.renderActiveGame();
@@ -1048,22 +1048,16 @@
       }
     }
 
-    if (modeState.mode === "chaos") {
-      if (state.balance === 0 || state.debtBusted) {
-        return false; // Let default win/bust overlay run
+    // Classic & Hardcore solo: opdater evt. Kaos-modifier og træk overraskelse mellem runder
+    if (state.balance > 0 && !state.debtBusted) {
+      if (isChaosEnabled()) {
+        rollChaosModifier();
+        updateDebtUI();
+        syncWagerUI();
       }
-      rollChaosTurn();
-      if (maybeTriggerSurprise(action, true)) return true;
-      setBusy(false);
-      updateDebtUI();
-      syncWagerUI();
-      Arcade.app.renderActiveGame();
-      return true;
-    }
-
-    // Classic & Hardcore solo: trigger between-round surprises when continuing cleanly
-    if (state.balance > 0 && !state.debtBusted && maybeTriggerSurprise(action, false)) {
-      return true;
+      if (maybeTriggerSurprise(action, false)) {
+        return true;
+      }
     }
 
     return false;
@@ -1075,8 +1069,8 @@
     const ctxBanner = $("#contextBanner");
 
     if (pill) {
-      const m = MODES[modeState.mode];
-      pill.textContent = `${m.icon} ${m.name}`;
+      const m = MODES[modeState.mode] || MODES.classic;
+      pill.textContent = `${m.icon} ${m.name}${isChaosEnabled() ? " · 🌪️" : ""}`;
       pill.className = `hud-mode-pill ${modeState.mode}`;
     }
 
@@ -1093,8 +1087,6 @@
         nameEl.textContent = `${p1} vs ${p2}`;
       } else if (modeState.mode === "hardcore") {
         nameEl.textContent = "Min 50% · +1 tab";
-      } else if (modeState.mode === "chaos") {
-        nameEl.textContent = "Tilfældigt spil";
       } else {
         nameEl.textContent = "Solo pulje";
       }
@@ -1112,7 +1104,7 @@
         ctxBanner.className = "context-banner drink";
         ctxBanner.innerHTML = `<span>🍻 DENNE TUR: ${s} ${s === 1 ? "TÅR" : "TÅRER"} PÅ HØJKANT${buffBadge}</span><small style="opacity:.88;font-weight:800">${p.drunk} 🍻 · ${p.given} 🎁</small>`;
         ctxBanner.classList.remove("hidden");
-      } else if (modeState.mode === "chaos" && modeState.activeModifier) {
+      } else if (isChaosEnabled() && modeState.activeModifier) {
         ctxBanner.className = "context-banner chaos";
         ctxBanner.innerHTML = `<span>${modeState.activeModifier.label}${buffBadge}</span><small style="opacity:.85;font-weight:700">${modeState.activeModifier.desc}</small>`;
         ctxBanner.classList.remove("hidden");
@@ -1139,10 +1131,12 @@
 
   function startModeSession(config) {
     modeState.mode = config.mode || "classic";
-    modeState.chaosSubMode = config.chaosSubMode || "solo";
+    modeState.classicSubMode = config.classicSubMode || "solo";
+    modeState.hardcoreSubMode = config.hardcoreSubMode || "solo";
     modeState.drinkSubMode = config.drinkSubMode || "solo";
     modeState.drinkMaxStake = clamp(parseInt(config.drinkMaxStake || 5, 10), 1, 20);
     modeState.duelSubMode = config.duelSubMode || "pools";
+    modeState.chaosEnabled = Boolean(config.chaosEnabled);
     modeState.surprisesEnabled = config.surprisesEnabled !== false;
     modeState.challengesEnabled = config.challengesEnabled !== false;
     modeState.turnCount = 0;
@@ -1158,7 +1152,7 @@
       modeState.players = (config.players || []).map((p, idx) => ({
         id: idx + 1,
         name: p.name.trim() || `Spiller ${idx + 1}`,
-        balance: clamp(parseInt(p.balance || 4, 10), 1, getMaxStartPool()),
+        balance: clamp(parseInt(p.balance || (modeState.mode === "hardcore" ? 8 : 4), 10), 1, getMaxStartPool()),
         status: "active",
         drunk: 0,
         given: 0
@@ -1177,7 +1171,7 @@
     } else if (isMultiplayer()) {
       state.balance = modeState.players[0].balance;
     } else {
-      state.balance = clamp(parseInt(config.soloAmount || 4, 10), 1, getMaxStartPool());
+      state.balance = clamp(parseInt(config.soloAmount || (modeState.mode === "hardcore" ? 8 : 4), 10), 1, getMaxStartPool());
     }
 
     if (modeState.mode !== "drink") {
@@ -1193,8 +1187,8 @@
     state.higherStreak = 0;
     state.history = [];
 
-    if (modeState.mode === "chaos") {
-      rollChaosTurn();
+    if (isChaosEnabled()) {
+      rollChaosModifier();
     }
 
     $("#zeroTitle").textContent = "Du gik i 0";
@@ -1655,6 +1649,7 @@
     state: modeState,
     isMultiplayer,
     isDrinkMode,
+    isChaosEnabled,
     rollDrinkTurn,
     applyDrinkOutcome,
     resolveDrinkDoubleOrNothing,

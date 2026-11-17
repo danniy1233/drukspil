@@ -139,7 +139,7 @@
     if (minEl) {
       if (isQuickDuel) {
         minEl.textContent = "Tårer i duel";
-      } else if (minW === maxW && state.balance > 1 && Arcade.modes && Arcade.modes.state.mode === "chaos") {
+      } else if (minW === maxW && state.balance > 1 && Arcade.modes && Arcade.modes.isChaosEnabled()) {
         minEl.textContent = `Tvungen MAX: ${maxW}`;
       } else if (minW > 1) {
         minEl.textContent = `Min ${minW} · Max ${maxW}`;
