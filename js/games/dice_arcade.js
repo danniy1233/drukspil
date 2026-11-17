@@ -658,11 +658,11 @@
   function renderCrash(a) {
     crashRunning = false; crashCashoutRequested = false;
     a.innerHTML = `
-      ${titleBlock("📈 Crash", "Cash ud fra 1.20x før raketten crasher!")}
+      ${titleBlock("📈 Crash", "Cash ud fra 1.67x før raketten crasher!")}
       <div class="crash-stage">
         <div class="crash-grid"></div><div class="crash-line" id="crashLine"></div>
         <div class="crash-mult" id="crashMult">1.000x</div>
-        <div class="crash-note" id="crashNote">Cash out er klar fra 1.20x</div>
+        <div class="crash-note" id="crashNote">Cash out er klar fra 1.67x</div>
       </div>
       <button class="big-button" id="crashBtn">START CRASH</button>
       <div id="gameResult"></div>`;
@@ -682,7 +682,7 @@
   }
 
   function crashRewardFraction(mult) {
-    if (mult < 1.50) return 0.50; if (mult < 2.00) return 1.00; if (mult < 3.00) return 1.70; if (mult < 5.00) return 2.40; return 3.50;
+    if (mult < 2.00) return 1.00; if (mult < 3.00) return 1.70; if (mult < 5.00) return 2.40; return 3.50;
   }
 
   async function playCrash() {
@@ -696,8 +696,8 @@
     while (mult < crashAt) {
       mult += 0.012 + mult * 0.0022;
       multEl.textContent = mult.toFixed(3) + "x";
-      if (mult >= 1.200 && btn.disabled) { btn.disabled = false; btn.textContent = "💰 CASH OUT"; note.textContent = "Cash out er åben!"; beep(720, 0.05, 0.02); }
-      if (crashCashoutRequested && mult >= 1.200) { cashed = true; break; }
+      if (mult >= 1.670 && btn.disabled) { btn.disabled = false; btn.textContent = "💰 CASH OUT"; note.textContent = "Cash out er åben!"; beep(720, 0.05, 0.02); }
+      if (crashCashoutRequested && mult >= 1.670) { cashed = true; break; }
       const progress = clamp(Math.log(mult) / Math.log(18), 0, 1);
       dot.style.left = `${4 + progress * 88}%`; dot.style.bottom = `${18 + progress * 175}px`;
       if (tick++ % 3 === 0) beep(285 + progress * 450, 0.012, 0.004);

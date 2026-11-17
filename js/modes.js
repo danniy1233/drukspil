@@ -127,12 +127,12 @@
   function pickFreshGameId() {
     const allIds = [...registry.keys()];
     if (!allIds.length) return "wheel";
-    const recent = new Set(modeState.recentGames.slice(-3));
+    const recent = new Set(modeState.recentGames.slice(-5));
     const pool = allIds.filter(id => !recent.has(id));
     const candidates = pool.length ? pool : allIds;
     const pickId = candidates[Math.floor(Math.random() * candidates.length)] || "wheel";
     modeState.recentGames.push(pickId);
-    if (modeState.recentGames.length > 3) modeState.recentGames.shift();
+    if (modeState.recentGames.length > 5) modeState.recentGames.shift();
     return pickId;
   }
 
