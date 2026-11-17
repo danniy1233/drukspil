@@ -1079,16 +1079,38 @@ button{cursor:pointer}
 .mine-cell.safe{background:linear-gradient(180deg,#1c4a35,#133324);border-color:#45d483}
 .mine-cell.boom{background:linear-gradient(180deg,#6e202c,#4a131b);border-color:#ff6475}
 
-/* NEW GAME 2: LIMBO */
+/* NEW GAME 2: LIMBO (ENERGY SURGE METER) */
 .limbo-display{
-  min-height:175px;border-radius:18px;border:1px solid var(--line);background:#0c1420;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;margin-bottom:12px;
+  min-height:190px;padding:18px 14px 14px;border-radius:18px;border:1px solid var(--line);
+  background:radial-gradient(circle at 50% 15%,rgba(165,120,255,.12),transparent 70%),#0c1420;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;margin-bottom:12px;
 }
-.limbo-val{font-size:58px;font-weight:1000;letter-spacing:-.04em;line-height:1}
+.limbo-val{font-size:54px;font-weight:1000;letter-spacing:-.04em;line-height:1}
 .limbo-val.win{color:var(--green)}
 .limbo-val.lose{color:var(--red)}
+.limbo-meter-wrap{width:100%;margin:16px 0 6px}
+.limbo-meter-track{
+  position:relative;height:20px;border-radius:999px;background:#131c29;
+  border:1px solid #2b3a4f;overflow:visible;
+}
+.limbo-meter-fill{
+  height:100%;width:0%;max-width:100%;border-radius:999px;
+  background:linear-gradient(90deg,#5ea1ff,#a578ff);
+  transition:width .05s linear,background .2s;
+}
+.limbo-meter-fill.win{background:linear-gradient(90deg,#45d483,#ffc857);box-shadow:0 0 18px rgba(69,212,131,.45)}
+.limbo-meter-fill.lose{background:linear-gradient(90deg,#ff6475,#9f2230)}
+.limbo-target-line{
+  position:absolute;top:-5px;bottom:-5px;width:3px;border-radius:2px;
+  background:var(--gold);box-shadow:0 0 10px var(--gold);
+  transition:left .22s ease;z-index:4;
+}
+.limbo-target-tag{
+  position:absolute;top:-17px;left:50%;transform:translateX(-50%);
+  font-size:9px;font-weight:1000;color:var(--gold);white-space:nowrap;letter-spacing:.04em;
+}
 .limbo-targets{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px}
-.limbo-target-btn{min-height:44px;border-radius:11px;border:1px solid var(--line);background:#151f2e;color:#fff;font-size:12.5px;font-weight:1000}
+.limbo-target-btn{min-height:58px;padding:6px 4px;border-radius:11px;border:1px solid var(--line);background:#151f2e;color:#fff;font-size:13px;font-weight:1000;line-height:1.25}
 .limbo-target-btn.active{outline:2px solid var(--gold);background:#243146;color:var(--gold)}
 
 /* NEW GAME 3: SKRABELOD (SCRATCH) */

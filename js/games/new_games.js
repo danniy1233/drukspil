@@ -120,35 +120,59 @@
   });
 
   // ==========================================================
-  // NEW GAME 2: LIMBO (GÆT MULTIPLIKATOR)
+  // NEW GAME 2: LIMBO (ENERGI-MÅLER & MÅLSTREG)
   // ==========================================================
+  const LIMBO_TIERS = [
+    { mult: 2.0, chance: "44%", rewardLabel: "1× save",   saveMult: 1 },
+    { mult: 3.0, chance: "29%", rewardLabel: "2× save",   saveMult: 2 },
+    { mult: 5.0, chance: "18%", rewardLabel: "3× save",   saveMult: 3 },
+    { mult: 10.0, chance: "9%", rewardLabel: "CLEAR!",    saveMult: 99 }
+  ];
   let limboTarget = 2.0;
 
+  function limboScalePct(val) {
+    // Logaritmisk skala fra 1.0x (0%) til 12.0x (100%)
+    const clamped = Math.max(1, Math.min(12, val));
+    return Math.round((Math.log(clamped) / Math.log(12)) * 100);
+  }
+
   function renderLimbo(a) {
-    const targets = [
-      { mult: 1.5, reward: "0.7× save", loss: "1×" },
-      { mult: 2.0, reward: "1.0× save", loss: "1×" },
-      { mult: 3.0, reward: "2.0× save", loss: "½×" },
-      { mult: 5.0, reward: "3.5× JACKPOT", loss: "½×" }
-    ];
+    const targetPct = limboScalePct(limboTarget);
     a.innerHTML = `
-      ${titleBlock("🚀 Limbo", "Vælg en mål-multiplikator! Når raketten over dit mål, vinder du.")}
+      ${titleBlock("🌩️ Limbo", "Vælg din målstreg! Jo højere mål, jo lavere chance – men vildere gevinst. Tab koster altid +1× indsats.")}
       <div class="limbo-display">
-        <span style="font-size:11px;font-weight:900;color:var(--muted);letter-spacing:.1em">RESULTAT</span>
+        <span style="font-size:10.5px;font-weight:900;color:var(--muted);letter-spacing:.1em">SPÆNDINGSMÅLER</span>
         <div class="limbo-val" id="limboVal">1.00x</div>
-        <span id="limboSub" style="font-size:12px;color:var(--muted)">Mål: ${limboTarget.toFixed(1)}x</span>
+        <div class="limbo-meter-wrap">
+          <div class="limbo-meter-track">
+            <div class="limbo-meter-fill" id="limboBarFill"></div>
+            <div class="limbo-target-line" id="limboTargetLine" style="left:${targetPct}%">
+              <span class="limbo-target-tag" id="limboTargetTag">MÅL ${limboTarget.toFixed(1)}x</span>
+            </div>
+          </div>
+        </div>
+        <span id="limboSub" style="font-size:11.5px;color:var(--muted)">Skyd over <strong style="color:var(--gold)">${limboTarget.toFixed(1)}x</strong> for at vinde</span>
       </div>
       <div class="limbo-targets">
-        ${targets.map(t => `<button class="limbo-target-btn ${limboTarget === t.mult ? "active" : ""}" data-target="${t.mult}">${t.mult.toFixed(1)}x<small style="display:block;font-size:9px;opacity:.75">${t.reward}</small></button>`).join("")}
+        ${LIMBO_TIERS.map(t => `
+          <button type="button" class="limbo-target-btn ${limboTarget === t.mult ? "active" : ""}" data-target="${t.mult}">
+            ${t.mult.toFixed(1)}x
+            <small style="display:block;font-size:9px;opacity:.82">${t.rewardLabel}</small>
+            <small style="display:block;font-size:8.5px;color:var(--muted)">${t.chance} chance</small>
+          </button>`).join("")}
       </div>
-      <button class="big-button" id="limboBtn">SKYD LIMBO 🚀</button>
+      <button class="big-button" id="limboBtn">LADE MÅLER 🌩️</button>
       <div id="gameResult"></div>`;
 
     $$(".limbo-target-btn").forEach(b => b.onclick = () => {
       if (state.busy) return;
       limboTarget = +b.dataset.target;
       $$(".limbo-target-btn").forEach(x => x.classList.toggle("active", x === b));
-      if ($("#limboSub")) $("#limboSub").textContent = `Mål: ${limboTarget.toFixed(1)}x`;
+      const pct = limboScalePct(limboTarget);
+      if ($("#limboTargetLine")) $("#limboTargetLine").style.left = `${pct}%`;
+      if ($("#limboTargetTag")) $("#limboTargetTag").textContent = `MÅL ${limboTarget.toFixed(1)}x`;
+      if ($("#limboSub")) $("#limboSub").innerHTML = `Skyd over <strong style="color:var(--gold)">${limboTarget.toFixed(1)}x</strong> for at vinde`;
+      beep(520, 0.025, 0.012);
     });
     $("#limboBtn").onclick = playLimbo;
   }
@@ -158,47 +182,59 @@
     const w = getWager();
     setBusy(true);
 
-    // Klassisk Limbo fordeling: ~96% RTP formet som 0.96 / U
-    const raw = 0.96 / Math.max(0.05, Math.random());
+    // Strammet house-balanceret fordeling: 0.88 / U => 2x = 44%, 3x = 29.3%, 5x = 17.6%, 10x = 8.8%
+    const raw = 0.88 / Math.max(0.01, Math.random());
     const outcome = Math.min(25, Math.max(1.00, Math.round(raw * 100) / 100));
 
     const valEl = $("#limboVal");
+    const fillEl = $("#limboBarFill");
     valEl.className = "limbo-val";
+    if (fillEl) { fillEl.className = "limbo-meter-fill"; fillEl.style.width = "0%"; }
+
     const steps = 14;
     for (let i = 1; i <= steps; i++) {
       const cur = 1 + ((outcome - 1) * (i / steps));
       valEl.textContent = cur.toFixed(2) + "x";
+      if (fillEl) fillEl.style.width = `${limboScalePct(cur)}%`;
       beep(340 + i * 28, 0.02, 0.01);
       await sleep(45);
     }
     valEl.textContent = outcome.toFixed(2) + "x";
+    if (fillEl) fillEl.style.width = `${limboScalePct(outcome)}%`;
 
     const win = outcome >= limboTarget;
     valEl.classList.add(win ? "win" : "lose");
+    if (fillEl) fillEl.classList.add(win ? "win" : "lose");
     beep(win ? 860 : 210, 0.14, 0.04);
 
+    const tier = LIMBO_TIERS.find(t => t.mult === limboTarget) || LIMBO_TIERS[0];
     let delta = 0;
     if (win) {
-      const mult = limboTarget === 1.5 ? 0.7 : limboTarget === 2.0 ? 1.0 : limboTarget === 3.0 ? 2.0 : 3.5;
-      delta = -Math.max(1, Math.round(w * mult));
+      if (tier.saveMult >= 99) {
+        delta = -state.balance; // 10.0x: CLEAR HELE PULJEN!
+      } else {
+        delta = -Math.max(1, Math.round(w * tier.saveMult));
+      }
       if (limboTarget >= 3) confetti();
     } else {
-      const lossMult = limboTarget >= 3 ? 0.5 : 1.0;
-      delta = Math.max(1, Math.ceil(w * lossMult));
+      delta = w; // Fuld straf ved alle mål – ingen gratis safe
     }
 
     const actual = updateBalance(delta, `Limbo: ${outcome.toFixed(2)}x (mål ${limboTarget.toFixed(1)}x).`);
-    showResult(win ? `🚀 LIMBO RAMTE ${outcome.toFixed(2)}x!` : `💥 STOPPEDE VED ${outcome.toFixed(2)}x`,
-      win ? `${Math.abs(actual)} point forsvandt (mål: ${limboTarget.toFixed(1)}x).` : `Målet var ${limboTarget.toFixed(1)}x. ${actual} point lagt oveni.`,
-      win ? "good" : "bad");
+    showResult(
+      win ? (tier.saveMult >= 99 ? `🌩️ 10x CLEAR · ${outcome.toFixed(2)}x!` : `🌩️ LIMBO OVER ${outcome.toFixed(2)}x!`) : `💥 STOPPEDE VED ${outcome.toFixed(2)}x`,
+      win ? `${Math.abs(actual)} point forsvandt (mål: ${limboTarget.toFixed(1)}x).` : `Nåede ikke ${limboTarget.toFixed(1)}x. ${actual} point lagt oveni.`,
+      win ? "good" : "bad",
+      { icon: "🌩️" }
+    );
     setBusy(false);
   }
 
   registerGame({
     id: "limbo",
     name: "Limbo",
-    icon: "🚀",
-    desc: "Ram mål-multiplikator",
+    icon: "🌩️",
+    desc: "Ram mål-stregen",
     category: "arcade",
     render: renderLimbo
   });
