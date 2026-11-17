@@ -25,10 +25,10 @@
 
   function renderWheel(a) {
     const step = 360 / wheelOptions.length;
-    const radius = 108;
+    const radius = 102;
     const labels = wheelOptions.map((o, i) => {
       const angle = i * step;
-      return `<div class="wheel-label" style="transform:rotate(${angle}deg) translateY(-${radius}px) rotate(${-angle}deg)">${o.label}</div>`;
+      return `<div class="wheel-label" style="transform:rotate(${angle}deg) translateY(-${radius}px)">${o.label}</div>`;
     }).join("");
 
     const colors = [
@@ -40,16 +40,15 @@
     const slices = colors.map((color, i) => `${color} ${i * step}deg ${(i + 1) * step}deg`).join(",");
     const tickCount = 48;
     const ticks = Array.from({ length: tickCount }, (_, i) =>
-      `<i class="tick" style="transform:translate(-50%,-50%) rotate(${i * (360 / tickCount)}deg) translateY(-140px)"></i>`
+      `<i class="tick" style="transform:translate(-50%,-50%) rotate(${i * (360 / tickCount)}deg) translateY(-129px)"></i>`
     ).join("");
 
     a.innerHTML = `
-      ${titleBlock("🎡 Risk Wheel", "16 udfald: store saves, GIV UD, HALV PULJE, CLEAR og RE-SPIN.")}
+      ${titleBlock("🎡 Risk Wheel", "16 retvendte udfald: store saves, GIV UD, HALV PULJE, CLEAR og RE-SPIN.")}
       <div class="wheel-stage">
         <div class="wheel-shell">
-          <div class="wheel-pointer"></div>
-          <div class="wheel" id="wheel" style="background:conic-gradient(from -${step / 2}deg,${slices})">${labels}</div>
-          <div class="wheel-ticks">${ticks}</div>
+          <div class="wheel-pointer" id="wheelPointer"></div>
+          <div class="wheel" id="wheel" style="background:conic-gradient(from -${step / 2}deg,${slices})">${labels}<div class="wheel-ticks">${ticks}</div></div>
         </div>
       </div>
       <button class="big-button" id="wheelBtn">SPIN HJULET</button>
@@ -67,7 +66,7 @@
     if (!isRespin) setBusy(true);
     $("#wheelBtn").disabled = true;
     const localResult = $("#gameResult");
-    if (localResult) localResult.innerHTML = "";
+    if (localResult) { localResult.className = ""; localResult.innerHTML = ""; }
 
     const step = 360 / wheelOptions.length;
     const segmentCenter = index * step;
@@ -78,6 +77,8 @@
     state.wheelRotation += turns * 360 + correction;
 
     const wheel = $("#wheel");
+    const ptr = $("#wheelPointer");
+    if (ptr) ptr.classList.add("spinning");
     wheel.style.transition = "transform 4.6s cubic-bezier(.08,.72,.08,1)";
     wheel.style.transform = `rotate(${state.wheelRotation}deg)`;
 
@@ -85,6 +86,7 @@
     const ticker = setInterval(() => { beep(500 + (t++ % 6) * 26, 0.025, 0.013); }, 105);
     await sleep(4620);
     clearInterval(ticker);
+    if (ptr) ptr.classList.remove("spinning");
     beep(840, 0.12, 0.04);
 
     if (opt.kind === "delta") {

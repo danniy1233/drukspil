@@ -722,8 +722,11 @@ button{cursor:pointer}
 .wheel-pointer{
   position:absolute;z-index:10;left:50%;top:-8px;transform:translateX(-50%);
   width:0;height:0;border-left:13px solid transparent;border-right:13px solid transparent;
-  border-top:24px solid var(--gold);filter:drop-shadow(0 3px 6px rgba(0,0,0,.8))
+  border-top:24px solid var(--gold);filter:drop-shadow(0 3px 6px rgba(0,0,0,.8));
+  transform-origin:50% 4px;
 }
+.wheel-pointer.spinning{animation:pointerTick .16s ease-in-out infinite}
+@keyframes pointerTick{0%,100%{transform:translateX(-50%) rotate(0deg)}50%{transform:translateX(-50%) rotate(-12deg)}}
 .wheel{
   position:absolute;inset:0;border-radius:50%;
   border:8px solid #202a37;box-shadow:0 0 0 2px #425067,inset 0 0 38px rgba(0,0,0,.42),0 18px 42px rgba(0,0,0,.45);
@@ -734,11 +737,11 @@ button{cursor:pointer}
   border-radius:50%;background:#111824;border:5px solid var(--gold);box-shadow:0 0 18px rgba(255,200,87,.28)
 }
 .wheel-label{
-  position:absolute;left:50%;top:50%;width:54px;margin-left:-27px;margin-top:-9px;text-align:center;
-  font-size:8.5px;font-weight:1000;text-shadow:0 2px 5px rgba(0,0,0,.95);line-height:1.05
+  position:absolute;left:50%;top:50%;width:48px;margin-left:-24px;margin-top:-8px;text-align:center;
+  font-size:7.6px;font-weight:1000;text-shadow:0 2px 5px rgba(0,0,0,.95);line-height:1.05
 }
-.wheel-ticks{position:absolute;inset:-4px;border-radius:50%;pointer-events:none}
-.tick{position:absolute;left:50%;top:50%;width:2.5px;height:9px;background:#dbe4f0;transform-origin:50% 143px;opacity:.6}
+.wheel-ticks{position:absolute;inset:0;border-radius:50%;pointer-events:none}
+.tick{position:absolute;left:50%;top:50%;width:2.5px;height:8px;background:#dbe4f0;opacity:.55}
 
 /* COIN */
 .coin-stage{height:210px;display:grid;place-items:center;perspective:900px}
@@ -978,11 +981,25 @@ button{cursor:pointer}
 .war-banner{background:linear-gradient(90deg,rgba(255,100,117,.25),rgba(255,200,87,.25));border:1px solid #ff6475;padding:8px 10px;border-radius:12px;margin:8px auto;font-weight:1000;font-size:12px;color:#ff8a98;text-align:center}
 .war-burn{display:inline-block;margin:0 3px;font-size:16px;opacity:.7;vertical-align:middle}
 
-.plinko-board{position:relative;width:100%;height:300px;margin:12px auto 8px;border-radius:18px;border:1px solid var(--line);background:linear-gradient(180deg,#101a2a,#0b1119);overflow:hidden}
-.peg{position:absolute;width:7px;height:7px;border-radius:50%;background:#8da2bd}
-.plinko-chip{position:absolute;top:10px;left:50%;width:20px;height:20px;border-radius:50%;background:var(--gold);border:2.5px solid #ffe8a8;transform:translateX(-50%);z-index:5;transition:left .19s ease,top .19s ease}
-.plinko-slots{position:absolute;left:6px;right:6px;bottom:6px;display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
-.plinko-slot{height:38px;border-radius:8px;display:grid;place-items:center;font-size:10.5px;font-weight:1000;background:#172334;border:1px solid #33435a}
+.plinko-board{position:relative;width:100%;height:320px;margin:10px auto 8px;border-radius:18px;border:1px solid var(--line);background:linear-gradient(180deg,#101a2a,#0b1119);overflow:hidden}
+.peg{position:absolute;width:8px;height:8px;border-radius:50%;background:#8da2bd;transform:translate(-50%,-50%);transition:background .12s,box-shadow .12s,transform .12s}
+.peg.hit{background:var(--gold);box-shadow:0 0 10px var(--gold);transform:translate(-50%,-50%) scale(1.45)}
+.plinko-chip{position:absolute;top:5%;left:50%;width:18px;height:18px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff3c4,#ffc857 60%,#d98a18);border:2px solid #ffe8a8;box-shadow:0 0 12px rgba(255,200,87,.65);transform:translate(-50%,-50%);z-index:5;transition:left .17s cubic-bezier(.3,0,.4,1),top .17s cubic-bezier(.4,0,.7,1)}
+.plinko-slots{position:absolute;left:4px;right:4px;bottom:6px;display:grid;grid-template-columns:repeat(8,1fr);gap:3px}
+.plinko-slot{height:38px;border-radius:8px;display:grid;place-items:center;font-size:10px;font-weight:1000;background:#172334;border:1px solid #33435a;transition:transform .16s,border-color .16s,background .16s}
+.plinko-slot.win{background:rgba(36,115,73,.38);border-color:rgba(69,212,131,.48);color:#b7f7d0}
+.plinko-slot.mega{background:rgba(255,200,87,.2);border-color:rgba(255,200,87,.52);color:#ffe49c}
+.plinko-slot.bad{background:rgba(159,34,48,.36);border-color:rgba(255,100,117,.45);color:#ffb3bc}
+.plinko-slot.hit{transform:scale(1.08);box-shadow:0 0 16px rgba(255,200,87,.45);border-color:#fff}
+
+/* BLACKJACK SPLIT HANDS */
+.bj-split-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%}
+.bj-split-box{padding:8px 6px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.02);text-align:center;transition:border-color .18s,background .18s}
+.bj-split-box.active{border-color:var(--gold);background:rgba(255,200,87,.09);box-shadow:0 0 0 1px rgba(255,200,87,.35)}
+.bj-split-title{font-size:10px;font-weight:900;color:var(--muted);margin-bottom:4px;letter-spacing:.05em}
+.bj-split-box.active .bj-split-title{color:var(--gold)}
+.bj-split-box .hand{min-height:82px;gap:4px}
+.bj-split-box .mini-card{width:46px;height:66px;font-size:15px}
 
 .box-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:18px auto}
 .safe-box{aspect-ratio:1;border-radius:15px;border:1px solid #34445b;background:#172231;color:#fff;font-size:32px;font-weight:1000;transition:.2s}

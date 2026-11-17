@@ -255,58 +255,122 @@
   registerGame({ id: "roulette", name: "Casino Roulette", icon: "🎯", desc: "Rød, sort eller tal", category: "wheel_cases", render: renderRoulette });
 
   // ==========================================================
-  // 2. PLINKO
+  // 2. PLINKO (ÆGTE 7-RÆKKE PEG-BOUNCE & 3 RISIKO-NIVEAUER)
   // ==========================================================
-  let plinkoDrop = "mid";
+  const PLINKO_RISK = {
+    low: {
+      label: "🟢 Blød",
+      mults: [-2, -1.5, -1, 1, 1, -1, -1.5, -2],
+      slots: [
+        { text: "-2×", cls: "mega" }, { text: "-1.5×", cls: "win" }, { text: "-1×", cls: "win" }, { text: "+1×", cls: "bad" },
+        { text: "+1×", cls: "bad" }, { text: "-1×", cls: "win" }, { text: "-1.5×", cls: "win" }, { text: "-2×", cls: "mega" }
+      ]
+    },
+    medium: {
+      label: "🟡 Medium",
+      mults: [-3, -2, -1, 1, 1, -1, -2, -3],
+      slots: [
+        { text: "-3×", cls: "mega" }, { text: "-2×", cls: "win" }, { text: "-1×", cls: "win" }, { text: "+1×", cls: "bad" },
+        { text: "+1×", cls: "bad" }, { text: "-1×", cls: "win" }, { text: "-2×", cls: "win" }, { text: "-3×", cls: "mega" }
+      ]
+    },
+    high: {
+      label: "🔴 Høj",
+      mults: [-6, -3, -1, 1.5, 1.5, -1, -3, -6],
+      slots: [
+        { text: "-6×", cls: "mega" }, { text: "-3×", cls: "win" }, { text: "-1×", cls: "win" }, { text: "+1.5×", cls: "bad" },
+        { text: "+1.5×", cls: "bad" }, { text: "-1×", cls: "win" }, { text: "-3×", cls: "win" }, { text: "-6×", cls: "mega" }
+      ]
+    }
+  };
+  let plinkoRisk = "medium";
+
+  function plinkoPosToX(pos) {
+    return ((pos + 0.5) / 8) * 100;
+  }
+
   function renderPlinko(a) {
+    const cfg = PLINKO_RISK[plinkoRisk] || PLINKO_RISK.medium;
     let pegs = "";
-    for (let r = 0; r < 6; r++) {
-      const count = 5 + r;
-      for (let c = 0; c < count; c++) pegs += `<i class="peg" style="left:${12 + (c / (count - 1)) * 76}%;top:${18 + r * 11.5}%"></i>`;
+    for (let r = 0; r < 7; r++) {
+      const startPos = 3.5 - r * 0.5;
+      const count = r + 1;
+      const yPct = 15 + r * 9.5;
+      for (let c = 0; c < count; c++) {
+        const p = startPos + c;
+        const xPct = plinkoPosToX(p);
+        pegs += `<i class="peg" data-peg="${r}-${p}" style="left:${xPct}%;top:${yPct}%"></i>`;
+      }
     }
     a.innerHTML = `
-      ${titleBlock("🔻 Plinko", "Vælg drop-position og lad chippen bounce ned i en multiplikator.")}
-      <div class="bet-picks" style="margin-bottom:10px">
-        <button class="btn bet-pick plinkoPick ${plinkoDrop === "left" ? "active" : ""}" data-drop="left">⬅️ VENSTRE</button>
-        <button class="btn bet-pick plinkoPick ${plinkoDrop === "mid" ? "active" : ""}" data-drop="mid">⏺️ MIDTE</button>
-        <button class="btn bet-pick plinkoPick ${plinkoDrop === "right" ? "active" : ""}" data-drop="right">➡️ HØJRE</button>
+      ${titleBlock("🔻 Plinko", "Ægte 7-rækkes peg-fald! Store gevinster i yderkanterne, straf i midten.")}
+      <div class="bet-picks" style="margin-bottom:8px">
+        ${Object.entries(PLINKO_RISK).map(([k, v]) => `<button type="button" class="btn bet-pick plinkoRiskBtn ${plinkoRisk === k ? "active" : ""}" style="flex:1" data-prisk="${k}">${v.label}</button>`).join("")}
       </div>
       <div class="plinko-board" id="plinkoBoard">
         ${pegs}<div class="plinko-chip" id="plinkoChip"></div>
-        <div class="plinko-slots"><div class="plinko-slot">0x</div><div class="plinko-slot">½x</div><div class="plinko-slot">1x</div><div class="plinko-slot">1½x</div><div class="plinko-slot">2x</div></div>
+        <div class="plinko-slots">${cfg.slots.map((s, i) => `<div class="plinko-slot ${s.cls}" data-slot="${i}">${s.text}</div>`).join("")}</div>
       </div>
       <button class="big-button" id="plinkoBtn">DROP CHIP</button>
       <div id="gameResult"></div>`;
-    $$(".plinkoPick").forEach(b => b.onclick = () => { plinkoDrop = b.dataset.drop; $$(".plinkoPick").forEach(x => x.classList.toggle("active", x === b)); });
+    $$(".plinkoRiskBtn").forEach(b => b.onclick = () => {
+      if (state.busy) return;
+      plinkoRisk = b.dataset.prisk;
+      renderPlinko(a);
+    });
     $("#plinkoBtn").onclick = playPlinko;
   }
 
   async function playPlinko() {
     if (state.busy || state.balance <= 0) return;
-    const w = getWager(); setBusy(true);
-    const outcomes = [
-      { label: "0x (Fuld gevinst)", delta: -w },
-      { label: "½x (Halv gevinst)", delta: -Math.max(1, Math.round(w * 0.5)) },
-      { label: "1x (Push)", delta: 0 },
-      { label: "1½x (Lille straf)", delta: Math.max(1, Math.round(w * 0.5)) },
-      { label: "2x (Fuld straf)", delta: w }
-    ];
-    let weights = plinkoDrop === "left" ? [28, 30, 22, 14, 6] : plinkoDrop === "right" ? [6, 14, 22, 30, 28] : [15, 25, 25, 23, 12];
-    let r = Math.random() * 100, idx = 2;
-    for (let i = 0; i < weights.length; i++) { r -= weights[i]; if (r <= 0) { idx = i; break; } }
+    const w = getWager();
+    setBusy(true);
+    $$(".plinkoRiskBtn").forEach(b => { b.disabled = true; });
+    $$(".plinko-slot.hit").forEach(s => s.classList.remove("hit"));
 
+    const cfg = PLINKO_RISK[plinkoRisk] || PLINKO_RISK.medium;
     const chip = $("#plinkoChip");
-    let curX = plinkoDrop === "left" ? 28 : plinkoDrop === "right" ? 72 : 50;
-    chip.style.left = `${curX}%`; chip.style.top = "8%";
-    for (let row = 0; row < 6; row++) {
-      curX += ((10 + idx * 20) - curX) * 0.38 + (Math.random() * 8 - 4);
-      chip.style.left = `${clamp(curX, 10, 90)}%`; chip.style.top = `${18 + row * 11.5}%`;
-      beep(380 + row * 40, 0.02, 0.012); await sleep(170);
+    let pos = 3.5;
+    chip.style.left = "50%";
+    chip.style.top = "5%";
+    await sleep(90);
+
+    for (let r = 0; r < 7; r++) {
+      const yPct = 15 + r * 9.5;
+      const pegEl = document.querySelector(`.peg[data-peg="${r}-${pos}"]`);
+      chip.style.left = `${plinkoPosToX(pos)}%`;
+      chip.style.top = `${yPct - 1.5}%`;
+      if (pegEl) pegEl.classList.add("hit");
+      beep(380 + r * 42, 0.025, 0.014);
+      await sleep(145);
+      if (pegEl) pegEl.classList.remove("hit");
+
+      const dir = Math.random() < 0.5 ? -0.5 : 0.5;
+      pos += dir;
+      chip.style.left = `${plinkoPosToX(pos)}%`;
+      chip.style.top = `${yPct + 4.5}%`;
+      await sleep(75);
     }
-    chip.style.left = `${10 + idx * 20}%`; chip.style.top = "86%"; await sleep(240);
-    const out = outcomes[idx];
-    const actual = updateBalance(out.delta, `Plinko: ${out.label}.`);
-    showResult(`Plinko: ${out.label}`, actual < 0 ? `${Math.abs(actual)} point forsvandt.` : actual > 0 ? `${actual} point lagt oveni.` : "Ingen ændring.", actual < 0 ? "good" : actual > 0 ? "bad" : "special");
+
+    const slotIdx = clamp(Math.round(pos), 0, 7);
+    chip.style.left = `${plinkoPosToX(slotIdx)}%`;
+    chip.style.top = "86%";
+    const hitSlot = document.querySelector(`.plinko-slot[data-slot="${slotIdx}"]`);
+    if (hitSlot) hitSlot.classList.add("hit");
+    await sleep(260);
+
+    const mult = cfg.mults[slotIdx];
+    const slotInfo = cfg.slots[slotIdx];
+    const delta = mult < 0 ? -Math.max(1, Math.round(w * Math.abs(mult))) : Math.max(1, Math.round(w * mult));
+    const actual = updateBalance(delta, `Plinko (${cfg.label}): ramte ${slotInfo.text}.`);
+    if (mult <= -2) confetti();
+    beep(mult < 0 ? 820 : 210, 0.13, 0.035);
+    showResult(
+      mult < 0 ? `🎯 PLINKO HIT · ${slotInfo.text}` : `💥 PLINKO MIDTE · ${slotInfo.text}`,
+      actual < 0 ? `${Math.abs(actual)} point forsvandt!` : `${actual} point lagt oveni.`,
+      mult < 0 ? "good" : "bad"
+    );
+    $$(".plinkoRiskBtn").forEach(b => { b.disabled = false; });
     setBusy(false);
   }
 

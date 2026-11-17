@@ -109,26 +109,85 @@
   });
 
   // ==========================================================
-  // 2. BLACKJACK
+  // 2. BLACKJACK (AUTO-STAND AT 21 + SPLIT + DOUBLE DOWN)
   // ==========================================================
   let bjState = null;
 
   function renderBlackjack(a) {
     bjState = null;
     a.innerHTML = `
-      ${titleBlock("🂡 Blackjack", "Slå huset mod 21. Sejr fjerner indsats. Natural 21 fjerner op til dobbelt indsats.")}
+      ${titleBlock("🂡 Blackjack", "Fuld Casino Blackjack: Auto-stand ved 21, Split ved par & Double Down! Natural 21 giver 2×.")}
       <div class="casino-table" id="bjTable">
         <div class="hand-label">Huset</div>
         <div class="hand" id="dealerHand"><div class="muted" style="font-size:12px;align-self:center">Klar til deal</div></div>
         <div style="text-align:center"><span class="score-bubble" id="dealerScore">?</span></div>
-        <div class="hand-label">Din hånd</div>
-        <div class="hand" id="playerHand"></div>
-        <div style="text-align:center"><span class="score-bubble" id="playerScore">0</span></div>
+        <div class="hand-label" id="playerHandTitle">Din hånd</div>
+        <div id="playerHandsWrap">
+          <div class="hand" id="playerHand"></div>
+          <div style="text-align:center"><span class="score-bubble" id="playerScore">0</span></div>
+        </div>
       </div>
       <button class="big-button" id="bjDeal">DEAL</button>
-      <div id="bjControls" style="display:flex;gap:10px;justify-content:center;margin-top:10px"></div>
+      <div id="bjControls" style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:10px"></div>
       <div id="gameResult"></div>`;
     $("#bjDeal").onclick = blackjackDeal;
+  }
+
+  function renderBjPlayerHands() {
+    if (!bjState) return;
+    const wrap = $("#playerHandsWrap");
+    const titleEl = $("#playerHandTitle");
+    if (!wrap) return;
+
+    if (!bjState.isSplit) {
+      const h = bjState.hands[0];
+      if (titleEl) titleEl.textContent = h.doubled ? "Din hånd (2× Double)" : "Din hånd";
+      wrap.innerHTML = `
+        <div class="hand" id="playerHand">${h.cards.map(c => cardHtml(c)).join("")}</div>
+        <div style="text-align:center"><span class="score-bubble" id="playerScore">${blackjackValue(h.cards)}</span></div>
+      `;
+      return;
+    }
+
+    if (titleEl) titleEl.textContent = `Split · Aktiv hånd: ${bjState.activeHandIdx + 1}`;
+    wrap.innerHTML = `
+      <div class="bj-split-grid">
+        ${bjState.hands.map((h, i) => `
+          <div class="bj-split-box ${i === bjState.activeHandIdx && !bjState.resolving ? "active" : ""}">
+            <div class="bj-split-title">HÅND ${i + 1}${h.doubled ? " (2×)" : ""}${h.done && i !== bjState.activeHandIdx ? " ✓" : ""}</div>
+            <div class="hand">${h.cards.map(c => cardHtml(c)).join("")}</div>
+            <span class="score-bubble">${blackjackValue(h.cards)}</span>
+          </div>
+        `).join("")}
+      </div>
+    `;
+  }
+
+  function renderBjControls() {
+    const ctrl = $("#bjControls");
+    if (!ctrl || !bjState || bjState.resolving) {
+      if (ctrl) ctrl.innerHTML = "";
+      return;
+    }
+    const h = bjState.hands[bjState.activeHandIdx];
+    if (!h || h.done || blackjackValue(h.cards) >= 21) {
+      ctrl.innerHTML = "";
+      return;
+    }
+
+    const canDouble = h.cards.length === 2;
+    const canSplit = !bjState.isSplit && h.cards.length === 2 && h.cards[0].value === h.cards[1].value;
+
+    ctrl.innerHTML = `
+      <button class="btn primary" style="flex:1;min-width:92px" id="bjHit">HIT</button>
+      <button class="btn" style="flex:1;min-width:92px" id="bjStand">STAND</button>
+      ${canDouble ? `<button class="btn good" style="flex:1;min-width:110px" id="bjDouble">⚡ DOUBLE</button>` : ""}
+      ${canSplit ? `<button class="btn" style="flex:1;min-width:105px;border-color:var(--gold);color:var(--gold)" id="bjSplit">✂️ SPLIT</button>` : ""}
+    `;
+    $("#bjHit").onclick = blackjackHit;
+    $("#bjStand").onclick = blackjackStand;
+    if (canDouble && $("#bjDouble")) $("#bjDouble").onclick = blackjackDouble;
+    if (canSplit && $("#bjSplit")) $("#bjSplit").onclick = blackjackSplit;
   }
 
   async function blackjackRevealDealerHole() {
@@ -153,71 +212,171 @@
     await sleep(420);
   }
 
+  async function blackjackAdvanceHand() {
+    if (!bjState) return;
+    if (bjState.activeHandIdx + 1 < bjState.hands.length) {
+      bjState.activeHandIdx += 1;
+      const nextH = bjState.hands[bjState.activeHandIdx];
+      renderBjPlayerHands();
+      if (blackjackValue(nextH.cards) >= 21) {
+        nextH.done = true;
+        renderBjControls();
+        await sleep(320);
+        await blackjackAdvanceHand();
+        return;
+      }
+      renderBjControls();
+      return;
+    }
+    bjState.resolving = true;
+    renderBjControls();
+    await blackjackResolve();
+  }
+
   async function blackjackDeal() {
     if (state.busy || state.balance <= 0) return;
     const w = getWager();
     setBusy(true);
-    bjState = { w, player: [casinoCard(), casinoCard()], dealer: [casinoCard(), casinoCard()], resolving: false };
+    bjState = {
+      baseWager: w,
+      dealer: [casinoCard(), casinoCard()],
+      hands: [{ cards: [casinoCard(), casinoCard()], wager: w, done: false, doubled: false, isNatural: false }],
+      activeHandIdx: 0,
+      isSplit: false,
+      resolving: false
+    };
     $("#bjDeal").style.display = "none";
+    const localRes = $("#gameResult");
+    if (localRes) { localRes.className = ""; localRes.innerHTML = ""; }
+    if ($("#playerHandTitle")) $("#playerHandTitle").textContent = "Din hånd";
 
-    const dHand = $("#dealerHand"), pHand = $("#playerHand");
-    dHand.innerHTML = ""; pHand.innerHTML = "";
-    $("#dealerScore").textContent = "?"; $("#playerScore").textContent = "0";
+    const dHand = $("#dealerHand");
+    const wrap = $("#playerHandsWrap");
+    dHand.innerHTML = "";
+    $("#dealerScore").textContent = "?";
+    wrap.innerHTML = `<div class="hand" id="playerHand"></div><div style="text-align:center"><span class="score-bubble" id="playerScore">0</span></div>`;
 
-    pHand.appendChild(createCardElement(bjState.player[0]));
-    $("#playerScore").textContent = bjState.player[0].value;
+    const pHand = $("#playerHand");
+    pHand.appendChild(createCardElement(bjState.hands[0].cards[0]));
+    $("#playerScore").textContent = bjState.hands[0].cards[0].value;
     beep(520, 0.04, 0.015); await sleep(170);
 
     dHand.appendChild(createCardElement(bjState.dealer[0]));
     $("#dealerScore").textContent = bjState.dealer[0].value;
     beep(560, 0.04, 0.015); await sleep(170);
 
-    pHand.appendChild(createCardElement(bjState.player[1]));
-    $("#playerScore").textContent = blackjackValue(bjState.player);
+    pHand.appendChild(createCardElement(bjState.hands[0].cards[1]));
+    const pv = blackjackValue(bjState.hands[0].cards);
+    $("#playerScore").textContent = pv;
     beep(600, 0.04, 0.015); await sleep(170);
 
     dHand.appendChild(createCardElement(bjState.dealer[1], true));
     beep(640, 0.04, 0.015); await sleep(200);
 
-    $("#bjControls").innerHTML = `<button class="btn primary" style="flex:1" id="bjHit">HIT</button><button class="btn" style="flex:1" id="bjStand">STAND</button>`;
-    $("#bjHit").onclick = blackjackHit;
-    $("#bjStand").onclick = blackjackStand;
+    if (pv === 21) {
+      bjState.hands[0].isNatural = true;
+      bjState.hands[0].done = true;
+      bjState.resolving = true;
+      renderBjControls();
+      await blackjackResolve();
+      return;
+    }
 
-    if (blackjackValue(bjState.player) === 21) await blackjackResolve(true);
+    renderBjControls();
   }
 
   async function blackjackHit() {
     if (!bjState || bjState.resolving) return;
+    const h = bjState.hands[bjState.activeHandIdx];
+    if (!h || h.done || blackjackValue(h.cards) >= 21) return;
+
     const card = casinoCard();
-    bjState.player.push(card);
-    $("#playerHand").appendChild(createCardElement(card));
-    $("#playerScore").textContent = blackjackValue(bjState.player);
-    beep(620, 0.05, 0.02);
-    await sleep(320);
-    if (blackjackValue(bjState.player) > 21) {
-      bjState.resolving = true;
-      await blackjackResolve(false);
+    h.cards.push(card);
+    if (!bjState.isSplit && $("#playerHand")) {
+      $("#playerHand").appendChild(createCardElement(card));
+      $("#playerScore").textContent = blackjackValue(h.cards);
+    } else {
+      renderBjPlayerHands();
     }
+    beep(620, 0.05, 0.02);
+
+    const val = blackjackValue(h.cards);
+    if (val >= 21) {
+      h.done = true;
+      renderBjControls();
+      await sleep(340);
+      await blackjackAdvanceHand();
+      return;
+    }
+    renderBjControls();
   }
 
   async function blackjackStand() {
     if (!bjState || bjState.resolving) return;
-    bjState.resolving = true;
-    $("#bjHit").disabled = true;
-    $("#bjStand").disabled = true;
-    await blackjackResolve(false);
+    const h = bjState.hands[bjState.activeHandIdx];
+    if (h) h.done = true;
+    renderBjControls();
+    await blackjackAdvanceHand();
   }
 
-  async function blackjackResolve(natural = false) {
+  async function blackjackDouble() {
+    if (!bjState || bjState.resolving) return;
+    const h = bjState.hands[bjState.activeHandIdx];
+    if (!h || h.done || h.cards.length !== 2) return;
+
+    h.wager = h.wager * 2;
+    h.doubled = true;
+    h.done = true;
+    renderBjControls();
+
+    const card = casinoCard();
+    h.cards.push(card);
+    if (!bjState.isSplit && $("#playerHand")) {
+      $("#playerHand").appendChild(createCardElement(card));
+      $("#playerScore").textContent = blackjackValue(h.cards);
+      if ($("#playerHandTitle")) $("#playerHandTitle").textContent = "Din hånd (2× Double)";
+    } else {
+      renderBjPlayerHands();
+    }
+    beep(740, 0.07, 0.028);
+    await sleep(380);
+    await blackjackAdvanceHand();
+  }
+
+  async function blackjackSplit() {
+    if (!bjState || bjState.resolving || bjState.isSplit) return;
+    const h = bjState.hands[0];
+    if (!h || h.cards.length !== 2 || h.cards[0].value !== h.cards[1].value) return;
+
+    bjState.isSplit = true;
+    bjState.hands = [
+      { cards: [h.cards[0], casinoCard()], wager: h.wager, done: false, doubled: false, isNatural: false },
+      { cards: [h.cards[1], casinoCard()], wager: h.wager, done: false, doubled: false, isNatural: false }
+    ];
+    bjState.activeHandIdx = 0;
+    beep(700, 0.06, 0.025);
+    renderBjPlayerHands();
+
+    if (blackjackValue(bjState.hands[0].cards) >= 21) {
+      bjState.hands[0].done = true;
+      await sleep(300);
+      await blackjackAdvanceHand();
+      return;
+    }
+    renderBjControls();
+  }
+
+  async function blackjackResolve() {
     if (!bjState) return;
     bjState.resolving = true;
-    $("#bjControls").innerHTML = "";
-    const pv = blackjackValue(bjState.player);
+    renderBjControls();
 
-    await sleep(240);
+    const anyAliveNonNatural = bjState.hands.some(h => !h.isNatural && blackjackValue(h.cards) <= 21);
+
+    await sleep(220);
     await blackjackRevealDealerHole();
 
-    if (pv <= 21) {
+    if (anyAliveNonNatural) {
       while (blackjackValue(bjState.dealer) < 17) {
         await sleep(320);
         await blackjackDealerDrawCard();
@@ -225,17 +384,45 @@
     }
 
     const dv = blackjackValue(bjState.dealer);
-    await sleep(250);
+    const dealerNatural = dv === 21 && bjState.dealer.length === 2;
+    await sleep(240);
 
-    let delta = 0, title = "", type = "", text = "";
-    if (pv > 21) { delta = bjState.w; title = "Bust"; type = "bad"; text = "Du gik over 21."; }
-    else if (natural && bjState.player.length === 2 && pv === 21) { delta = -2 * bjState.w; title = "Blackjack!"; type = "good"; text = "Natural 21."; }
-    else if (dv > 21 || pv > dv) { delta = -bjState.w; title = "Du vinder"; type = "good"; text = `${pv} mod husets ${dv}.`; }
-    else if (pv === dv) { delta = 0; title = "Push"; text = `Begge endte på ${pv}.`; }
-    else { delta = bjState.w; title = "Huset vinder"; type = "bad"; text = `${pv} mod husets ${dv}.`; }
+    let netDelta = 0;
+    const handSummaries = [];
+    let mainTitle = "Blackjack";
 
-    const actual = updateBalance(delta, `Blackjack: ${title}.`);
-    showResult(title, `${text} ${actual < 0 ? Math.abs(actual) + " point forsvandt." : actual > 0 ? actual + " point lagt oveni." : "Ingen ændring."}`, type);
+    bjState.hands.forEach((h, idx) => {
+      const pv = blackjackValue(h.cards);
+      const prefix = bjState.isSplit ? `Hånd ${idx + 1}: ` : "";
+      let d = 0, label = "";
+
+      if (h.isNatural) {
+        if (dealerNatural) { d = 0; label = "Begge Blackjack (Push)"; mainTitle = "Push"; }
+        else { d = -2 * h.wager; label = `Natural Blackjack (${pv})`; mainTitle = "Blackjack!"; }
+      } else if (pv > 21) {
+        d = h.wager; label = `Bust (${pv})`; if (!bjState.isSplit) mainTitle = "Bust";
+      } else if (dv > 21 || pv > dv) {
+        d = -h.wager; label = `Sejr (${pv} vs ${dv})`; if (!bjState.isSplit) mainTitle = h.doubled ? "Double Sejr!" : "Du vinder";
+      } else if (pv === dv) {
+        d = 0; label = `Push (${pv})`; if (!bjState.isSplit) mainTitle = "Push";
+      } else {
+        d = h.wager; label = `Tab (${pv} vs ${dv})`; if (!bjState.isSplit) mainTitle = "Huset vinder";
+      }
+      netDelta += d;
+      handSummaries.push(`${prefix}${label}`);
+    });
+
+    if (bjState.isSplit) {
+      mainTitle = netDelta < 0 ? "Split Sejr!" : netDelta > 0 ? "Split Tab" : "Split Uafgjort";
+    }
+
+    const type = netDelta < 0 ? "good" : netDelta > 0 ? "bad" : "special";
+    const actual = updateBalance(netDelta, `Blackjack: ${mainTitle} (${handSummaries.join(" · ")}).`);
+    showResult(
+      mainTitle,
+      `${handSummaries.join(" · ")}. ${actual < 0 ? Math.abs(actual) + " point forsvandt." : actual > 0 ? actual + " point lagt oveni." : "Ingen ændring."}`,
+      type
+    );
 
     bjState = null;
     setBusy(false);
