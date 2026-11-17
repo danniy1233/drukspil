@@ -1135,3 +1135,127 @@ button{cursor:pointer}
   font-size:12px;font-weight:1000;margin:0 auto 10px;
 }
 #arena.round-ending{pointer-events:none}
+
+/* CONTEXT BUFF & OVERRASKELSE */
+.context-banner.buff{
+  background:linear-gradient(135deg,rgba(165,120,255,.18),rgba(69,212,131,.12));
+  border:1px solid rgba(165,120,255,.45);
+  color:#efe4ff;
+}
+
+/* GAME 28: PRIK TIL SHREK */
+.shrek-stage{
+  display:flex;flex-direction:column;align-items:center;gap:10px;
+  padding:14px 12px;border-radius:18px;border:1px solid #2b4528;
+  background:radial-gradient(circle at 50% 25%,rgba(130,205,71,.16),transparent 68%),#0e1911;
+  transition:border-color .25s,background .25s;
+}
+.shrek-stage.tense{border-color:#d99b26;background:radial-gradient(circle at 50% 25%,rgba(255,180,60,.16),transparent 68%),#19170e}
+.shrek-stage.angry{border-color:#ff5268;background:radial-gradient(circle at 50% 25%,rgba(255,82,104,.24),transparent 68%),#250f14}
+.shrek-mood-wrap{width:100%}
+.shrek-mood-top{display:flex;justify-content:space-between;font-size:11px;font-weight:900;margin-bottom:5px;color:#d6e9ce}
+.shrek-mood-bar{height:8px;border-radius:999px;background:#1c291e;overflow:hidden;border:1px solid rgba(255,255,255,.08)}
+.shrek-mood-fill{height:100%;background:linear-gradient(90deg,#6fd355,#ffc857,#ff5268);border-radius:inherit;transition:width .25s ease}
+
+.shrek-avatar{
+  position:relative;border:0;background:transparent;padding:12px 18px 6px;
+  display:flex;flex-direction:column;align-items:center;cursor:pointer;
+  transition:transform .12s cubic-bezier(.34,1.56,.64,1);
+}
+.shrek-avatar:active,.shrek-avatar.poked{transform:scale(.91) rotate(-3deg)}
+.shrek-ears{display:flex;justify-content:space-between;width:142px;margin-bottom:-24px;z-index:1}
+.shrek-ears span{
+  width:24px;height:36px;border-radius:12px 12px 4px 4px;
+  background:linear-gradient(180deg,#8ac94c,#5c962b);border:2px solid #416d1c;
+}
+.shrek-ears span:first-child{transform:rotate(-28deg)}
+.shrek-ears span:last-child{transform:rotate(28deg)}
+.shrek-head{
+  width:118px;height:112px;border-radius:48% 48% 42% 42%;position:relative;z-index:2;
+  background:radial-gradient(circle at 35% 28%,#a3df5f,#6aa832 72%,#4d7f1f);
+  border:3px solid #3c6518;box-shadow:0 10px 26px rgba(0,0,0,.45);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
+  transition:filter .2s;
+}
+.shrek-stage.angry .shrek-head{filter:hue-rotate(-45deg) saturate(1.4)}
+.shrek-brows{display:flex;gap:26px;margin-top:6px}
+.shrek-brows i{width:22px;height:5px;border-radius:4px;background:#2f4e13;transition:transform .2s}
+.shrek-stage.tense .shrek-brows i:first-child,.shrek-stage.angry .shrek-brows i:first-child{transform:rotate(18deg) translateY(3px)}
+.shrek-stage.tense .shrek-brows i:last-child,.shrek-stage.angry .shrek-brows i:last-child{transform:rotate(-18deg) translateY(3px)}
+.shrek-eyes{display:flex;gap:24px}
+.shrek-eyes b{width:18px;height:18px;border-radius:50%;background:#fff;border:2px solid #2c4614;position:relative}
+.shrek-eyes b:after{content:"";position:absolute;top:4px;left:5px;width:7px;height:7px;border-radius:50%;background:#322416}
+.shrek-mouth{
+  width:44px;height:14px;border-radius:0 0 24px 24px;background:#3a1d19;border:2px solid #2b4512;
+  transition:all .2s;
+}
+.shrek-stage.angry .shrek-mouth{width:54px;height:28px;border-radius:16px 16px 24px 24px;background:#65101a;border-color:#ff7b8a}
+.shrek-tap-hint{
+  margin-top:8px;padding:4px 12px;border-radius:999px;font-size:11px;font-weight:1000;
+  background:rgba(138,201,76,.18);border:1px solid rgba(138,201,76,.45);color:#ccf5a2;
+}
+.shrek-bubble{
+  width:100%;padding:9px 12px;border-radius:12px;background:#142217;border:1px solid #2f492e;
+  font-size:12.5px;font-weight:800;text-align:center;color:#e7f4e2;
+}
+.shrek-gift-bar{
+  width:100%;display:flex;flex-wrap:wrap;gap:6px;justify-content:center;min-height:28px;align-items:center;
+}
+.shrek-gift-chip{
+  font-size:11px;font-weight:900;padding:4px 9px;border-radius:999px;
+  background:rgba(255,200,87,.14);border:1px solid rgba(255,200,87,.35);color:#ffe29d;
+}
+.shrek-actions{width:100%;display:grid;gap:8px}
+.shrek-actions .btn{width:100%}
+
+/* GAME 29: KROKODILLE TANDLÆGE */
+.croc-toolbar{
+  padding:8px 10px;border-radius:12px;background:#111925;border:1px solid var(--line);margin-bottom:10px;
+}
+.croc-mouth{
+  border-radius:22px;border:2px solid #2c5b3e;background:#0f2419;overflow:hidden;
+  box-shadow:0 12px 26px rgba(0,0,0,.45);margin-bottom:10px;transition:transform .16s;
+}
+.croc-snout-top{
+  background:linear-gradient(180deg,#2e7d4f,#215b38);padding:10px 14px 8px;
+  display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid #163d26;
+  transition:transform .2s ease;
+}
+.croc-eyes{display:flex;gap:14px}
+.croc-eye{width:28px;height:28px;border-radius:50%;background:#fff7cf;border:2px solid #163d26;display:grid;place-items:center}
+.croc-eye i{width:7px;height:16px;border-radius:999px;background:#111}
+.croc-nostrils{display:flex;gap:10px}
+.croc-nostrils b{width:9px;height:9px;border-radius:50%;background:#133822}
+.croc-throat{
+  background:radial-gradient(circle at 50% 50%,#4f141e,#290a10 75%);
+  padding:12px 10px;display:flex;flex-direction:column;gap:10px;
+}
+.croc-teeth-row{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.croc-tooth{
+  height:52px;border:2px solid #cfd8e3;background:linear-gradient(180deg,#ffffff,#dce3ec);
+  color:#1d2733;font-size:20px;font-weight:1000;display:grid;place-items:center;
+  transition:transform .16s,opacity .16s,background .16s;
+}
+.croc-tooth.upper{border-radius:8px 8px 18px 18px}
+.croc-tooth.lower{border-radius:18px 18px 8px 8px}
+.croc-tooth.down{
+  transform:scaleY(.42);opacity:.38;background:#7b8898;border-color:#536070;
+}
+.croc-tooth.trap{
+  background:linear-gradient(180deg,#ff6475,#a91b2b);border-color:#ffd0d6;transform:scale(1.08);
+}
+.croc-center-status{
+  text-align:center;font-size:12px;font-weight:900;color:#ffd5dc;padding:5px 8px;
+  border-radius:10px;background:rgba(0,0,0,.28);
+}
+.croc-snout-bot{
+  height:18px;background:linear-gradient(180deg,#1f5635,#174027);border-top:3px solid #12331f;
+  transition:transform .2s ease;
+}
+.croc-mouth.snapped{border-color:#ff5268;animation:shake .38s linear}
+.croc-mouth.snapped .croc-snout-top{transform:translateY(14px)}
+.croc-mouth.snapped .croc-snout-bot{transform:translateY(-14px)}
+.croc-action-bar{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:44px;margin-bottom:4px;
+}
+.croc-action-bar .btn{flex:0 0 auto}

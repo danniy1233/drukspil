@@ -25,6 +25,10 @@
     drinkSubMode: "solo", // "solo" | "party"
     drinkMaxStake: 5,
     duelSubMode: "pools", // "pools" | "quick"
+    surprisesEnabled: true,
+    turnCount: 0,
+    lastSurpriseTurn: -2,
+    pendingBuff: null, // null | "double" | "shield"
     players: [],
     turnIndex: 0,
     turnStake: 2,
@@ -81,6 +85,11 @@
       if (m === "double" && d !== 0) d = d * 2;
       else if (m === "shield" && d > 0) d = Math.max(0, d - 1);
       else if (m === "extra_save" && d < 0) d = d - 1;
+    }
+    if (modeState.pendingBuff === "double" && d !== 0) {
+      d = d * 2;
+    } else if (modeState.pendingBuff === "shield" && d > 0) {
+      d = d > 1 ? Math.ceil(d / 2) : 0;
     }
     return d;
   }
@@ -224,6 +233,35 @@
         flyText: "0",
         historyText: `🤝 ${cur ? cur.name : "Du"}: Slap fri (0 tårer)`
       };
+    }
+
+    if (modeState.pendingBuff === "double") {
+      if (res.outcomeType === "good" && res.giveAmt > 0) {
+        if (cur) cur.given += res.giveAmt;
+        res.giveAmt *= 2;
+        res.signedAmount = -res.giveAmt;
+        res.flyText = `⚡ ${res.giveAmt}`;
+        res.historyText += " (⚡ 2× Buff!)";
+      } else if (res.outcomeType === "bad" && res.drinkAmt > 0) {
+        if (cur) cur.drunk += res.drinkAmt;
+        res.drinkAmt *= 2;
+        res.signedAmount = res.drinkAmt;
+        res.flyText = `⚡ +${res.drinkAmt}`;
+        res.historyText += " (⚡ 2× Buff!)";
+      }
+    } else if (modeState.pendingBuff === "shield" && res.outcomeType === "bad" && res.drinkAmt > 0) {
+      const saved = Math.max(1, Math.floor(res.drinkAmt / 2));
+      if (cur) cur.drunk = Math.max(0, cur.drunk - saved);
+      res.drinkAmt -= saved;
+      res.signedAmount = res.drinkAmt;
+      if (res.drinkAmt === 0) {
+        res.outcomeType = "special";
+        res.flyText = "🛡️ 0";
+        res.historyText = `🛡️ ${cur ? cur.name : "Du"}: Skjold blokerede alle tårer!`;
+      } else {
+        res.flyText = `🛡️ ${res.drinkAmt}`;
+        res.historyText += ` (🛡️ -${saved})`;
+      }
     }
 
     res.doubleUsed = false;
@@ -398,12 +436,234 @@
     confetti();
   }
 
+  const SURPRISE_EVENTS = [
+    {
+      id: "toast",
+      icon: "🍻",
+      badge: "⚡ FÆLLES SKÅL!",
+      title: "Pludselig Skål!",
+      color: "#ffc857",
+      condition: () => true,
+      run: () => {
+        if (isDrinkMode()) {
+          modeState.players.forEach(p => { p.drunk += 1; });
+        }
+        pushHistory("🍻 OVERRASKELSE: Fælles skål — alle tog 1 tår!");
+        return {
+          headline: "🍻 ALLE SKÅLER (1 TÅR NU!)",
+          desc: "Hele selskabet skåler med det samme og tager 1 hurtig tår sammen!"
+        };
+      }
+    },
+    {
+      id: "double_next",
+      icon: "⚡",
+      badge: "⚡ DOBBELT OP!",
+      title: "Strømstød i næste tur!",
+      color: "#a578ff",
+      condition: () => true,
+      run: () => {
+        modeState.pendingBuff = "double";
+        pushHistory("⚡ OVERRASKELSE: Næste runde tæller 2×!");
+        return {
+          headline: "⚡ NÆSTE TUR TÆLLER 2×!",
+          desc: "Både din næste gevinst og dit næste tab bliver fordoblet!"
+        };
+      }
+    },
+    {
+      id: "shield_next",
+      icon: "🛡️",
+      badge: "🛡️ SUMPENS SKJOLD!",
+      title: "Gratis Beskyttelse!",
+      color: "#45d483",
+      condition: () => true,
+      run: () => {
+        modeState.pendingBuff = "shield";
+        pushHistory("🛡️ OVERRASKELSE: Gratis beskyttelsesskjold til næste tur!");
+        return {
+          headline: "🛡️ SKJOLD AKTIVT NÆSTE TUR!",
+          desc: "Hvis du taber næste runde, halverer eller blokerer skjoldet straffen automatisk."
+        };
+      }
+    },
+    {
+      id: "bonus_gift",
+      icon: "🎁",
+      badge: "🎁 UVENTET GAVE!",
+      title: "Shrek er i godt humør!",
+      color: "#45d483",
+      condition: () => isDrinkMode() || state.balance > 1,
+      run: () => {
+        const cur = currentPlayer();
+        if (isDrinkMode()) {
+          if (cur) cur.given += 2;
+          pushHistory(`🎁 OVERRASKELSE: ${cur ? cur.name : "Du"} må straks uddele 2 bonus-tårer!`);
+          return {
+            headline: "🎁 UDDEL 2 TÅRER NU!",
+            desc: `${cur ? cur.name : "Du"} får en pludselig gave — uddel 2 ekstra tårer til hvem som helst!`
+          };
+        }
+        state.balance = Math.max(1, state.balance - 1);
+        syncCurrentPlayerPool(state.balance);
+        pushHistory(`🎁 OVERRASKELSE: ${cur ? cur.name : "Du"} fik -1 gratis tår fra puljen!`);
+        return {
+          headline: "🎁 -1 TÅR FJERNET FRA PULJEN!",
+          desc: "Sump-bonus! Du får fjernet 1 punkt fra din aktuelle pulje uden at spille."
+        };
+      }
+    },
+    {
+      id: "croc_ambush",
+      icon: "🐊",
+      badge: "🐊 KROKODILLE-BAGHOLD!",
+      title: "Snip-snap i pausen!",
+      color: "#ff6475",
+      condition: () => isDrinkMode() || state.balance < getBustLimit() - 1,
+      run: () => {
+        const cur = currentPlayer();
+        if (isDrinkMode()) {
+          if (cur) cur.drunk += 1;
+          pushHistory(`🐊 OVERRASKELSE: Krokodille-baghold — ${cur ? cur.name : "Du"} drak 1 tår!`);
+          return {
+            headline: "🐊 DRIK 1 HURTIG TÅR NU!",
+            desc: `${cur ? cur.name : "Du"} blev nappet af en vild krokodille mellem runderne!`
+          };
+        }
+        state.balance = state.balance + 1;
+        syncCurrentPlayerPool(state.balance);
+        pushHistory(`🐊 OVERRASKELSE: Krokodille-baghold — +1 straf til ${cur ? cur.name : "dig"}!`);
+        return {
+          headline: "🐊 +1 STRAFTÅR TIL PULJEN!",
+          desc: "En krokodille snuppede dig mellem spillene (+1 lagt på puljen)!"
+        };
+      }
+    },
+    {
+      id: "swap_pool",
+      icon: "🔄",
+      badge: "🔄 PULJE-BYTTE!",
+      title: "Kaos mellem spillere!",
+      color: "#5ea1ff",
+      condition: () => !isDrinkMode() && isMultiplayer() && activePlayers().length >= 2,
+      run: () => {
+        const cur = currentPlayer();
+        const others = activePlayers().filter(p => p.id !== cur.id);
+        const other = others[Math.floor(Math.random() * others.length)];
+        const tmp = cur.balance;
+        cur.balance = other.balance;
+        other.balance = tmp;
+        state.balance = cur.balance;
+        pushHistory(`🔄 OVERRASKELSE: ${cur.name} (${cur.balance}) byttede pulje med ${other.name} (${other.balance})!`);
+        return {
+          headline: `🔄 ${cur.name} BYTTEDE PULJE MED ${other.name}!`,
+          desc: `${cur.name} har nu ${cur.balance} tårer · ${other.name} har nu ${other.balance} tårer.`
+        };
+      }
+    },
+    {
+      id: "force_swamp",
+      icon: "👹",
+      badge: "👹 TVUNGET BONUS-SPIL!",
+      title: "Du bliver trukket i sumpen!",
+      color: "#ff9f43",
+      condition: () => registry.has("shrek") && registry.has("croc"),
+      run: () => {
+        const forced = Math.random() < 0.5 ? "shrek" : "croc";
+        state.game = forced;
+        const g = registry.get(forced);
+        pushHistory(`👹 OVERRASKELSE: Næste runde er tvunget til ${g.icon} ${g.name}!`);
+        return {
+          headline: `NÆSTE SPIL: ${g.icon} ${g.name.toUpperCase()}!`,
+          desc: "Skæbnen har overtaget kontrollen og tvinger dig ind i dette minispil lige nu!",
+          forcedArena: true
+        };
+      }
+    },
+    {
+      id: "table_rule",
+      icon: "😜",
+      badge: "⚡ BORD-TWIST!",
+      title: "Hurtig mini-udfordring!",
+      color: "#eb63cf",
+      condition: () => true,
+      run: () => {
+        const twists = [
+          "Den der sidst drak vand eller rørte sin telefon tager 1 tår nu!",
+          "Personen til venstre for den der holder telefonen uddeler 2 tårer!",
+          "Alle der griner eller smiler lige nu drikker 1 tår!"
+        ];
+        const chosen = twists[Math.floor(Math.random() * twists.length)];
+        pushHistory(`😜 OVERRASKELSE: ${chosen}`);
+        return {
+          headline: "😜 UDFØR REGELEN NU!",
+          desc: chosen
+        };
+      }
+    }
+  ];
+
+  function maybeTriggerSurprise(action, forcedArenaFromCaller = false) {
+    if (!modeState.surprisesEnabled || modeState.mode === "duel") return false;
+    if (modeState.turnCount - modeState.lastSurpriseTurn < 2) return false;
+    if (Math.random() >= 0.25) return false;
+
+    const modal = $("#surpriseModal");
+    if (!modal) return false;
+
+    const pool = SURPRISE_EVENTS.filter(ev => ev.condition());
+    if (!pool.length) return false;
+    const ev = pool[Math.floor(Math.random() * pool.length)];
+    modeState.lastSurpriseTurn = modeState.turnCount;
+
+    const out = ev.run();
+    const card = $("#surpriseModalCard");
+    if (card) card.style.setProperty("--outcome-color", ev.color || "#a578ff");
+    if ($("#surpriseBadge")) $("#surpriseBadge").textContent = ev.badge;
+    if ($("#surpriseIcon")) $("#surpriseIcon").textContent = ev.icon;
+    if ($("#surpriseTitle")) $("#surpriseTitle").textContent = ev.title;
+    if ($("#surpriseHeadline")) {
+      $("#surpriseHeadline").textContent = out.headline;
+      $("#surpriseHeadline").style.color = ev.color || "#a578ff";
+    }
+    if ($("#surpriseDesc")) $("#surpriseDesc").textContent = out.desc;
+
+    setBusy(true);
+    updateDebtUI();
+    syncWagerUI();
+    modal.classList.add("show");
+    beep(ev.id === "croc_ambush" ? 210 : 780, 0.14, 0.035);
+    if (ev.id === "bonus_gift" || ev.id === "shield_next") confetti();
+
+    const forceArena = Boolean(out.forcedArena) || forcedArenaFromCaller;
+    const btn = $("#surpriseContinueBtn");
+    if (btn) {
+      btn.onclick = () => {
+        modal.classList.remove("show");
+        setBusy(false);
+        updateDebtUI();
+        syncWagerUI();
+        if (forceArena || isDrinkMode() || modeState.mode === "chaos" || action === "stay") {
+          Arcade.app.renderActiveGame();
+          Arcade.app.switchView("arena");
+        } else if (action === "switch") {
+          Arcade.app.switchView("games");
+        }
+      };
+    }
+    return true;
+  }
+
   function handleAfterOutcome(action) {
+    modeState.pendingBuff = null;
+    modeState.turnCount += 1;
+
     if (isDrinkMode()) {
       if (isMultiplayer()) {
         modeState.turnIndex = (modeState.turnIndex + 1) % modeState.players.length;
       }
       rollDrinkTurn();
+      if (maybeTriggerSurprise(action, true)) return true;
       setBusy(false);
       updateDebtUI();
       syncWagerUI();
@@ -431,6 +691,7 @@
         if (modeState.mode === "chaos") {
           rollChaosTurn();
         }
+        if (maybeTriggerSurprise(action, modeState.mode === "chaos")) return true;
         setBusy(false);
         updateDebtUI();
         syncWagerUI();
@@ -449,10 +710,16 @@
         return false; // Let default win/bust overlay run
       }
       rollChaosTurn();
+      if (maybeTriggerSurprise(action, true)) return true;
       setBusy(false);
       updateDebtUI();
       syncWagerUI();
       Arcade.app.renderActiveGame();
+      return true;
+    }
+
+    // Classic & Hardcore solo: trigger between-round surprises when continuing cleanly
+    if (state.balance > 0 && !state.debtBusted && maybeTriggerSurprise(action, false)) {
       return true;
     }
 
@@ -491,15 +758,20 @@
     }
 
     if (ctxBanner) {
+      const buffBadge = modeState.pendingBuff === "double"
+        ? " · ⚡ 2× AKTIV"
+        : modeState.pendingBuff === "shield"
+          ? " · 🛡️ SKJOLD"
+          : "";
       if (isDrinkMode()) {
         const p = currentPlayer();
         const s = modeState.turnStake;
         ctxBanner.className = "context-banner drink";
-        ctxBanner.innerHTML = `<span>🍻 DENNE TUR: ${s} ${s === 1 ? "TÅR" : "TÅRER"} PÅ HØJKANT</span><small style="opacity:.88;font-weight:800">${p.drunk} 🍻 · ${p.given} 🎁</small>`;
+        ctxBanner.innerHTML = `<span>🍻 DENNE TUR: ${s} ${s === 1 ? "TÅR" : "TÅRER"} PÅ HØJKANT${buffBadge}</span><small style="opacity:.88;font-weight:800">${p.drunk} 🍻 · ${p.given} 🎁</small>`;
         ctxBanner.classList.remove("hidden");
       } else if (modeState.mode === "chaos" && modeState.activeModifier) {
         ctxBanner.className = "context-banner chaos";
-        ctxBanner.innerHTML = `<span>${modeState.activeModifier.label}</span><small style="opacity:.85;font-weight:700">${modeState.activeModifier.desc}</small>`;
+        ctxBanner.innerHTML = `<span>${modeState.activeModifier.label}${buffBadge}</span><small style="opacity:.85;font-weight:700">${modeState.activeModifier.desc}</small>`;
         ctxBanner.classList.remove("hidden");
       } else if (modeState.mode === "duel") {
         const p1 = modeState.players[0];
@@ -509,6 +781,12 @@
           : `⚔️ ${p1.name}: ${p1.balance}  |  ${p2.name}: ${p2.balance}`;
         ctxBanner.className = "context-banner duel";
         ctxBanner.innerHTML = `<span>${label}</span>`;
+        ctxBanner.classList.remove("hidden");
+      } else if (modeState.pendingBuff) {
+        ctxBanner.className = "context-banner buff";
+        ctxBanner.innerHTML = modeState.pendingBuff === "double"
+          ? "<span>⚡ OVERRASKELSE: NÆSTE TUR TÆLLER 2×!</span>"
+          : "<span>🛡️ OVERRASKELSE: SKJOLD HALVERER NÆSTE TAB!</span>";
         ctxBanner.classList.remove("hidden");
       } else {
         ctxBanner.classList.add("hidden");
@@ -522,6 +800,10 @@
     modeState.drinkSubMode = config.drinkSubMode || "solo";
     modeState.drinkMaxStake = clamp(parseInt(config.drinkMaxStake || 5, 10), 1, 20);
     modeState.duelSubMode = config.duelSubMode || "pools";
+    modeState.surprisesEnabled = config.surprisesEnabled !== false;
+    modeState.turnCount = 0;
+    modeState.lastSurpriseTurn = -2;
+    modeState.pendingBuff = null;
 
     if (modeState.mode === "drink" && modeState.drinkSubMode === "solo") {
       modeState.players = [{ id: 1, name: "Dig", balance: 10, status: "active", drunk: 0, given: 0 }];
@@ -1021,12 +1303,14 @@
   window.Arcade.modes = {
     MODES,
     CHAOS_MODIFIERS,
+    SURPRISE_EVENTS,
     state: modeState,
     isMultiplayer,
     isDrinkMode,
     rollDrinkTurn,
     applyDrinkOutcome,
     resolveDrinkDoubleOrNothing,
+    maybeTriggerSurprise,
     currentPlayer,
     activePlayers,
     getBustLimit,

@@ -56,6 +56,23 @@
   </div>
 </div>
 
+<!-- BETWEEN-ROUND SURPRISE MODAL -->
+<div class="overlay" id="surpriseModal">
+  <div class="overlay-card outcome-modal-card" id="surpriseModalCard" style="--outcome-color:#a578ff">
+    <div class="outcome-modal-halo"></div>
+    <div class="outcome-badge" id="surpriseBadge">⚡ OVERRASKELSE!</div>
+    <div class="outcome-icon" id="surpriseIcon">🎲</div>
+    <div class="outcome-title" id="surpriseTitle">Uventet Twist!</div>
+    <div class="outcome-action-box" style="margin-top:12px">
+      <div class="outcome-action-headline" id="surpriseHeadline"></div>
+      <div class="outcome-action-desc" id="surpriseDesc"></div>
+    </div>
+    <div class="outcome-btn-group" style="margin-top:14px">
+      <button type="button" class="btn primary outcome-modal-btn" id="surpriseContinueBtn">KLAR! FORTSÆT ➔</button>
+    </div>
+  </div>
+</div>
+
 <!-- CS:GO CASE REVEAL MODAL -->
 <div class="overlay" id="caseModal">
   <div class="overlay-card case-modal-card" id="caseModalCard">
@@ -134,7 +151,7 @@
       <h1>🎰 Penalty Gamble</h1>
       <p>Mobil-optimeret drukspil · flere gamemodes</p>
     </div>
-    <div class="badge" id="topGameBadge">27 spil · 6 modes</div>
+    <div class="badge" id="topGameBadge">29 spil · 6 modes</div>
   </div>
 
   <!-- START SCREEN -->
@@ -148,6 +165,7 @@
     <div class="mode-grid" id="modeGrid"></div>
     <div class="mode-setup-box" id="modeSetupArea"></div>
 
+    <button type="button" class="toggle-pill active" id="surpriseToggleBtn" style="width:100%;margin-bottom:8px">⚡ Overraskelser mellem runder: TIL</button>
     <button class="big-button" id="startBtn" style="margin-top:4px">START SPILLET ➔</button>
     <div class="footer-note" style="text-align:center">Point bruges som standard. Hvis I kobler point til tårer, så spil ansvarligt og hold mængderne små.</div>
   </section>
@@ -229,7 +247,7 @@
       </button>
       <button type="button" class="nav-tab" data-nav="games">
         <span class="nav-ico">🕹️</span>
-        <span>Spil (27)</span>
+        <span>Spil (29)</span>
       </button>
       <button type="button" class="nav-tab" data-nav="status">
         <span class="nav-ico">📊</span>
@@ -245,6 +263,7 @@
 <script defer src="js/games/cards.js"></script>
 <script defer src="js/games/dice_arcade.js"></script>
 <script defer src="js/games/new_games.js"></script>
+<script defer src="js/games/swamp_croc.js"></script>
 <script defer src="js/app.js"></script>
 </body>
 </html>

@@ -4,6 +4,7 @@
   let selectedMode = "classic";
   let drinkSub = "solo";
   let drinkMax = 5;
+  let surprisesEnabled = true;
   let chaosSub = "solo";
   let duelSub = "pools";
   let setupPlayers = [
@@ -102,7 +103,7 @@
     if (selectedMode === "classic") {
       box.innerHTML = `
         <span class="setup-label">Startpulje (1–10 tårer)</span>
-        <p class="setup-rule-note">Spil alle 27 minispil alene. Ram <strong>0</strong> for at vinde – rammer puljen <strong>11</strong> taber du.</p>
+        <p class="setup-rule-note">Spil alle ${registry.size} minispil alene. Ram <strong>0</strong> for at vinde – rammer puljen <strong>11</strong> taber du.</p>
         <div class="start-input-row" style="display:flex;gap:8px;align-items:center">
           <input id="startAmount" type="number" min="1" max="10" value="4" style="flex:1">
           <button type="button" class="btn small" id="randStartBtn">🎲 Tilfældig</button>
@@ -365,6 +366,7 @@
       mode: selectedMode,
       drinkSubMode: drinkSub,
       drinkMaxStake: drinkMax,
+      surprisesEnabled,
       chaosSubMode: chaosSub,
       duelSubMode: duelSub,
       soloAmount: soloAmt,
@@ -380,6 +382,8 @@
     $("#outcomeModal")?.classList.remove("show");
     $("#duelPrivacyOverlay")?.classList.remove("show");
     $("#confirmLeaveModal")?.classList.remove("show");
+    $("#surpriseModal")?.classList.remove("show");
+    $("#surpriseModal")?.classList.remove("show");
     clearTimeout(state.outcomeModalTimer);
 
     const gamesNavBtn = $(`.nav-tab[data-nav="games"]`);
@@ -426,6 +430,7 @@
     $("#outcomeModal")?.classList.remove("show");
     $("#duelPrivacyOverlay")?.classList.remove("show");
     $("#confirmLeaveModal")?.classList.remove("show");
+    $("#surpriseModal")?.classList.remove("show");
     $("#debtVignette").className = "debt-vignette";
     if ($("#balanceChange")) {
       $("#balanceChange").textContent = "";
@@ -452,6 +457,15 @@
   function init() {
     renderModeCards();
     renderModeSetup();
+
+    if ($("#surpriseToggleBtn")) {
+      $("#surpriseToggleBtn").onclick = () => {
+        surprisesEnabled = !surprisesEnabled;
+        $("#surpriseToggleBtn").classList.toggle("active", surprisesEnabled);
+        $("#surpriseToggleBtn").textContent = `⚡ Overraskelser mellem runder: ${surprisesEnabled ? "TIL" : "FRA"}`;
+        beep(surprisesEnabled ? 660 : 420, 0.04, 0.02);
+      };
+    }
 
     $("#startBtn").onclick = startFromSetup;
     $("#startScreen").addEventListener("keydown", e => {
@@ -550,6 +564,12 @@
         if (leaveM && leaveM.classList.contains("show")) {
           e.preventDefault();
           leaveM.classList.remove("show");
+          return;
+        }
+        const surM = $("#surpriseModal");
+        if (surM && surM.classList.contains("show")) {
+          e.preventDefault();
+          $("#surpriseContinueBtn")?.click();
           return;
         }
         const outModal = $("#outcomeModal");
