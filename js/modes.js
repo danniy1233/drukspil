@@ -29,6 +29,7 @@
     turnCount: 0,
     lastSurpriseTurn: -2,
     pendingBuff: null, // null | "double" | "shield"
+    recentGames: [],
     players: [],
     turnIndex: 0,
     turnStake: 2,
@@ -123,10 +124,20 @@
     return target;
   }
 
-  function rollChaosTurn() {
+  function pickFreshGameId() {
     const allIds = [...registry.keys()];
-    const pickId = allIds[Math.floor(Math.random() * allIds.length)] || "wheel";
-    state.game = pickId;
+    if (!allIds.length) return "wheel";
+    const recent = new Set(modeState.recentGames.slice(-3));
+    const pool = allIds.filter(id => !recent.has(id));
+    const candidates = pool.length ? pool : allIds;
+    const pickId = candidates[Math.floor(Math.random() * candidates.length)] || "wheel";
+    modeState.recentGames.push(pickId);
+    if (modeState.recentGames.length > 3) modeState.recentGames.shift();
+    return pickId;
+  }
+
+  function rollChaosTurn() {
+    state.game = pickFreshGameId();
     modeState.activeModifier = CHAOS_MODIFIERS[Math.floor(Math.random() * CHAOS_MODIFIERS.length)];
     if (modeState.activeModifier.id === "forced_max") {
       state.desiredWager = Math.max(1, state.balance);
@@ -134,9 +145,7 @@
   }
 
   function rollDrinkTurn() {
-    const allIds = [...registry.keys()];
-    const pickId = allIds[Math.floor(Math.random() * allIds.length)] || "wheel";
-    state.game = pickId;
+    state.game = pickFreshGameId();
     state.higherStreak = 0;
     const maxS = clamp(parseInt(modeState.drinkMaxStake || 5, 10), 1, 20);
     modeState.turnStake = 1 + Math.floor(Math.random() * maxS);
@@ -804,6 +813,7 @@
     modeState.turnCount = 0;
     modeState.lastSurpriseTurn = -2;
     modeState.pendingBuff = null;
+    modeState.recentGames = [];
 
     if (modeState.mode === "drink" && modeState.drinkSubMode === "solo") {
       modeState.players = [{ id: 1, name: "Dig", balance: 10, status: "active", drunk: 0, given: 0 }];

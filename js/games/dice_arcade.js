@@ -317,14 +317,14 @@
   // ==========================================================
   let boxState = null;
   function boxRewardAmount(safeCount, w) {
-    return safeCount === 1 ? Math.max(1, Math.round(w * 0.5)) : safeCount === 2 ? Math.max(1, Math.round(w * 1.3)) : Math.max(1, Math.round(w * 2.5));
+    return safeCount < 2 ? 0 : safeCount === 2 ? Math.max(1, Math.round(w * 1.6)) : Math.max(2, Math.round(w * 3.0));
   }
 
   function renderBoxes(a) {
     const bombSet = new Set(); while (bombSet.size < 2) bombSet.add(Math.floor(Math.random() * 5));
     boxState = { bombSet, opened: new Set(), safeCount: 0, active: false, finished: false, wager: null };
     a.innerHTML = `
-      ${titleBlock("💣 Safe Boxes", "5 bokse: 3 diamanter og 2 bomber. Cash ud når som helst!")}
+      ${titleBlock("💣 Safe Boxes", "5 bokse: 3 diamanter og 2 bomber. Åbn mindst 2 bokse før du kan cashe ud!")}
       <div class="box-grid">${Array.from({ length: 5 }, (_, i) => `<button class="safe-box" data-box="${i}">?</button>`).join("")}</div>
       <div id="boxActionArea" style="text-align:center;min-height:48px;display:flex;justify-content:center;align-items:center"><span class="muted" style="font-size:12px">Vælg din første boks</span></div>
       <div id="gameResult"></div>`;
@@ -390,6 +390,11 @@
       return;
     }
 
+    if (boxState.safeCount < 2) {
+      $("#boxActionArea").innerHTML = `<span class="muted" style="font-size:12px;font-weight:800">🔒 Åbn 1 diamant mere (min. 2) for Cash Out</span>`;
+      return;
+    }
+
     const curReward = boxRewardAmount(boxState.safeCount, w);
     $("#boxActionArea").innerHTML = `<button class="btn cashout-btn" style="width:100%" id="boxCashoutBtn">💰 CASH UD NU (-${curReward} POINT)</button>`;
     $("#boxCashoutBtn").onclick = cashoutBoxes;
@@ -402,7 +407,7 @@
   // ==========================================================
   function renderLucky7(a) {
     a.innerHTML = `
-      ${titleBlock("7️⃣ Lucky 7", "Præcis 7 er 2.5× JACKPOT! 6 eller 8 fjerner fuld indsats. Andre summer koster ½ indsats.")}
+      ${titleBlock("7️⃣ Lucky 7", "Præcis 7 er 2.5× JACKPOT! 6 eller 8 fjerner ½ indsats. Andre summer koster fuld indsats.")}
       <div class="dice-pair"><div class="mini-die" id="l7d1">⚅</div><div class="mini-die" id="l7d2">⚀</div></div>
       <button class="big-button" id="lucky7Btn">ROLL FOR 7</button>
       <div id="gameResult"></div>`;
@@ -420,13 +425,13 @@
     els[0].textContent = dieFace(d1); els[1].textContent = dieFace(d2);
     const sum = d1 + d2;
     if (sum === 7) {
-      const actual = updateBalance(-Math.max(1, Math.round(w * 2.5)), `Lucky 7: 7 Jackpot!`);
+      const actual = updateBalance(-Math.max(2, Math.round(w * 2.5)), `Lucky 7: 7 Jackpot!`);
       showResult("🎉 LUCKY 7 JACKPOT!", `${Math.abs(actual)} point forsvandt! (2.5× indsats)`, "good"); confetti();
     } else if (sum === 6 || sum === 8) {
-      const actual = updateBalance(-w, `Lucky 7: near hit ${sum}.`);
+      const actual = updateBalance(-Math.max(1, Math.round(w * 0.5)), `Lucky 7: near hit ${sum}.`);
       showResult(`✨ NEAR HIT · ${sum}`, `${Math.abs(actual)} point forsvandt.`, "good");
     } else {
-      const actual = updateBalance(Math.max(1, Math.ceil(w / 2)), `Lucky 7: sum ${sum}.`);
+      const actual = updateBalance(w, `Lucky 7: sum ${sum}.`);
       showResult(`SUM ${sum}`, `${actual} point blev lagt oveni.`, "bad");
     }
     setBusy(false);
@@ -521,7 +526,7 @@
   function renderCups(a) {
     cupsState = { phase: "ready", ball: Math.floor(Math.random() * 3) };
     a.innerHTML = `
-      ${titleBlock("🥤 Three Cups", "Hold øje med bolden, bland kopperne og find den rigtige!")}
+      ${titleBlock("🥤 Three Cups", "Blind gæt (1/3 chance)! Hit giver 1.5× gevinst – miss koster fuld indsats.")}
       <div class="cups-stage" id="cupsStage">
         ${[0, 1, 2].map(i => `<button class="cup ${i === cupsState.ball ? "has-ball lift" : ""}" id="cup-${i}" data-cup="${i}">${i + 1}<i class="ball"></i></button>`).join("")}
       </div>
@@ -558,7 +563,8 @@
     const win = choice === cupsState.ball;
     if (!win) { await sleep(350); cups[cupsState.ball].classList.add("lift"); }
     beep(win ? 790 : 230, 0.12, 0.035);
-    const actual = updateBalance(win ? -w : Math.max(1, Math.ceil(w / 2)), `Three Cups: under kop ${cupsState.ball + 1}.`);
+    const hitReward = Math.max(2, Math.round(w * 1.5));
+    const actual = updateBalance(win ? -hitReward : w, `Three Cups: under kop ${cupsState.ball + 1}.`);
     showResult(win ? "🎉 DU FANDT BOLDEN!" : `BOLDEN VAR UNDER KOP ${cupsState.ball + 1}`, win ? `${Math.abs(actual)} point forsvandt!` : `${actual} point lagt oveni.`, win ? "good" : "bad");
     if (win) confetti();
     const btn = $("#cupsBtn"); btn.classList.remove("hidden"); btn.disabled = false; btn.textContent = "SPIL IGEN"; btn.onclick = () => renderCups($("#arena"));
@@ -573,7 +579,7 @@
   let pickedNumber = 6;
   function renderPickNumber(a) {
     a.innerHTML = `
-      ${titleBlock("🔢 Pick a Number", "Direkte hit = 3.5× JACKPOT! Nabotal = 1× save. Miss = ½ straf.")}
+      ${titleBlock("🔢 Pick a Number", "Direkte hit = 3× JACKPOT! Nabotal = ½× save. Miss = fuld straf.")}
       <div class="big-number" id="numberReveal">?</div>
       <div class="number-picks">${[1, 2, 3, 4, 5, 6].map(n => `<button class="number-pick ${n === pickedNumber ? "active" : ""}" data-num="${n}">${n}</button>`).join("")}</div>
       <button class="big-button" id="numberBtn">TRÆK TAL</button>
@@ -591,15 +597,15 @@
     const exact = n === pickedNumber, left = pickedNumber === 1 ? 6 : pickedNumber - 1, right = pickedNumber === 6 ? 1 : pickedNumber + 1;
     if (exact) {
       beep(850, 0.12, 0.04);
-      const actual = updateBalance(-Math.max(1, Math.round(w * 3.5)), `Pick a Number: direkte hit ${n}!`);
-      showResult(`🎯 DIREKTE HIT · ${n}`, `${Math.abs(actual)} point forsvandt! (3.5× jackpot)`, "good"); confetti();
+      const actual = updateBalance(-Math.max(2, Math.round(w * 3)), `Pick a Number: direkte hit ${n}!`);
+      showResult(`🎯 DIREKTE HIT · ${n}`, `${Math.abs(actual)} point forsvandt! (3× jackpot)`, "good"); confetti();
     } else if (n === left || n === right) {
       beep(680, 0.12, 0.035);
-      const actual = updateBalance(-w, `Pick a Number: nabotal ${n}.`);
+      const actual = updateBalance(-Math.max(1, Math.round(w * 0.5)), `Pick a Number: nabotal ${n}.`);
       showResult(`✨ NABOTAL · ${n}`, `${Math.abs(actual)} point forsvandt (dit valg: ${pickedNumber}).`, "good");
     } else {
       beep(250, 0.12, 0.04);
-      const actual = updateBalance(Math.max(1, Math.ceil(w / 2)), `Pick a Number: miss ${n}.`);
+      const actual = updateBalance(w, `Pick a Number: miss ${n}.`);
       showResult(`NUMMER ${n}`, `${actual} point lagt oveni (dit valg: ${pickedNumber}).`, "bad");
     }
     setBusy(false);
@@ -652,11 +658,11 @@
   function renderCrash(a) {
     crashRunning = false; crashCashoutRequested = false;
     a.innerHTML = `
-      ${titleBlock("📈 Crash", "Cash ud fra 1.10x før raketten crasher!")}
+      ${titleBlock("📈 Crash", "Cash ud fra 1.20x før raketten crasher!")}
       <div class="crash-stage">
         <div class="crash-grid"></div><div class="crash-line" id="crashLine"></div>
         <div class="crash-mult" id="crashMult">1.000x</div>
-        <div class="crash-note" id="crashNote">Cash out er klar fra 1.10x</div>
+        <div class="crash-note" id="crashNote">Cash out er klar fra 1.20x</div>
       </div>
       <button class="big-button" id="crashBtn">START CRASH</button>
       <div id="gameResult"></div>`;
@@ -668,15 +674,15 @@
 
   function randomCrashPoint() {
     const r = Math.random();
-    if (r < 0.05) return 1.05 + Math.random() * 0.10;
-    if (r < 0.35) return 1.15 + Math.random() * 0.85;
-    if (r < 0.70) return 2.00 + Math.random() * 2.00;
-    if (r < 0.90) return 4.00 + Math.random() * 4.00;
+    if (r < 0.22) return 1.01 + Math.random() * 0.18;
+    if (r < 0.55) return 1.20 + Math.random() * 0.70;
+    if (r < 0.80) return 1.90 + Math.random() * 1.60;
+    if (r < 0.94) return 3.50 + Math.random() * 4.50;
     return 8.00 + Math.random() * 12.00;
   }
 
   function crashRewardFraction(mult) {
-    if (mult < 1.50) return 0.60; if (mult < 2.00) return 1.00; if (mult < 3.00) return 1.60; if (mult < 5.00) return 2.20; return 3.00;
+    if (mult < 1.50) return 0.50; if (mult < 2.00) return 1.00; if (mult < 3.00) return 1.70; if (mult < 5.00) return 2.40; return 3.50;
   }
 
   async function playCrash() {
@@ -690,8 +696,8 @@
     while (mult < crashAt) {
       mult += 0.012 + mult * 0.0022;
       multEl.textContent = mult.toFixed(3) + "x";
-      if (mult >= 1.100 && btn.disabled) { btn.disabled = false; btn.textContent = "💰 CASH OUT"; note.textContent = "Cash out er åben!"; beep(720, 0.05, 0.02); }
-      if (crashCashoutRequested && mult >= 1.100) { cashed = true; break; }
+      if (mult >= 1.200 && btn.disabled) { btn.disabled = false; btn.textContent = "💰 CASH OUT"; note.textContent = "Cash out er åben!"; beep(720, 0.05, 0.02); }
+      if (crashCashoutRequested && mult >= 1.200) { cashed = true; break; }
       const progress = clamp(Math.log(mult) / Math.log(18), 0, 1);
       dot.style.left = `${4 + progress * 88}%`; dot.style.bottom = `${18 + progress * 175}px`;
       if (tick++ % 3 === 0) beep(285 + progress * 450, 0.012, 0.004);
@@ -720,11 +726,11 @@
   // ==========================================================
   let rabbitState = null;
   function rabbitRewardAmount(hops, w) {
-    if (hops === 1) return Math.max(1, Math.round(w * 0.4));
-    if (hops === 2) return Math.max(1, Math.round(w * 0.8));
-    if (hops === 3) return Math.max(1, Math.round(w * 1.4));
-    if (hops === 4) return Math.max(1, Math.round(w * 2.0));
-    return Math.max(1, Math.round(w * 3.0));
+    if (hops < 2) return 0;
+    if (hops === 2) return w;
+    if (hops === 3) return Math.max(2, Math.round(w * 1.6));
+    if (hops === 4) return Math.max(2, Math.round(w * 2.4));
+    return Math.max(3, Math.round(w * 3.5));
   }
   function rabbitProgressHtml(step) {
     return [1, 2, 3, 4, 5].map(i => `<i class="${i < step ? "done" : i === step ? "current" : ""}"></i>`).join("");
@@ -805,6 +811,11 @@
     $("#rabbitProgress").innerHTML = rabbitProgressHtml(nextStep);
     const nextRow = document.querySelector(`.rabbit-row[data-step="${nextStep}"]`);
     if (nextRow) nextRow.querySelectorAll(".rabbit-pad").forEach(p => { p.disabled = false; p.classList.remove("locked"); });
+    if (step < 2) {
+      $("#rabbitInstruction").innerHTML = `<span class="muted" style="font-size:12px;font-weight:800">🔒 Klar mindst 2 hop før Cash Out låser op</span>`;
+      rabbitState.animating = false;
+      return;
+    }
     $("#rabbitInstruction").innerHTML = `<button class="btn cashout-btn" style="width:100%" id="rabbitCashoutBtn">💰 CASH UD NU (-${curReward} POINT)</button>`;
     $("#rabbitCashoutBtn").onclick = () => {
       if (!rabbitState || rabbitState.finished) return;

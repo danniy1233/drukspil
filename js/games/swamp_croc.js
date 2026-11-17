@@ -116,10 +116,13 @@
         $("#shrekGiftBar").innerHTML = s.gifts.map(g => `<span class="shrek-gift-chip">${g.ico} ${g.name}</span>`).join("");
       }
 
-      if (s.pokes > 0 && !s.finished) {
+      if (s.pokes >= 2 && !s.finished) {
         const bonusTxt = s.pokes >= 3 ? " + 🎁 Giv 1 ekstra tår!" : "";
         cashBtn.disabled = false;
         cashBtn.textContent = `🎁 CASH UD: -${rew} TÅRER${bonusTxt}`;
+      } else if (s.pokes === 1 && !s.finished) {
+        cashBtn.disabled = true;
+        cashBtn.textContent = "🔒 PRIK MIN. 2 GANGE FØR CASH OUT (1/2)";
       } else {
         cashBtn.disabled = true;
         cashBtn.textContent = "🎁 TAG GAVE & CASH UD";
@@ -171,7 +174,7 @@
     };
 
     cashBtn.onclick = () => {
-      if (!shrekState.active || shrekState.finished || shrekState.pokes <= 0) return;
+      if (!shrekState.active || shrekState.finished || shrekState.pokes < 2) return;
       shrekState.finished = true;
       const rew = shrekReward(shrekState.pokes, shrekState.wager);
       const bonusGive = shrekState.pokes >= 3 ? 1 : 0;
@@ -301,15 +304,19 @@
       const s = crocState;
       const n = s.pressed.size;
       const w = s.wager || getWager();
+      const minSafe = s.trapsCount === 1 ? 3 : 2;
       if ($("#crocStatsText")) {
         $("#crocStatsText").textContent = `Tænder nede: ${n} / ${10 - s.trapsCount} sikre`;
       }
       if (s.mode === "cashout" && $("#crocCashBtn")) {
         const cashBtn = $("#crocCashBtn");
-        if (n > 0 && !s.finished) {
+        if (n >= minSafe && !s.finished) {
           const rew = crocReward(n, s.trapsCount, w);
           cashBtn.disabled = false;
           cashBtn.textContent = `💰 CASH UD (-${rew} tårer)`;
+        } else if (n > 0 && !s.finished) {
+          cashBtn.disabled = true;
+          cashBtn.textContent = `🔒 MIN. ${minSafe} TÆNDER (${n}/${minSafe})`;
         } else {
           cashBtn.disabled = true;
           cashBtn.textContent = "💰 CASH UD";
@@ -386,7 +393,8 @@
 
     if ($("#crocCashBtn")) {
       $("#crocCashBtn").onclick = () => {
-        if (!crocState.active || crocState.finished || crocState.pressed.size <= 0) return;
+        const minSafe = crocState ? (crocState.trapsCount === 1 ? 3 : 2) : 3;
+        if (!crocState.active || crocState.finished || crocState.pressed.size < minSafe) return;
         crocState.finished = true;
         const n = crocState.pressed.size;
         const rew = crocReward(n, crocState.trapsCount, crocState.wager);

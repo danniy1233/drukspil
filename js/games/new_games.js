@@ -8,8 +8,12 @@
   let minesBombsPref = 3;
 
   function minesRewardAmount(safeCount, bombCount, w) {
-    const stepMult = bombCount === 2 ? 0.25 : bombCount === 3 ? 0.38 : 0.65;
+    const stepMult = bombCount === 2 ? 0.30 : bombCount === 3 ? 0.45 : 0.75;
     return Math.max(1, Math.round(w * (safeCount * stepMult)));
+  }
+
+  function minesMinSafe(bombCount) {
+    return bombCount === 2 ? 3 : 2;
   }
 
   function renderMines(a) {
@@ -96,6 +100,12 @@
       setBusy(false);
       confetti();
       showResult("💎 ALLE DIAMANTER FUNDET!", `Du ryddede brættet! ${Math.abs(actual)} point forsvandt!`, "good");
+      return;
+    }
+
+    const minReq = minesMinSafe(minesState.bombCount);
+    if (minesState.safeCount < minReq) {
+      $("#minesAction").innerHTML = `<span class="muted" style="font-size:12px;font-weight:800">🔒 Find ${minReq - minesState.safeCount} mere (min. ${minReq}) før Cash Out</span>`;
       return;
     }
 
@@ -249,11 +259,11 @@
     const r = Math.random();
     const syms = ["🛡️", "💎", "🎁", "🍻", "🏆", "💀"];
     let winSym = null;
-    if (r < 0.08) winSym = "🏆";       // Halv pulje
-    else if (r < 0.22) winSym = "💎";  // 2x Save
-    else if (r < 0.36) winSym = "🎁";  // Giv 3 tårer + Save
-    else if (r < 0.54) winSym = "🛡️";  // 1x Save
-    else if (r < 0.64) winSym = "🍻";  // Tag 2 tårer (neutral pulje)
+    if (r < 0.07) winSym = "🏆";       // Halv pulje
+    else if (r < 0.20) winSym = "💎";  // 2x Save
+    else if (r < 0.32) winSym = "🎁";  // Giv 3 tårer + Save
+    else if (r < 0.46) winSym = "🛡️";  // 1x Save
+    else if (r < 0.56) winSym = "🍻";  // Tag 2 tårer (neutral pulje)
 
     const cells = [];
     if (winSym) {
@@ -369,7 +379,7 @@
       title = "🍻 3× SKÅL · TAG 2 TÅRER SELV!"; type = "special";
       desc = "Tag 2 tårer selv! Puljen er urørt.";
     } else {
-      delta = Math.max(1, Math.ceil(w * 0.75));
+      delta = w;
       title = "🎫 Nitte · Ingen 3 ens"; type = "bad";
     }
 

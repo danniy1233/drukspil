@@ -8,19 +8,19 @@
   function randomCardVal() { return 2 + Math.floor(Math.random() * 13); }
   function cardText(v) { return v === 14 ? "A" : v === 13 ? "K" : v === 12 ? "Q" : v === 11 ? "J" : String(v); }
   function higherCashoutAmount(streak, w) {
-    if (streak === 1) return Math.max(1, Math.round(w * 0.4));
+    if (streak < 2) return 0;
     if (streak === 2) return w;
-    return 2 * w;
+    return Math.max(2, Math.round(w * 2.5));
   }
 
   function renderHigher(a) {
     const pips = [0, 1, 2].map(i => `<i class="streak-pip ${i < state.higherStreak ? "active" : ""}"></i>`).join("");
     const w = getWager();
-    const canCashout = state.higherStreak > 0;
+    const canCashout = state.higherStreak >= 2;
     const cashVal = canCashout ? higherCashoutAmount(state.higherStreak, w) : 0;
 
     a.innerHTML = `
-      ${titleBlock("🃏 Higher / Lower", "Gæt højere eller lavere. Cash ud undervejs eller nå 3 i streg for 2× JACKPOT!")}
+      ${titleBlock("🃏 Higher / Lower", "Gæt højere eller lavere! Nå min. 2 i streg for Cash Out – eller 3/3 for 2.5× JACKPOT!")}
       <div class="streak-wrap">
         <div class="streak-label">STREAK</div>
         <div class="streak-pips">${pips}</div>
@@ -34,14 +34,18 @@
         <button class="btn primary hlBtn" style="flex:1" data-choice="higher">⬆️ Højere</button>
         <button class="btn primary hlBtn" style="flex:1" data-choice="lower">⬇️ Lavere</button>
       </div>
-      ${canCashout ? `<button class="big-button cashout-btn" id="hlCashoutBtn">💰 CASH UD NU (-${cashVal} POINT)</button>` : ""}
+      ${canCashout
+        ? `<button class="big-button cashout-btn" id="hlCashoutBtn">💰 CASH UD NU (-${cashVal} POINT)</button>`
+        : state.higherStreak === 1
+          ? `<div style="text-align:center;font-size:11.5px;color:var(--muted);font-weight:800;margin-top:4px">🔒 Klar 1 mere (2/3) for at låse Cash Out op</div>`
+          : ""}
       <div id="gameResult"></div>`;
     $$(".hlBtn").forEach(b => b.onclick = () => playHigher(b.dataset.choice));
     if (canCashout) $("#hlCashoutBtn").onclick = cashoutHigher;
   }
 
   function cashoutHigher() {
-    if (state.busy || state.balance <= 0 || state.higherStreak <= 0) return;
+    if (state.busy || state.balance <= 0 || state.higherStreak < 2) return;
     const w = getWager();
     const cashVal = higherCashoutAmount(state.higherStreak, w);
     const streak = state.higherStreak;
@@ -72,19 +76,21 @@
     if (correct) {
       state.higherStreak++;
       if (state.higherStreak >= 3) {
-        const actual = updateBalance(-2 * w, `Higher / Lower: 3 i streg! Jackpot.`);
+        const jack = Math.max(2, Math.round(w * 2.5));
+        const actual = updateBalance(-jack, `Higher / Lower: 3 i streg! Jackpot.`);
         state.higherStreak = 0;
-        showResult("🔥 3 I STREG JACKPOT!", `${cardText(previous)} → ${cardText(next)} var korrekt! 2× indsats fjernet: ${Math.abs(actual)} point forsvandt!`, "good");
+        showResult("🔥 3 I STREG JACKPOT!", `${cardText(previous)} → ${cardText(next)} var korrekt! 2.5× indsats fjernet: ${Math.abs(actual)} point forsvandt!`, "good");
         confetti();
       } else {
-        const cashVal = higherCashoutAmount(state.higherStreak, w);
-        showResult(`✅ KORREKT · ${state.higherStreak}/3`, `${cardText(previous)} → ${cardText(next)}. Du kan nu cashe ud (-${cashVal} point) eller fortsætte!`, "good", { skipModal: true });
+        const msg = state.higherStreak >= 2
+          ? `${cardText(previous)} → ${cardText(next)}. Cash Out er nu låst op (-${higherCashoutAmount(state.higherStreak, w)} point) – eller gå efter 3/3!`
+          : `${cardText(previous)} → ${cardText(next)}. Klar 1 rigtig mere (2/3) for at kunne cashe ud!`;
+        showResult(`✅ KORREKT · ${state.higherStreak}/3`, msg, "good", { skipModal: true });
       }
     } else {
-      const penalty = state.higherStreak === 0 ? Math.max(1, Math.ceil(w / 2)) : w;
       const prevStreak = state.higherStreak;
       state.higherStreak = 0;
-      const actual = updateBalance(penalty, `Higher / Lower: forkert gæt.`);
+      const actual = updateBalance(w, `Higher / Lower: forkert gæt.`);
       showResult("❌ FORKERT GÆT", `${cardText(previous)} → ${cardText(next)} gik den anden vej. ${actual} point lagt oveni.${prevStreak > 0 ? " Streak nulstillet." : ""}`, "bad");
     }
 
@@ -425,7 +431,7 @@
   // 6. POKER DRAW
   // ==========================================================
   function pokerRank(cards) {
-    const vals = cards.map(c => c.value).sort((a, b) => a - b);
+    const vals = cards.map(c => (c.rank === 1 ? 14 : c.rank)).sort((a, b) => a - b);
     const counts = {}; vals.forEach(v => { counts[v] = (counts[v] || 0) + 1; });
     const groups = Object.values(counts).sort((a, b) => b - a);
     const flush = cards.every(c => c.suit === cards[0].suit);
@@ -438,8 +444,12 @@
     if (flush) return { name: "Flush", mult: 3 };
     if (straight) return { name: "Straight", mult: 3 };
     if (groups[0] === 3) return { name: "Three of a Kind", mult: 2 };
-    if (groups[0] === 2 && groups[1] === 2) return { name: "Two Pair", mult: 2 };
-    if (groups[0] === 2) return { name: "One Pair", mult: 1 };
+    if (groups[0] === 2 && groups[1] === 2) return { name: "Two Pair", mult: 1.5 };
+    if (groups[0] === 2) {
+      const pairVal = Number(Object.keys(counts).find(k => counts[k] === 2));
+      if (pairVal >= 11) return { name: "Jacks or Better", mult: 1 };
+      return { name: "Low Pair", mult: 0 };
+    }
     return { name: "High Card", mult: -1 };
   }
 
@@ -448,7 +458,7 @@
   function renderPoker(a) {
     pokerState = null;
     a.innerHTML = `
-      ${titleBlock("🃏 Poker Draw", "Video Poker: Få 5 kort, tap dem du vil BEHOLDE, og træk nye kort!")}
+      ${titleBlock("🃏 Poker Draw", "Jacks or Better: Par i J–A eller 2+ par vinder! Lavt par (2–10) er Push.")}
       <div class="poker-hand" id="pokerHand">
         ${Array.from({ length: 5 }, () => `<div class="poker-card-wrap"><div class="mini-card hidden-card">?</div></div>`).join("")}
       </div>
@@ -472,7 +482,12 @@
 
     const rankCounts = {};
     cards.forEach(c => { rankCounts[c.rank] = (rankCounts[c.rank] || 0) + 1; });
-    cards.forEach((c, i) => { if (rankCounts[c.rank] > 1) pokerState.held[i] = true; });
+    cards.forEach((c, i) => {
+      const pVal = c.rank === 1 ? 14 : c.rank;
+      if (rankCounts[c.rank] >= 3 || (rankCounts[c.rank] === 2 && pVal >= 11)) {
+        pokerState.held[i] = true;
+      }
+    });
     updatePokerHeldUI();
 
     $$(".poker-card-wrap").forEach(wrap => {
@@ -528,14 +543,15 @@
     const rank = pokerRank(pokerState.cards);
     let delta = w, title = "", type = "";
     if (rank.name === "High Card") { delta = w; title = "HIGH CARD · TAB"; type = "bad"; }
-    else if (rank.name === "One Pair") { delta = -Math.max(1, Math.round(w * 0.75)); title = "✅ ET PAR"; type = "good"; }
+    else if (rank.name === "Low Pair") { delta = 0; title = "➖ LAVT PAR (2–10) · PUSH"; type = "special"; }
+    else if (rank.name === "Jacks or Better") { delta = -w; title = "✅ PAR I J–A · GEVINST!"; type = "good"; }
     else if (rank.name === "Two Pair") { delta = -Math.max(1, Math.round(w * 1.5)); title = "✨ TO PAR"; type = "good"; confetti(); }
     else if (rank.name === "Three of a Kind") { delta = -2 * w; title = "🔥 TRE ENS!"; type = "good"; confetti(); }
     else if (rank.name === "Straight" || rank.name === "Flush" || rank.name === "Full House") { delta = -3 * w; title = `🏆 ${rank.name.toUpperCase()}!`; type = "good"; confetti(); }
     else { delta = -4 * w; title = `👑 ${rank.name.toUpperCase()} · JACKPOT!`; type = "good"; confetti(); }
 
     const actual = updateBalance(delta, `Poker Draw: ${rank.name}.`);
-    showResult(title, actual < 0 ? `${Math.abs(actual)} point forsvandt!` : `${actual} point lagt oveni.`, type);
+    showResult(title, actual < 0 ? `${Math.abs(actual)} point forsvandt!` : actual > 0 ? `${actual} point lagt oveni.` : "Lavt par giver Push (0 ændring).", type);
     $("#pokerPrompt").textContent = `Resultat: ${rank.name}.`;
     const btn = $("#pokerBtn");
     btn.textContent = "DEAL IGEN";

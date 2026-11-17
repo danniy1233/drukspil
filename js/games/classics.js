@@ -11,7 +11,7 @@
     { label: "1½x", kind: "delta", delta: w => Math.max(1, Math.ceil(w / 2)), text: "En halv indsats bliver lagt oveni" },
     { label: "2x", kind: "delta", delta: w => w, text: "Indsatsen bliver lagt oveni" },
     { label: "3x", kind: "delta", delta: w => 2 * w, text: "Dobbelt indsats bliver lagt oveni" },
-    { label: "-1", kind: "fixed", amount: -1, text: "Ét point forsvinder" },
+    { label: "+1½x", kind: "delta", delta: w => Math.max(1, Math.round(w * 1.5)), text: "1.5× indsats bliver lagt oveni" },
     { label: "+1", kind: "fixed", amount: 1, text: "Ét point bliver lagt oveni" },
     { label: "GIV UD", kind: "give", text: "Giv den gamblede indsats ud til andre" },
     { label: "GIV ½", kind: "giveHalf", text: "Giv halvdelen af indsatsen ud til andre" },
@@ -107,12 +107,12 @@
       const actual = updateBalance(-amount, `Risk Wheel: Giv ${amount} point ud.`, "auto", null, { giveAmount: amount, giveLabel: `${amount} tårer` });
       showResult("🎁 GIV HALVDELEN UD", `Giv ${Math.abs(actual)} point ud til de andre. De er fjernet fra din egen pulje.`, "good");
     } else if (opt.kind === "shot") {
-      const actual = updateBalance(-w, `Risk Wheel: 1 shot. Indsats fjernet.`, "none");
-      showResult("🥃 1 SHOT", `Tag 1 shot! Samtidig fjernes ${Math.abs(actual)} point fra din pulje.`, "special");
+      updateBalance(0, `Risk Wheel: 1 shot.`, "none", null, { drinkSelf: 3 });
+      showResult("🥃 1 SHOT", "Tag 1 shot! Puljen forbliver uændret.", "special");
       vibrate([60, 50, 60]);
     } else if (opt.kind === "sips") {
-      const actual = updateBalance(-w, `Risk Wheel: ${opt.amount} slurke. Indsats fjernet.`, "none");
-      showResult(`🍻 ${opt.amount} SLURKE`, `Tag ${opt.amount} slurke! Samtidig fjernes ${Math.abs(actual)} point fra din pulje.`, "special");
+      updateBalance(0, `Risk Wheel: ${opt.amount} slurke.`, "none", null, { drinkSelf: opt.amount });
+      showResult(`🍻 ${opt.amount} SLURKE`, `Tag ${opt.amount} slurke! Puljen forbliver uændret.`, "special");
       vibrate([40, 40, 40]);
     } else if (opt.kind === "halfPool") {
       const amount = Math.max(1, Math.ceil(state.balance / 2));
@@ -679,7 +679,7 @@
   // ==========================================================
   function renderDice(a) {
     a.innerHTML = `
-      ${titleBlock("🎲 Dice Risk", "4–5 fjerner indsats. 6 er 2× JACKPOT! 2–3 koster ½ indsats, 1 koster fuld.")}
+      ${titleBlock("🎲 Dice Risk", "4–5 fjerner indsats. 6 er 2× JACKPOT! 2–3 koster fuld indsats, 1 koster 1.5×.")}
       <div class="dice-stage"><div class="die" id="die">⚄</div></div>
       <button class="big-button" id="diceBtn">KAST TERNINGEN</button>
       <div id="gameResult"></div>`;
@@ -703,8 +703,8 @@
     let delta = 0, title = "", type = "";
     if (d === 6) { delta = -2 * w; title = "🔥 6 · SUPER JACKPOT!"; type = "good"; confetti(); }
     else if (d >= 4) { delta = -w; title = `✅ DU SLOG ${d} · SEJR`; type = "good"; }
-    else if (d >= 2) { delta = Math.max(1, Math.ceil(w / 2)); title = `LAVT KAST · ${d}`; type = "bad"; }
-    else { delta = w; title = "💀 1 · SNAKE EYES"; type = "bad"; }
+    else if (d >= 2) { delta = w; title = `LAVT KAST · ${d}`; type = "bad"; }
+    else { delta = Math.max(1, Math.round(w * 1.5)); title = "💀 1 · SNAKE EYES (1.5×)"; type = "bad"; }
 
     const actual = updateBalance(delta, `Dice Risk: slog ${d}.`);
     showResult(title, actual < 0 ? `${Math.abs(actual)} point forsvandt fra puljen!` : `${actual} point blev lagt oveni.`, type);
