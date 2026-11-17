@@ -5,6 +5,7 @@
   let drinkSub = "solo";
   let drinkMax = 5;
   let surprisesEnabled = true;
+  let challengesEnabled = true;
   let chaosSub = "solo";
   let duelSub = "pools";
   let setupPlayers = [
@@ -367,6 +368,7 @@
       drinkSubMode: drinkSub,
       drinkMaxStake: drinkMax,
       surprisesEnabled,
+      challengesEnabled,
       chaosSubMode: chaosSub,
       duelSubMode: duelSub,
       soloAmount: soloAmt,
@@ -383,7 +385,8 @@
     $("#duelPrivacyOverlay")?.classList.remove("show");
     $("#confirmLeaveModal")?.classList.remove("show");
     $("#surpriseModal")?.classList.remove("show");
-    $("#surpriseModal")?.classList.remove("show");
+    $("#promptModal")?.classList.remove("show");
+    $("#promptModal")?.classList.remove("show");
     clearTimeout(state.outcomeModalTimer);
 
     const gamesNavBtn = $(`.nav-tab[data-nav="games"]`);
@@ -431,6 +434,7 @@
     $("#duelPrivacyOverlay")?.classList.remove("show");
     $("#confirmLeaveModal")?.classList.remove("show");
     $("#surpriseModal")?.classList.remove("show");
+    $("#promptModal")?.classList.remove("show");
     $("#debtVignette").className = "debt-vignette";
     if ($("#balanceChange")) {
       $("#balanceChange").textContent = "";
@@ -464,6 +468,15 @@
         $("#surpriseToggleBtn").classList.toggle("active", surprisesEnabled);
         $("#surpriseToggleBtn").textContent = `⚡ Overraskelser mellem runder: ${surprisesEnabled ? "TIL" : "FRA"}`;
         beep(surprisesEnabled ? 660 : 420, 0.04, 0.02);
+      };
+    }
+
+    if ($("#challengesToggleBtn")) {
+      $("#challengesToggleBtn").onclick = () => {
+        challengesEnabled = !challengesEnabled;
+        $("#challengesToggleBtn").classList.toggle("active", challengesEnabled);
+        $("#challengesToggleBtn").textContent = `💬 Spørgsmål & Udfordringer: ${challengesEnabled ? "TIL" : "FRA"}`;
+        beep(challengesEnabled ? 680 : 420, 0.04, 0.02);
       };
     }
 

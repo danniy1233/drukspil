@@ -73,6 +73,27 @@
   </div>
 </div>
 
+<!-- SOCIAL QUESTIONS & CHALLENGES MODAL -->
+<div class="overlay" id="promptModal">
+  <div class="overlay-card outcome-modal-card" id="promptModalCard" style="--outcome-color:#38bdf8">
+    <div class="outcome-modal-halo"></div>
+    <div class="outcome-badge" id="promptBadge">💬 SPØRGSMÅL</div>
+    <div class="outcome-icon" id="promptIcon">🗣️</div>
+    <div class="outcome-title" id="promptTitle">Rundens Spørgsmål</div>
+    <div class="outcome-game-sub" id="promptPlayerSub" style="display:none"></div>
+    <div class="outcome-action-box" style="margin-top:12px">
+      <div class="outcome-action-headline" id="promptHeadline" style="font-size:15px;line-height:1.4"></div>
+      <div class="outcome-action-desc" id="promptDesc"></div>
+    </div>
+    <div class="outcome-btn-group" style="margin-top:14px">
+      <button type="button" class="btn good outcome-modal-btn hidden" id="promptSuccessBtn"></button>
+      <button type="button" class="btn bad outcome-modal-btn hidden" id="promptFailBtn"></button>
+      <button type="button" class="btn primary outcome-modal-btn hidden" id="promptAnswerBtn">✓ BESVARET · FORTSÆT ➔</button>
+      <button type="button" class="btn ghost outcome-modal-btn hidden" id="promptSkipBtn">🙈 SPRINGER OVER · TAG 2 TÅRER</button>
+    </div>
+  </div>
+</div>
+
 <!-- CS:GO CASE REVEAL MODAL -->
 <div class="overlay" id="caseModal">
   <div class="overlay-card case-modal-card" id="caseModalCard">
@@ -165,7 +186,8 @@
     <div class="mode-grid" id="modeGrid"></div>
     <div class="mode-setup-box" id="modeSetupArea"></div>
 
-    <button type="button" class="toggle-pill active" id="surpriseToggleBtn" style="width:100%;margin-bottom:8px">⚡ Overraskelser mellem runder: TIL</button>
+    <button type="button" class="toggle-pill active" id="surpriseToggleBtn" style="width:100%;margin-bottom:6px">⚡ Overraskelser mellem runder: TIL</button>
+    <button type="button" class="toggle-pill active" id="challengesToggleBtn" style="width:100%;margin-bottom:10px">💬 Spørgsmål & Udfordringer: TIL</button>
     <button class="big-button" id="startBtn" style="margin-top:4px">START SPILLET ➔</button>
     <div class="footer-note" style="text-align:center">Point bruges som standard. Hvis I kobler point til tårer, så spil ansvarligt og hold mængderne små.</div>
   </section>

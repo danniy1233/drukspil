@@ -26,10 +26,13 @@
     drinkMaxStake: 5,
     duelSubMode: "pools", // "pools" | "quick"
     surprisesEnabled: true,
+    challengesEnabled: true,
     turnCount: 0,
-    lastSurpriseTurn: -2,
+    lastBetweenPopupTurn: -2,
     pendingBuff: null, // null | "double" | "shield"
     recentGames: [],
+    promptBag: [],
+    lastPromptId: null,
     players: [],
     turnIndex: 0,
     turnStake: 2,
@@ -612,18 +615,249 @@
     }
   ];
 
-  function maybeTriggerSurprise(action, forcedArenaFromCaller = false) {
-    if (!modeState.surprisesEnabled || modeState.mode === "duel") return false;
-    if (modeState.turnCount - modeState.lastSurpriseTurn < 2) return false;
-    if (Math.random() >= 0.25) return false;
+  const SOCIAL_PROMPTS = [
+    // Brugerens egne udfordringer & spørgsmål + flere sjove uskyldige
+    {
+      id: "coolest",
+      kind: "question",
+      icon: "😎",
+      title: "Dagens Spørgsmål",
+      text: "Fortæl de andre i selskabet, hvorfor du er den sejeste!",
+      sub: "Giv et godt bud til bordet — eller spring over mod en lille straf.",
+      skipDrink: 2
+    },
+    {
+      id: "left_drink",
+      kind: "challenge",
+      icon: "🍹",
+      title: "Bartender-udfordring",
+      text: "Lav en drink til personen til venstre for dig!",
+      sub: "Hvis personen kan lide den → giv 2 tårer ud! Hvis personen ikke kan lide den → tag selv 2 tårer.",
+      winGive: 2,
+      failDrink: 2
+    },
+    {
+      id: "alpha_color",
+      kind: "challenge",
+      icon: "🎨",
+      title: "Umuligt Gæt!",
+      text: "På en skala fra 1–10: Hvad er personen til venstres yndlingsfarve i alfabetet?",
+      sub: "Svarer du rigtigt (eller får bordet til at grine nok!) → giv 2 tårer ud! Forkert → tag 1 tår selv.",
+      winGive: 2,
+      failDrink: 1
+    },
+    {
+      id: "rps_side",
+      kind: "challenge",
+      icon: "✊",
+      title: "Lyn-duel ved bordet",
+      text: "Spil én hurtig runde Sten-Saks-Papir mod personen til højre for dig!",
+      sub: "Vinder du → giv 2 tårer ud. Taber du → tag 1 tår selv.",
+      winGive: 2,
+      failDrink: 1
+    },
+    {
+      id: "ad_spot",
+      kind: "challenge",
+      icon: "📺",
+      title: "5-Sekunders Reklame",
+      text: "Lav en 5-sekunders TV-reklame for din egen drink lige nu!",
+      sub: "Stemmes reklamen godkendt af selskabet → giv 2 tårer ud, ellers tag 1 tår selv.",
+      winGive: 2,
+      failDrink: 1
+    },
+    {
+      id: "eye_contact",
+      kind: "challenge",
+      icon: "👀",
+      title: "Stirrekonkurrence",
+      text: "Hold øjenkontakt med personen overfor dig i 10 sekunder uden at grine eller smile!",
+      sub: "Klarer I begge 10 sek → giv 2 tårer ud! Griner du først → tag 1 tår selv.",
+      winGive: 2,
+      failDrink: 1
+    },
+    {
+      id: "bathroom_5",
+      kind: "challenge",
+      icon: "⏱️",
+      title: "8-Sekunders Blitz",
+      text: "Nævn 5 ting man finder på et badeværelse på under 8 sekunder!",
+      sub: "Klarer du alle 5 i tide → giv 2 tårer ud! Ellers tag 2 tårer selv.",
+      winGive: 2,
+      failDrink: 2
+    },
+    {
+      id: "hum_song",
+      kind: "challenge",
+      icon: "🎵",
+      title: "Gæt Nynneriet",
+      text: "Nyn omkvædet på en kendt sang i 10 sekunder!",
+      sub: "Gætter nogen ved bordet sangen → giv 2 tårer ud! Gætter ingen → tag 1 tår selv.",
+      winGive: 2,
+      failDrink: 1
+    },
+    {
+      id: "spell_back",
+      kind: "challenge",
+      icon: "🔤",
+      title: "Hjernevrider",
+      text: "Stav dit eget fornavn bagfra højt uden at tøve eller kigge!",
+      sub: "Fejlfrit → giv 1 tår ud! Kløjs i et bogstav → tag 1 tår selv.",
+      winGive: 1,
+      failDrink: 1
+    },
+    {
+      id: "epic_compliment",
+      kind: "challenge",
+      icon: "🎭",
+      title: "Film-kompliment",
+      text: "Giv personen til højre for dig det mest dramatiske film-kompliment du kan finde på!",
+      sub: "Godkender bordet præstationen → giv 2 tårer ud! Ellers tag 1 tår selv.",
+      winGive: 2,
+      failDrink: 1
+    },
+    {
+      id: "guess_time",
+      kind: "challenge",
+      icon: "⌚",
+      title: "Indre Ur",
+      text: "Gæt hvad klokken er lige nu inden for ±3 minutter (uden at kigge på skærmen)!",
+      sub: "Rammer du inden for 3 min → giv 2 tårer ud! Ved siden af → tag 1 tår selv.",
+      winGive: 2,
+      failDrink: 1
+    },
+    {
+      id: "balance_5",
+      kind: "challenge",
+      icon: "⚖️",
+      title: "Balance-kunstner",
+      text: "Balancér en coaster, serviet eller ske på hovedet i 5 sekunder uden hænder!",
+      sub: "Bliver den liggende → giv 2 tårer ud! Falder den ned → tag 2 tårer selv.",
+      winGive: 2,
+      failDrink: 2
+    },
+    {
+      id: "one_food",
+      kind: "question",
+      icon: "🍕",
+      title: "Dagens Spørgsmål",
+      text: "Hvis du kun måtte spise én madret resten af livet, hvad skulle det være — og hvorfor?",
+      sub: "Del dit svar med selskabet!",
+      skipDrink: 2
+    },
+    {
+      id: "weird_buy",
+      kind: "question",
+      icon: "🛒",
+      title: "Dagens Spørgsmål",
+      text: "Hvad er den sjoveste eller mærkeligste ting du nogensinde har købt sent om aftenen?",
+      sub: "Fortæl historien kort!",
+      skipDrink: 2
+    },
+    {
+      id: "desert_island",
+      kind: "question",
+      icon: "🏝️",
+      title: "Dagens Spørgsmål",
+      text: "Hvis hele selskabet strandede på en øde ø — hvem ville bygge lejren, og hvem ville først fare vild?",
+      sub: "Udpeg personerne og forklar hvorfor!",
+      skipDrink: 2
+    },
+    {
+      id: "useless_talent",
+      kind: "question",
+      icon: "✨",
+      title: "Dagens Spørgsmål",
+      text: "Hvad er en helt ubrugelig ting eller 'superkraft', som du faktisk er overraskende god til?",
+      sub: "Vis eller fortæl om dit talent!",
+      skipDrink: 2
+    },
+    {
+      id: "quiz_partner",
+      kind: "question",
+      icon: "🧠",
+      title: "Dagens Spørgsmål",
+      text: "Hvis du skulle vinde 1 million kr. i et quiz-show med én her fra bordet — hvem vælger du og hvorfor?",
+      sub: "Forklar dit taktiske valg!",
+      skipDrink: 2
+    },
+    {
+      id: "mayor_day",
+      kind: "question",
+      icon: "🏛️",
+      title: "Dagens Spørgsmål",
+      text: "Hvis du blev borgmester i byen i én dag, hvad er den første sjove regel du indfører?",
+      sub: "Fremlæg dit bedste lovforslag!",
+      skipDrink: 2
+    },
+    {
+      id: "praise_left",
+      kind: "question",
+      icon: "🌟",
+      title: "Dagens Spørgsmål",
+      text: "Nævn 3 ting som personen til venstre for dig er mega god til!",
+      sub: "Spred god stemning ved bordet!",
+      skipDrink: 2
+    },
+    {
+      id: "food_opinion",
+      kind: "question",
+      icon: "🍍",
+      title: "Dagens Spørgsmål",
+      text: "Hvad er din mest kontroversielle mad-holdning (fx ananas på pizza eller ketchup på pasta)?",
+      sub: "Forsvar din smag for bordet!",
+      skipDrink: 2
+    },
+    {
+      id: "movie_title",
+      kind: "question",
+      icon: "🎬",
+      title: "Dagens Spørgsmål",
+      text: "Hvis dit liv lige nu havde en filmtitel, hvad skulle filmen hedde?",
+      sub: "Giv dit bedste bud!",
+      skipDrink: 2
+    }
+  ];
 
+  function drawSocialPrompt() {
+    if (!modeState.promptBag.length) {
+      modeState.promptBag = Array.from({ length: SOCIAL_PROMPTS.length }, (_, i) => i);
+      for (let i = modeState.promptBag.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [modeState.promptBag[i], modeState.promptBag[j]] = [modeState.promptBag[j], modeState.promptBag[i]];
+      }
+      if (modeState.promptBag.length > 1 && SOCIAL_PROMPTS[modeState.promptBag[modeState.promptBag.length - 1]].id === modeState.lastPromptId) {
+        const last = modeState.promptBag.length - 1;
+        [modeState.promptBag[last], modeState.promptBag[0]] = [modeState.promptBag[0], modeState.promptBag[last]];
+      }
+    }
+    const idx = modeState.promptBag.pop();
+    const chosen = SOCIAL_PROMPTS[idx];
+    modeState.lastPromptId = chosen.id;
+    return chosen;
+  }
+
+  function finishBetweenRoundModal(modal, forceArena, action) {
+    modal.classList.remove("show");
+    setBusy(false);
+    updateDebtUI();
+    syncWagerUI();
+    if (forceArena || isDrinkMode() || modeState.mode === "chaos" || action === "stay") {
+      Arcade.app.renderActiveGame();
+      Arcade.app.switchView("arena");
+    } else if (action === "switch") {
+      Arcade.app.switchView("games");
+    }
+  }
+
+  function openSurprisePopup(action, forcedArenaFromCaller) {
     const modal = $("#surpriseModal");
     if (!modal) return false;
 
     const pool = SURPRISE_EVENTS.filter(ev => ev.condition());
     if (!pool.length) return false;
     const ev = pool[Math.floor(Math.random() * pool.length)];
-    modeState.lastSurpriseTurn = modeState.turnCount;
+    modeState.lastBetweenPopupTurn = modeState.turnCount;
 
     const out = ev.run();
     const card = $("#surpriseModalCard");
@@ -647,20 +881,120 @@
     const forceArena = Boolean(out.forcedArena) || forcedArenaFromCaller;
     const btn = $("#surpriseContinueBtn");
     if (btn) {
-      btn.onclick = () => {
-        modal.classList.remove("show");
-        setBusy(false);
-        updateDebtUI();
-        syncWagerUI();
-        if (forceArena || isDrinkMode() || modeState.mode === "chaos" || action === "stay") {
-          Arcade.app.renderActiveGame();
-          Arcade.app.switchView("arena");
-        } else if (action === "switch") {
-          Arcade.app.switchView("games");
-        }
-      };
+      btn.onclick = () => finishBetweenRoundModal(modal, forceArena, action);
     }
     return true;
+  }
+
+  function openPromptPopup(action, forcedArenaFromCaller) {
+    const modal = $("#promptModal");
+    if (!modal) return false;
+
+    const prompt = drawSocialPrompt();
+    if (!prompt) return false;
+    modeState.lastBetweenPopupTurn = modeState.turnCount;
+
+    const cur = currentPlayer();
+    const isChallenge = prompt.kind === "challenge";
+    const accent = isChallenge ? "#f59e0b" : "#38bdf8";
+
+    const card = $("#promptModalCard");
+    if (card) card.style.setProperty("--outcome-color", accent);
+    if ($("#promptBadge")) $("#promptBadge").textContent = isChallenge ? "🎯 UDFORDRING!" : "💬 SPØRGSMÅL!";
+    if ($("#promptIcon")) $("#promptIcon").textContent = prompt.icon;
+    if ($("#promptTitle")) $("#promptTitle").textContent = prompt.title;
+    const playerSub = $("#promptPlayerSub");
+    if (playerSub) {
+      if (isMultiplayer() && cur) {
+        playerSub.textContent = `Gælder nu: ${cur.name}`;
+        playerSub.style.display = "block";
+      } else {
+        playerSub.style.display = "none";
+      }
+    }
+    if ($("#promptHeadline")) {
+      $("#promptHeadline").textContent = prompt.text;
+      $("#promptHeadline").style.color = "#fff";
+    }
+    if ($("#promptDesc")) $("#promptDesc").textContent = prompt.sub || "";
+
+    const sucBtn = $("#promptSuccessBtn");
+    const failBtn = $("#promptFailBtn");
+    const ansBtn = $("#promptAnswerBtn");
+    const skipBtn = $("#promptSkipBtn");
+
+    [sucBtn, failBtn, ansBtn, skipBtn].forEach(b => { if (b) b.classList.add("hidden"); });
+
+    if (isChallenge) {
+      const wg = prompt.winGive || 2;
+      const fd = prompt.failDrink || 1;
+      if (sucBtn) {
+        sucBtn.classList.remove("hidden");
+        sucBtn.textContent = `✅ KLARET! GIV ${wg} ${wg === 1 ? "TÅR" : "TÅRER"} UD`;
+        sucBtn.onclick = () => {
+          if (isDrinkMode() && cur) cur.given += wg;
+          pushHistory(`✅ ${cur ? cur.name : "Du"} klarede udfordring: Giv ${wg} ${wg === 1 ? "tår" : "tårer"} ud!`);
+          confetti();
+          beep(840, 0.11, 0.03);
+          finishBetweenRoundModal(modal, forcedArenaFromCaller, action);
+        };
+      }
+      if (failBtn) {
+        failBtn.classList.remove("hidden");
+        failBtn.textContent = `❌ FEJLET! TAG ${fd} ${fd === 1 ? "TÅR" : "TÅRER"} SELV`;
+        failBtn.onclick = () => {
+          if (isDrinkMode() && cur) cur.drunk += fd;
+          pushHistory(`❌ ${cur ? cur.name : "Du"} fejlede udfordring: Tag ${fd} ${fd === 1 ? "tår" : "tårer"} selv.`);
+          beep(220, 0.14, 0.035);
+          finishBetweenRoundModal(modal, forcedArenaFromCaller, action);
+        };
+      }
+    } else {
+      const sd = prompt.skipDrink || 2;
+      if (ansBtn) {
+        ansBtn.classList.remove("hidden");
+        ansBtn.onclick = () => {
+          pushHistory(`💬 ${cur ? cur.name : "Du"} svarede: "${prompt.text}"`);
+          beep(680, 0.08, 0.025);
+          finishBetweenRoundModal(modal, forcedArenaFromCaller, action);
+        };
+      }
+      if (skipBtn) {
+        skipBtn.classList.remove("hidden");
+        skipBtn.textContent = `🙈 SPRINGER OVER · TAG ${sd} TÅRER`;
+        skipBtn.onclick = () => {
+          if (isDrinkMode() && cur) cur.drunk += sd;
+          pushHistory(`🙈 ${cur ? cur.name : "Du"} sprang spørgsmål over (+${sd} tårer).`);
+          beep(220, 0.12, 0.03);
+          finishBetweenRoundModal(modal, forcedArenaFromCaller, action);
+        };
+      }
+    }
+
+    setBusy(true);
+    updateDebtUI();
+    syncWagerUI();
+    modal.classList.add("show");
+    beep(660, 0.1, 0.03);
+    return true;
+  }
+
+  function maybeTriggerSurprise(action, forcedArenaFromCaller = false) {
+    if (modeState.mode === "duel") return false;
+    if (!modeState.surprisesEnabled && !modeState.challengesEnabled) return false;
+    if (modeState.turnCount - modeState.lastBetweenPopupTurn < 2) return false;
+
+    const both = modeState.surprisesEnabled && modeState.challengesEnabled;
+    const chance = both ? 0.35 : 0.28;
+    if (Math.random() >= chance) return false;
+
+    if (both) {
+      return Math.random() < 0.5
+        ? openSurprisePopup(action, forcedArenaFromCaller)
+        : openPromptPopup(action, forcedArenaFromCaller);
+    }
+    if (modeState.surprisesEnabled) return openSurprisePopup(action, forcedArenaFromCaller);
+    return openPromptPopup(action, forcedArenaFromCaller);
   }
 
   function handleAfterOutcome(action) {
@@ -810,10 +1144,13 @@
     modeState.drinkMaxStake = clamp(parseInt(config.drinkMaxStake || 5, 10), 1, 20);
     modeState.duelSubMode = config.duelSubMode || "pools";
     modeState.surprisesEnabled = config.surprisesEnabled !== false;
+    modeState.challengesEnabled = config.challengesEnabled !== false;
     modeState.turnCount = 0;
-    modeState.lastSurpriseTurn = -2;
+    modeState.lastBetweenPopupTurn = -2;
     modeState.pendingBuff = null;
     modeState.recentGames = [];
+    modeState.promptBag = [];
+    modeState.lastPromptId = null;
 
     if (modeState.mode === "drink" && modeState.drinkSubMode === "solo") {
       modeState.players = [{ id: 1, name: "Dig", balance: 10, status: "active", drunk: 0, given: 0 }];
@@ -1314,6 +1651,7 @@
     MODES,
     CHAOS_MODIFIERS,
     SURPRISE_EVENTS,
+    SOCIAL_PROMPTS,
     state: modeState,
     isMultiplayer,
     isDrinkMode,
