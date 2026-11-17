@@ -788,6 +788,398 @@
       text: "Hvad tror du personen til venstre for dig er absolut værst til her i livet?",
       sub: "Gæt med et smil!",
       skipDrink: 2
+    },
+    // +11 nye hurtige gætte- & sidekammerat-opgaver (ialt 20)
+    {
+      id: "shoe_size_right",
+      kind: "challenge",
+      icon: "👟",
+      title: "Skostørrelse-gæt",
+      text: "Gæt personen til højre for digs præcise skostørrelse inden for ±1 nummer!",
+      sub: "Inden for ±1 → giv 2 tårer ud! Ved siden af → tag 1 tår selv.",
+      winGive: 2,
+      failDrink: 1
+    },
+    {
+      id: "last_emoji_left",
+      kind: "challenge",
+      icon: "😜",
+      title: "Seneste Emoji",
+      text: "Gæt en af de 3 senest brugte emojis på personen til venstres tastatur!",
+      sub: "Rammer du én af de 3 → giv 2 tårer ud! Ellers → tag 1 tår selv.",
+      winGive: 2,
+      failDrink: 1
+    },
+    {
+      id: "photo_count",
+      kind: "challenge",
+      icon: "📸",
+      title: "Kamerarulle-gæt",
+      text: "Gæt hvor mange billeder personen overfor dig har i sin kamerarulle (inden for ±500)!",
+      sub: "Inden for ±500 → giv 2 tårer ud! Ellers → tag 1 tår selv.",
+      winGive: 2,
+      failDrink: 1
+    },
+    {
+      id: "mom_letter",
+      kind: "challenge",
+      icon: "🔠",
+      title: "Fornavns-gæt",
+      text: "Gæt hvilken af disse 3 bogstaver personen til venstres mors fornavn starter med (eller få 3 gæt på hele alfabetet)!",
+      sub: "Rigtigt på max 3 gæt → giv 2 tårer ud! Forkert → tag 1 tår selv.",
+      winGive: 2,
+      failDrink: 1
+    },
+    {
+      id: "last_takeaway",
+      kind: "challenge",
+      icon: "🥡",
+      title: "Takeaway-gæt",
+      text: "Gæt hvad personen til højre for dig sidst bestilte af fastfood eller take-away!",
+      sub: "Rigtigt (eller tæt nok!) → giv 2 tårer ud! Forkert → tag 1 tår selv.",
+      winGive: 2,
+      failDrink: 1
+    },
+    {
+      id: "mind_number",
+      kind: "challenge",
+      icon: "🔮",
+      title: "Tankelæser (1–5)",
+      text: "Personen til venstre tænker på et tal fra 1 til 5. Gæt tallet på 2 forsøg!",
+      sub: "Rammer du → giv 2 tårer ud! Misser du → tag 1 tår selv.",
+      winGive: 2,
+      failDrink: 1
+    },
+    {
+      id: "height_guess",
+      kind: "challenge",
+      icon: "📏",
+      title: "Højde-gæt",
+      text: "Gæt personen til højres højde i centimeter inden for ±3 cm!",
+      sub: "Inden for ±3 cm → giv 2 tårer ud! Ved siden af → tag 1 tår selv.",
+      winGive: 2,
+      failDrink: 1
+    },
+    {
+      id: "wake_time",
+      kind: "challenge",
+      icon: "⏰",
+      title: "Morgen-gæt",
+      text: "Gæt hvornår personen overfor dig vågnede i morges inden for ±30 minutter!",
+      sub: "Inden for ±30 min → giv 2 tårer ud! Forkert → tag 1 tår selv.",
+      winGive: 2,
+      failDrink: 1
+    },
+    {
+      id: "tabs_count",
+      kind: "challenge",
+      icon: "🌐",
+      title: "Browser-faner",
+      text: "Gæt om personen til venstre har OVER eller UNDER 15 åbne faner i sin telefon-browser lige nu!",
+      sub: "Rigtigt → giv 2 tårer ud! Forkert → tag 1 tår selv.",
+      winGive: 2,
+      failDrink: 1
+    },
+    {
+      id: "screen_time",
+      kind: "challenge",
+      icon: "📲",
+      title: "Skærmtid-duel",
+      text: "Gæt hvem af dig og personen til højre, der har HØJEST daglig skærmtid i snit denne uge!",
+      sub: "Rigtigt → giv 2 tårer ud! Forkert → tag 1 tår selv.",
+      winGive: 2,
+      failDrink: 1
+    },
+    {
+      id: "coin_mental",
+      kind: "challenge",
+      icon: "🪙",
+      title: "Hoved-plat",
+      text: "Personen til højre vælger hemmeligt Krone eller Plat i hovedet — gæt hvad de valgte!",
+      sub: "Rigtigt → giv 2 tårer ud! Forkert → tag 1 tår selv.",
+      winGive: 2,
+      failDrink: 1
+    },
+    // +11 nye skøre & ironiske spørgsmål (ialt 20)
+    {
+      id: "dumbest_injury",
+      kind: "question",
+      icon: "🩹",
+      title: "Skørt Spørgsmål",
+      text: "Hvad er den dummeste eller mest pinligt ligegyldige måde, du nogensinde er kommet til skade på?",
+      sub: "Kort historie til bordet!",
+      skipDrink: 2
+    },
+    {
+      id: "useless_expert",
+      kind: "question",
+      icon: "🎓",
+      title: "Skørt Spørgsmål",
+      text: "Hvilket fuldstændig ubrugeligt emne kunne du holde et 20 minutters foredrag om uden forberedelse?",
+      sub: "Vis din indre nørd frem!",
+      skipDrink: 2
+    },
+    {
+      id: "pet_talk",
+      kind: "question",
+      icon: "🐶",
+      title: "Ironisk Spørgsmål",
+      text: "Hvis din hund, kat eller roomie kunne sladre om dig lige nu, hvad ville det første de sagde være?",
+      sub: "Vær ærlig!",
+      skipDrink: 2
+    },
+    {
+      id: "heist_left",
+      kind: "question",
+      icon: "🦝",
+      title: "Selskabets Kup",
+      text: "Hvis du og personen til venstre skulle stjæle noget fuldstændig ubrugeligt (værdi under 50 kr.), hvad ville I gå efter?",
+      sub: "Planlæg kuppet på 10 sekunder!",
+      skipDrink: 2
+    },
+    {
+      id: "worst_gift",
+      kind: "question",
+      icon: "🎁",
+      title: "Skørt Spørgsmål",
+      text: "Hvad er den mærkeligste eller dårligste gave, du nogensinde har fået (og måtte lade som om du blev glad for)?",
+      sub: "Ingen ved bordet dømmer dig!",
+      skipDrink: 2
+    },
+    {
+      id: "survival_minutes",
+      kind: "question",
+      icon: "🧟",
+      title: "Zombie-test",
+      text: "Hvor mange timer ville du realistisk set overleve i en zombie-apokalypse, før du lavede en dum fejl?",
+      sub: "Giv et ærligt gæt!",
+      skipDrink: 2
+    },
+    {
+      id: "pointless_company",
+      kind: "question",
+      icon: "💼",
+      title: "Skørt Firma",
+      text: "Hvis dig og personen til højre skulle starte et totalt åndssvagt firma sammen i morgen, hvad skulle I sælge?",
+      sub: "Giv jeres bedste pitch!",
+      skipDrink: 2
+    },
+    {
+      id: "food_ban",
+      kind: "question",
+      icon: "🚫",
+      title: "Skørt Spørgsmål",
+      text: "Hvis du kunne forbyde én helt almindelig ting som alle andre elsker (fx koriander eller crocs), hvad ryger ud?",
+      sub: "Forklar dit had!",
+      skipDrink: 2
+    },
+    {
+      id: "fake_iq",
+      kind: "question",
+      icon: "🧠",
+      title: "Selvtillids-test",
+      text: "Hvad er én simpel ting, du er overbevist om du er bedre til end alle andre her ved bordet?",
+      sub: "Prøv at overbevise de andre!",
+      skipDrink: 2
+    },
+    {
+      id: "bad_advice",
+      kind: "question",
+      icon: "📣",
+      title: "Ironisk Råd",
+      text: "Hvad er det værste men sjoveste råd, du nogensinde har givet (eller fulgt) til en fest?",
+      sub: "Del visdommen!",
+      skipDrink: 2
+    },
+    {
+      id: "search_history",
+      kind: "question",
+      icon: "🔍",
+      title: "Google-gæt",
+      text: "Hvad er det mest mærkelige eller random spørgsmål, du har googlet i denne uge?",
+      sub: "Indrøm det nu bare!",
+      skipDrink: 2
+    },
+    // 20 sjove "Vil du helst...?" dilemmaer
+    {
+      id: "wyr_battery_water",
+      kind: "question",
+      icon: "🤔",
+      title: "Vil du helst...?",
+      text: "Vil du helst altid maks have 3% batteri på din telefon — eller kun kunne drikke lunkent vand resten af livet?",
+      sub: "Vælg én og forsvar dit valg!",
+      skipDrink: 2
+    },
+    {
+      id: "wyr_frikadelle_spoon",
+      kind: "question",
+      icon: "🤔",
+      title: "Vil du helst...?",
+      text: "Vil du helst altid lugte svagt af frikadelle — eller kun måtte spise al mad med en teske resten af livet?",
+      sub: "Begge lyder træls — hvad vælger du?",
+      skipDrink: 2
+    },
+    {
+      id: "wyr_gps_sms",
+      kind: "question",
+      icon: "🤔",
+      title: "Vil du helst...?",
+      text: "Vil du helst altid tale med GPS-stemme — eller at alle dine SMS'er automatisk blev læst højt på højttaler?",
+      sub: "Vælg side!",
+      skipDrink: 2
+    },
+    {
+      id: "wyr_fries_cheese",
+      kind: "question",
+      icon: "🤔",
+      title: "Vil du helst...?",
+      text: "Vil du helst aldrig mere spise pommes frites — eller aldrig mere spise smeltet ost (pizza inkl.)?",
+      sub: "Tænk dig godt om!",
+      skipDrink: 2
+    },
+    {
+      id: "wyr_wet_socks",
+      kind: "question",
+      icon: "🤔",
+      title: "Vil du helst...?",
+      text: "Vil du helst altid have let fugtige strømper på — eller altid have en myg i soveværelset når du skal sove?",
+      sub: "Pure tortur — vælg én!",
+      skipDrink: 2
+    },
+    {
+      id: "wyr_loud_whisper",
+      kind: "question",
+      icon: "🤔",
+      title: "Vil du helst...?",
+      text: "Vil du helst kun kunne tale ved at råbe 30% for højt — eller kun kunne hviske resten af livet?",
+      sub: "Hvordan klarer du den på arbejde/skole?",
+      skipDrink: 2
+    },
+    {
+      id: "wyr_music_one_song",
+      kind: "question",
+      icon: "🤔",
+      title: "Vil du helst...?",
+      text: "Vil du helst aldrig mere høre musik — eller kun måtte høre én bestemt sang på repeat resten af livet?",
+      sub: "Og hvilken sang hvis du vælger den?",
+      skipDrink: 2
+    },
+    {
+      id: "wyr_duck_horse",
+      kind: "question",
+      icon: "🤔",
+      title: "Vil du helst...?",
+      text: "Vil du helst kæmpe imod én and på størrelse med en hest — eller 100 heste på størrelse med ænder?",
+      sub: "Klassikeren — forklar din kampplan!",
+      skipDrink: 2
+    },
+    {
+      id: "wyr_teleport_late",
+      kind: "question",
+      icon: "🤔",
+      title: "Vil du helst...?",
+      text: "Vil du helst kunne teleportere hvorhen du vil (men altid komme 15 min for sent) — eller aldrig sidde i kø i trafikken?",
+      sub: "Vælg superkraft!",
+      skipDrink: 2
+    },
+    {
+      id: "wyr_no_bed_shower",
+      kind: "question",
+      icon: "🤔",
+      title: "Vil du helst...?",
+      text: "Vil du helst aldrig mere sove med dyne — eller kun måtte tage iskolde brusebade resten af livet?",
+      sub: "Hvad overlever du bedst?",
+      skipDrink: 2
+    },
+    {
+      id: "wyr_tooth_hands",
+      kind: "question",
+      icon: "🤔",
+      title: "Vil du helst...?",
+      text: "Vil du helst have tænder lavet af blødt gummi — eller altid have 12 fingre på hver hånd?",
+      sub: "Vælg hurtigt!",
+      skipDrink: 2
+    },
+    {
+      id: "wyr_free_food_flights",
+      kind: "question",
+      icon: "🤔",
+      title: "Vil du helst...?",
+      text: "Vil du helst få gratis take-away for livet — eller gratis flybilletter resten af livet?",
+      sub: "Pengepungen skal vælge!",
+      skipDrink: 2
+    },
+    {
+      id: "wyr_pause_rewind",
+      kind: "question",
+      icon: "🤔",
+      title: "Vil du helst...?",
+      text: "Vil du helst kunne pause tiden i 10 minutter om dagen — eller spole 10 sekunder tilbage når du siger noget dumt?",
+      sub: "Hvilken knap redder dig mest?",
+      skipDrink: 2
+    },
+    {
+      id: "wyr_internet_no_phone",
+      kind: "question",
+      icon: "🤔",
+      title: "Vil du helst...?",
+      text: "Vil du helst have super hurtigt internet uden mobil — eller en iPhone uden internet?",
+      sub: "Vælg skærm-skæbne!",
+      skipDrink: 2
+    },
+    {
+      id: "wyr_hiccups_sneeze",
+      kind: "question",
+      icon: "🤔",
+      title: "Vil du helst...?",
+      text: "Vil du helst have hikke i 10 minutter hver dag kl. 14 — eller nyse hver eneste gang du bliver glad?",
+      sub: "Begge er irriterende — vælg!",
+      skipDrink: 2
+    },
+    {
+      id: "wyr_ketchup_hair",
+      kind: "question",
+      icon: "🤔",
+      title: "Vil du helst...?",
+      text: "Vil du helst have skriggrønt hår i 2 år — eller kun måtte gå i crocs til alle fester i 2 år?",
+      sub: "Mode eller værdighed!",
+      skipDrink: 2
+    },
+    {
+      id: "wyr_read_minds_animals",
+      kind: "question",
+      icon: "🤔",
+      title: "Vil du helst...?",
+      text: "Vil du helst kunne læse folks tanker (men du kan ikke slå det fra) — eller kunne tale flydende med duer og måger?",
+      sub: "Hvem vil du helst snakke med?",
+      skipDrink: 2
+    },
+    {
+      id: "wyr_coffee_beer",
+      kind: "question",
+      icon: "🤔",
+      title: "Vil du helst...?",
+      text: "Vil du helst aldrig mere drikke kaffe/energidrik — eller aldrig mere spise chokolade/slik?",
+      sub: "Hård prioritering!",
+      skipDrink: 2
+    },
+    {
+      id: "wyr_laugh_cry",
+      kind: "question",
+      icon: "🤔",
+      title: "Vil du helst...?",
+      text: "Vil du helst grine ukontrolleret hver gang nogen falder — eller altid græde når du ser en sød hund?",
+      sub: "Begge er ret realistiske!",
+      skipDrink: 2
+    },
+    {
+      id: "wyr_rich_ugly_hair",
+      kind: "question",
+      icon: "🤔",
+      title: "Vil du helst...?",
+      text: "Vil du helst vinde 5 millioner kr. i morgen (men med permanent grydehår i 5 år) — eller beholde dit liv præcis som nu?",
+      sub: "Skål på det!",
+      skipDrink: 2
     }
   ];
 
