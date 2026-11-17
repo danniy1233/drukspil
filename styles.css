@@ -1027,13 +1027,20 @@ button{cursor:pointer}
 
 .cashout-btn{background:linear-gradient(135deg,#ffc857,#f59e0b)!important;color:#111!important;font-weight:1000!important;border:none!important}
 
-.cups-stage{display:flex;justify-content:center;gap:12px;align-items:flex-end;min-height:220px;perspective:900px}
-.cup{width:88px;height:114px;border-radius:16px 16px 36px 36px;border:2px solid #886a35;background:linear-gradient(145deg,#e0b353,#9c6b24);color:#241604;font-size:34px;font-weight:1000;display:grid;place-items:center;position:relative;transition:transform .42s cubic-bezier(.2,.8,.2,1)}
-.cup.shuffle{animation:cupShuffle .75s ease}
-.cup.lift{transform:translateY(-64px)}
-.ball{position:absolute;left:50%;bottom:-42px;transform:translateX(-50%);width:28px;height:28px;border-radius:50%;background:#f3f4f6;border:3px solid #bdc6d1;display:none}
+.cups-stage{position:relative;width:100%;max-width:320px;height:195px;margin:10px auto 4px;perspective:900px}
+.cup{
+  position:absolute;bottom:22px;width:82px;height:106px;transform:translate(-50%,0);
+  border-radius:18px 18px 34px 34px;border:2px solid #967438;
+  background:linear-gradient(145deg,#e5ba5c,#9b6820);color:#3a2204;
+  font-size:28px;font-weight:1000;display:grid;place-items:center;
+  box-shadow:0 10px 20px rgba(0,0,0,.45),inset 0 6px 10px rgba(255,255,255,.22);
+  transition:left .32s cubic-bezier(.4,0,.2,1),transform .28s cubic-bezier(.2,.8,.2,1);
+  z-index:3;
+}
+.cup:after{content:"";position:absolute;left:10px;right:10px;top:16px;height:5px;border-radius:99px;background:rgba(58,34,4,.22)}
+.cup.lift{transform:translate(-50%,-56px)}
+.ball{position:absolute;left:50%;bottom:-42px;transform:translateX(-50%);width:28px;height:28px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ffffff,#c8d1dc);border:2.5px solid #9ba8b8;box-shadow:0 4px 10px rgba(0,0,0,.5);display:none}
 .cup.has-ball .ball{display:block}
-@keyframes cupShuffle{25%{transform:translateX(14px) rotate(5deg)}50%{transform:translateX(-14px) rotate(-5deg)}75%{transform:translateX(8px) rotate(3deg)}}
 
 .rps-stage{display:flex;justify-content:center;gap:14px;min-height:185px;align-items:center}
 .rps-hand{width:112px;height:112px;border-radius:50%;display:grid;place-items:center;font-size:56px;background:#182334;border:1px solid #35445a}

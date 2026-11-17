@@ -593,7 +593,7 @@
       setBusy(false);
       if (action === "switch" && window.Arcade && Arcade.app) {
         Arcade.app.switchView("games");
-      } else if (action === "stay" && window.Arcade && Arcade.app && (state.game === "shrek" || state.game === "croc" || state.game === "mines" || state.game === "scratch")) {
+      } else if (action === "stay" && window.Arcade && Arcade.app && (state.game === "shrek" || state.game === "croc" || state.game === "mines" || state.game === "scratch" || state.game === "cups")) {
         Arcade.app.renderActiveGame();
       }
     }

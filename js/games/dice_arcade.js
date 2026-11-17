@@ -584,54 +584,151 @@
   registerGame({ id: "tridice", name: "Triple Dice", icon: "🎲", desc: "Høj eller lav sum", category: "dice", duel: true, render: renderTriDice });
 
   // ==========================================================
-  // 7. THREE CUPS
+  // 7. THREE CUPS (RIGTIG KOP-BYTNING)
   // ==========================================================
-  let cupsState = { phase: "idle", ball: 1 };
+  const CUP_SLOT_X = [17, 50, 83];
+  const CUP_SLOT_NAMES = ["venstre", "midterste", "højre"];
+  let cupsSpeed = "normal"; // "normal" (1x) | "fast" (2x)
+  let cupsState = { phase: "idle", ballCup: 1, slots: [0, 1, 2] };
+
   function renderCups(a) {
-    cupsState = { phase: "ready", ball: Math.floor(Math.random() * 3) };
+    const ballCup = Math.floor(Math.random() * 3);
+    cupsState = { phase: "ready", ballCup, slots: [0, 1, 2], speed: cupsSpeed };
+
     a.innerHTML = `
-      ${titleBlock("🥤 Three Cups", "Blind gæt (1/3 chance)! Hit giver 1.5× gevinst – miss koster fuld indsats.")}
-      <div class="cups-stage" id="cupsStage">
-        ${[0, 1, 2].map(i => `<button class="cup ${i === cupsState.ball ? "has-ball lift" : ""}" id="cup-${i}" data-cup="${i}">${i + 1}<i class="ball"></i></button>`).join("")}
+      ${titleBlock("🥤 Three Cups", "Følg bolden med øjnene når kopperne bytter plads! Normal = 1× gevinst · Lynhurtig = 2× gevinst.")}
+      <div class="bet-picks" style="margin-bottom:8px">
+        <button type="button" class="btn bet-pick cupsSpeedBtn ${cupsSpeed === "normal" ? "active" : ""}" style="flex:1" data-cspeed="normal">🐢 Normal (1×)</button>
+        <button type="button" class="btn bet-pick cupsSpeedBtn ${cupsSpeed === "fast" ? "active" : ""}" style="flex:1" data-cspeed="fast">⚡ Lynhurtig (2×)</button>
       </div>
-      <div id="cupsPrompt" style="text-align:center;font-weight:900;margin:10px auto;color:var(--gold);font-size:13px">Bolden starter under kop ${cupsState.ball + 1}!</div>
+      <div class="cups-stage" id="cupsStage">
+        ${[0, 1, 2].map(i => `
+          <button type="button" class="cup ${i === ballCup ? "has-ball lift" : ""}" id="cup-${i}" data-cup="${i}" style="left:${CUP_SLOT_X[i]}%">
+            🥤<i class="ball"></i>
+          </button>`).join("")}
+      </div>
+      <div id="cupsPrompt" style="text-align:center;font-weight:900;margin:8px auto 10px;color:var(--gold);font-size:13px">Bolden starter under den ${CUP_SLOT_NAMES[ballCup]} kop!</div>
       <button class="big-button" id="cupsBtn">BLAND KOPPERNE</button>
       <div id="gameResult"></div>`;
+
+    $$(".cupsSpeedBtn").forEach(b => b.onclick = () => {
+      if (state.busy || cupsState.phase !== "ready") return;
+      cupsSpeed = b.dataset.cspeed;
+      renderCups(a);
+    });
     $("#cupsBtn").onclick = startCupsShuffle;
   }
 
   async function startCupsShuffle() {
-    if (state.busy || state.balance <= 0) return;
-    setBusy(true); $("#cupsBtn").disabled = true;
-    $("#cupsPrompt").textContent = "Kopperne blandes...";
-    const oldCup = $(`#cup-${cupsState.ball}`); if (oldCup) oldCup.classList.remove("lift");
-    await sleep(380);
-    const cups = $$(".cup"); cups.forEach(c => c.classList.remove("has-ball"));
-    for (let r = 0; r < 3; r++) {
-      cups.forEach(c => { c.classList.remove("shuffle"); void c.offsetWidth; c.classList.add("shuffle"); });
-      beep(420 + r * 60, 0.04, 0.016); await sleep(620);
+    if (state.busy || state.balance <= 0 || cupsState.phase !== "ready") return;
+    setBusy(true);
+    cupsState.phase = "shuffling";
+    $("#cupsBtn").disabled = true;
+    $$(".cupsSpeedBtn").forEach(b => { b.disabled = true; });
+    $("#cupsPrompt").textContent = "Hold øje med bolden...";
+
+    const oldCup = $(`#cup-${cupsState.ballCup}`);
+    if (oldCup) oldCup.classList.remove("lift");
+    await sleep(340);
+    $$(".cup").forEach(c => c.classList.remove("has-ball"));
+
+    const isFast = cupsSpeed === "fast";
+    const swaps = isFast ? 10 : 7;
+    const swapDur = isFast ? 215 : 340;
+    let lastPairKey = "";
+
+    for (let s = 0; s < swaps; s++) {
+      let sA, sB;
+      const ballSlot = cupsState.slots[cupsState.ballCup];
+      // Involvér næsten altid bold-koppen eller nabokopper for ægte udfordring, uden at gentage præcis samme swap 2× i træk
+      do {
+        if (Math.random() < 0.78) {
+          sA = ballSlot;
+          const others = [0, 1, 2].filter(x => x !== sA);
+          sB = others[Math.floor(Math.random() * others.length)];
+        } else {
+          sA = Math.floor(Math.random() * 3);
+          const others = [0, 1, 2].filter(x => x !== sA);
+          sB = others[Math.floor(Math.random() * others.length)];
+        }
+      } while (`${Math.min(sA, sB)}-${Math.max(sA, sB)}` === lastPairKey);
+      lastPairKey = `${Math.min(sA, sB)}-${Math.max(sA, sB)}`;
+
+      const cupAId = cupsState.slots.indexOf(sA);
+      const cupBId = cupsState.slots.indexOf(sB);
+      const elA = $(`#cup-${cupAId}`);
+      const elB = $(`#cup-${cupBId}`);
+
+      cupsState.slots[cupAId] = sB;
+      cupsState.slots[cupBId] = sA;
+
+      if (elA && elB) {
+        const trans = `left ${swapDur}ms cubic-bezier(.4,0,.2,1), transform ${Math.round(swapDur * 0.5)}ms ease`;
+        elA.style.transition = trans;
+        elB.style.transition = trans;
+        elA.style.zIndex = "5";
+        elB.style.zIndex = "2";
+        elA.style.transform = "translate(-50%, -20px)";
+        elB.style.transform = "translate(-50%, 10px)";
+        elA.style.left = `${CUP_SLOT_X[sB]}%`;
+        elB.style.left = `${CUP_SLOT_X[sA]}%`;
+        beep(430 + (s % 4) * 55, 0.035, 0.015);
+        await sleep(Math.round(swapDur * 0.55));
+        elA.style.transform = "translate(-50%, 0)";
+        elB.style.transform = "translate(-50%, 0)";
+        await sleep(Math.round(swapDur * 0.52));
+        elA.style.zIndex = "3";
+        elB.style.zIndex = "3";
+      }
     }
-    cupsState.ball = Math.floor(Math.random() * 3);
+
     cupsState.phase = "pick";
     $("#cupsPrompt").textContent = "Hvor er bolden? Vælg en kop!";
     $("#cupsBtn").classList.add("hidden");
-    cups.forEach(c => c.onclick = () => chooseCup(+c.dataset.cup));
+    $$(".cup").forEach(c => { c.onclick = () => chooseCup(+c.dataset.cup); });
     setBusy(false);
   }
 
-  async function chooseCup(choice) {
+  async function chooseCup(choiceCupId) {
     if (state.busy || state.balance <= 0 || cupsState.phase !== "pick") return;
-    const w = getWager(); setBusy(true); cupsState.phase = "done";
-    const cups = $$(".cup");
-    cups[cupsState.ball].classList.add("has-ball"); cups[choice].classList.add("lift");
-    const win = choice === cupsState.ball;
-    if (!win) { await sleep(350); cups[cupsState.ball].classList.add("lift"); }
+    const w = getWager();
+    setBusy(true);
+    cupsState.phase = "done";
+
+    const winnerCupEl = $(`#cup-${cupsState.ballCup}`);
+    const chosenCupEl = $(`#cup-${choiceCupId}`);
+    if (winnerCupEl) winnerCupEl.classList.add("has-ball");
+    if (chosenCupEl) {
+      chosenCupEl.style.transition = "";
+      chosenCupEl.style.transform = "";
+      chosenCupEl.classList.add("lift");
+    }
+
+    const win = choiceCupId === cupsState.ballCup;
+    if (!win && winnerCupEl) {
+      await sleep(360);
+      winnerCupEl.style.transition = "";
+      winnerCupEl.style.transform = "";
+      winnerCupEl.classList.add("lift");
+    }
+
     beep(win ? 790 : 230, 0.12, 0.035);
-    const hitReward = Math.max(2, Math.round(w * 1.5));
-    const actual = updateBalance(win ? -hitReward : w, `Three Cups: under kop ${cupsState.ball + 1}.`);
-    showResult(win ? "🎉 DU FANDT BOLDEN!" : `BOLDEN VAR UNDER KOP ${cupsState.ball + 1}`, win ? `${Math.abs(actual)} point forsvandt!` : `${actual} point lagt oveni.`, win ? "good" : "bad");
+    const reward = cupsSpeed === "fast" ? Math.max(2, Math.round(w * 2)) : w;
+    const actual = updateBalance(win ? -reward : w, `Three Cups (${cupsSpeed === "fast" ? "Lynhurtig" : "Normal"}): ${win ? "ramte" : "missede"} bolden.`);
+    const ballPosName = CUP_SLOT_NAMES[cupsState.slots[cupsState.ballCup]] || "";
+    showResult(
+      win ? "🎉 DU FANDT BOLDEN!" : `BOLDEN VAR UNDER DEN ${ballPosName.toUpperCase()} KOP`,
+      win ? `${Math.abs(actual)} point forsvandt!` : `${actual} point lagt oveni.`,
+      win ? "good" : "bad"
+    );
     if (win) confetti();
-    const btn = $("#cupsBtn"); btn.classList.remove("hidden"); btn.disabled = false; btn.textContent = "SPIL IGEN"; btn.onclick = () => renderCups($("#arena"));
+
+    const btn = $("#cupsBtn");
+    btn.classList.remove("hidden");
+    btn.disabled = false;
+    btn.textContent = "SPIL IGEN";
+    btn.onclick = () => { if (!state.busy) renderCups($("#arena")); };
+    $$(".cupsSpeedBtn").forEach(b => { b.disabled = false; });
     setBusy(false);
   }
 
