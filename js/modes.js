@@ -1,0 +1,822 @@
+(() => {
+  const { $, $$, clamp, sleep, state, registry, beep, vibrate, confetti, setBusy, getWager, updateDebtUI, syncWagerUI, pushHistory } = window.Arcade;
+
+  const MODES = {
+    classic: { id: "classic", name: "Classic Solo", icon: "🎲", desc: "1 spiller · Start 1–10 · Bust ved 11" },
+    party:   { id: "party",   name: "Party",        icon: "👥", desc: "2–8 spillere · Pass-the-phone & giv ud" },
+    duel:    { id: "duel",    name: "Duel 1v1",     icon: "⚔️", desc: "2 spillere kæmper direkte mod hinanden" },
+    hardcore:{ id: "hardcore",name: "Hardcore",     icon: "🔥", desc: "Start 1–20 · Bust ved 21 · Hårdere straf" },
+    chaos:   { id: "chaos",   name: "Kaos",         icon: "🌪️", desc: "Tilfældigt spil & vilde modifiers pr. tur" }
+  };
+
+  const CHAOS_MODIFIERS = [
+    { id: "double",     label: "⚡ 2× GEVINST & STRAF",   desc: "Alt tæller dobbelt denne tur!" },
+    { id: "forced_max", label: "💣 TVUNGEN MAX INDSATS",  desc: "Du SKAL satse hele din pulje på dette spil!" },
+    { id: "shield",     label: "🛡️ KAOS-SKJOLD (-1)",     desc: "Taber du, slipper du med 1 point mindre i straf." },
+    { id: "extra_save", label: "✨ GULD-BOOST (-1 EKSTRA)", desc: "Vinder du, fjerner du 1 ekstra point fra puljen!" },
+    { id: "sip_first",  label: "🍻 DRIK 1 TÅR FØR SPIL",  desc: "Tag 1 tår inden du starter spillet. Normale point!" },
+    { id: "normal",     label: "🎲 REN KAOS-TUR",         desc: "Tilfældigt udtrukket spil med standard odds." }
+  ];
+
+  const modeState = {
+    mode: "classic",
+    chaosSubMode: "solo", // "solo" | "party"
+    duelSubMode: "pools", // "pools" | "quick"
+    players: [],
+    turnIndex: 0,
+    activeModifier: null,
+    duelSession: null
+  };
+
+  function isMultiplayer() {
+    return modeState.mode === "party" || (modeState.mode === "chaos" && modeState.chaosSubMode === "party");
+  }
+
+  function currentPlayer() {
+    if (!modeState.players.length) return null;
+    return modeState.players[modeState.turnIndex] || modeState.players[0];
+  }
+
+  function activePlayers() {
+    return modeState.players.filter(p => p.status === "active");
+  }
+
+  function getBustLimit() {
+    return modeState.mode === "hardcore" ? 21 : 11;
+  }
+
+  function getMaxStartPool() {
+    return modeState.mode === "hardcore" ? 20 : 10;
+  }
+
+  function getMinWager(pool) {
+    if (pool <= 1) return 1;
+    if (modeState.mode === "hardcore") {
+      return Math.max(2, Math.ceil(pool * 0.5));
+    }
+    if (modeState.mode === "chaos" && modeState.activeModifier && modeState.activeModifier.id === "forced_max") {
+      return pool;
+    }
+    return 1;
+  }
+
+  function transformDelta(rawDelta, currentBalance) {
+    let d = rawDelta;
+    if (modeState.mode === "hardcore" && d > 0) {
+      d += 1; // Hardcore: +1 ekstra straftår ved tab
+    }
+    if (modeState.mode === "chaos" && modeState.activeModifier) {
+      const m = modeState.activeModifier.id;
+      if (m === "double" && d !== 0) d = d * 2;
+      else if (m === "shield" && d > 0) d = Math.max(0, d - 1);
+      else if (m === "extra_save" && d < 0) d = d - 1;
+    }
+    return d;
+  }
+
+  function syncCurrentPlayerPool(newBal) {
+    const p = currentPlayer();
+    if (!p) return;
+    p.balance = newBal;
+    const bust = getBustLimit();
+    if (newBal <= 0) p.status = "safe";
+    else if (newBal >= bust) p.status = "busted";
+  }
+
+  function canTransferSips() {
+    return isMultiplayer() && activePlayers().filter(p => p.id !== currentPlayer()?.id).length > 0;
+  }
+
+  function getTransferTargets() {
+    const cur = currentPlayer();
+    return activePlayers().filter(p => !cur || p.id !== cur.id);
+  }
+
+  function transferPointsToPlayer(targetId, amount) {
+    const target = modeState.players.find(p => p.id === targetId);
+    if (!target) return null;
+    target.balance = clamp(target.balance + amount, 0, 99);
+    const bust = getBustLimit();
+    if (target.balance >= bust) target.status = "busted";
+    const sender = currentPlayer();
+    pushHistory(`🎁 ${sender ? sender.name : "Spiller"} sendte +${amount} til ${target.name} (nu ${target.balance})`);
+    return target;
+  }
+
+  function rollChaosTurn() {
+    const allIds = [...registry.keys()];
+    const pickId = allIds[Math.floor(Math.random() * allIds.length)] || "wheel";
+    state.game = pickId;
+    modeState.activeModifier = CHAOS_MODIFIERS[Math.floor(Math.random() * CHAOS_MODIFIERS.length)];
+    if (modeState.activeModifier.id === "forced_max") {
+      state.desiredWager = Math.max(1, state.balance);
+    }
+  }
+
+  function findNextActivePlayerIndex(fromIdx) {
+    const n = modeState.players.length;
+    for (let step = 1; step <= n; step++) {
+      const idx = (fromIdx + step) % n;
+      if (modeState.players[idx].status === "active") return idx;
+    }
+    return -1;
+  }
+
+  function shouldEndMultiplayerSession() {
+    if (!isMultiplayer()) return false;
+    const active = activePlayers();
+    // Stopper når 0 aktive eller kun 1 aktiv tilbage mens alle andre enten er sikre/busted (hvis >=2 spillere)
+    if (active.length === 0) return true;
+    if (modeState.players.length >= 2 && active.length === 1 && modeState.players.some(p => p.status !== "active")) {
+      return true;
+    }
+    return false;
+  }
+
+  function getModeOutcomeConfig() {
+    const cur = currentPlayer();
+    if (isMultiplayer()) {
+      const ended = shouldEndMultiplayerSession();
+      if (ended) {
+        return {
+          mode: modeState.mode,
+          playerLabel: cur ? cur.name : "",
+          isPartyOrChaosNext: true,
+          nextBtnText: "🏆 SE PARTY SLUTRESULTAT ➔",
+          showSwitch: false,
+          extraNote: state.balance === 0 ? `${cur.name} ramte 0 og er SIKKER!` : state.debtBusted ? `${cur.name} bustede!` : ""
+        };
+      }
+      const nextIdx = findNextActivePlayerIndex(modeState.turnIndex);
+      const nextP = modeState.players[nextIdx];
+      return {
+        mode: modeState.mode,
+        playerLabel: cur ? cur.name : "",
+        isPartyOrChaosNext: true,
+        nextBtnText: modeState.mode === "chaos"
+          ? `🌪️ NÆSTE KAOS-TUR: ${nextP.name} ➔`
+          : `👥 NÆSTE SPILLER: ${nextP.name} ➔`,
+        showSwitch: modeState.mode !== "chaos",
+        extraNote: state.balance === 0
+          ? `🏆 ${cur.name} er ude & sikker på 0 tårer!`
+          : state.debtBusted
+            ? `💀 ${cur.name} nåede gældsgrænsen og skal cashe ${state.balance} ud!`
+            : ""
+      };
+    }
+
+    if (modeState.mode === "chaos" && state.balance > 0 && !state.debtBusted) {
+      return {
+        mode: "chaos",
+        isPartyOrChaosNext: true,
+        nextBtnText: "🌪️ RUL NÆSTE KAOS-SPIL ➔",
+        showSwitch: false
+      };
+    }
+
+    return {
+      mode: modeState.mode,
+      playerLabel: modeState.mode === "hardcore" ? "🔥 Hardcore" : "",
+      isPartyOrChaosNext: false,
+      showSwitch: modeState.mode !== "chaos"
+    };
+  }
+
+  function showPartyFinalSummary() {
+    const sorted = [...modeState.players].sort((a, b) => a.balance - b.balance);
+    const winners = sorted.filter(p => p.balance === 0);
+    const busted = sorted.filter(p => p.status === "busted");
+    const lastActive = sorted.filter(p => p.status === "active");
+
+    const zeroTitle = $("#zeroTitle");
+    const zeroDesc = $("#zeroDesc");
+    if (winners.length) {
+      zeroTitle.textContent = winners.length > 1 ? "Party Vindere!" : `${winners[0].name} Vandt!`;
+    } else {
+      zeroTitle.textContent = "Party Afsluttet!";
+    }
+
+    const lines = sorted.map(p => {
+      const tag = p.balance === 0 ? "🏆 Sikker (0)" : p.status === "busted" ? `💀 Bust (${p.balance})` : `⏳ Tilbage (${p.balance})`;
+      return `<div style="display:flex;justify-content:space-between;padding:6px 8px;background:rgba(255,255,255,.04);border-radius:8px;margin-bottom:4px;font-size:13px"><strong>${p.name}</strong><span>${tag}</span></div>`;
+    }).join("");
+
+    let bottomNote = "";
+    if (busted.length) bottomNote = `Taber-straf til: ${busted.map(p => `${p.name} (${p.balance})`).join(", ")}.`;
+    else if (lastActive.length === 1) bottomNote = `${lastActive[0].name} er sidst tilbage med ${lastActive[0].balance} tårer!`;
+
+    zeroDesc.innerHTML = `<div style="text-align:left;margin:10px 0">${lines}</div><div>${bottomNote}</div>`;
+    $("#zeroOverlay").classList.add("show");
+    beep(820, 0.25, 0.05);
+    confetti();
+  }
+
+  function handleAfterOutcome(action) {
+    if (isMultiplayer()) {
+      if (shouldEndMultiplayerSession()) {
+        showPartyFinalSummary();
+        return true;
+      }
+      const nextIdx = findNextActivePlayerIndex(modeState.turnIndex);
+      if (nextIdx !== -1) {
+        modeState.turnIndex = nextIdx;
+        const nextP = currentPlayer();
+        state.balance = nextP.balance;
+        state.debtBusted = false;
+        state.roundEnding = false;
+        state.higherStreak = 0;
+        const arena = $("#arena");
+        if (arena) arena.classList.remove("round-ending");
+
+        if (modeState.mode === "chaos") {
+          rollChaosTurn();
+        }
+        setBusy(false);
+        updateDebtUI();
+        syncWagerUI();
+        if (action === "switch" && modeState.mode !== "chaos") {
+          Arcade.app.switchView("games");
+        } else {
+          Arcade.app.renderActiveGame();
+          Arcade.app.switchView("arena");
+        }
+        return true;
+      }
+    }
+
+    if (modeState.mode === "chaos") {
+      if (state.balance === 0 || state.debtBusted) {
+        return false; // Let default win/bust overlay run
+      }
+      rollChaosTurn();
+      setBusy(false);
+      updateDebtUI();
+      syncWagerUI();
+      Arcade.app.renderActiveGame();
+      return true;
+    }
+
+    return false;
+  }
+
+  function renderHudExtras() {
+    const pill = $("#hudModePill");
+    const nameEl = $("#hudPlayerName");
+    const ctxBanner = $("#contextBanner");
+
+    if (pill) {
+      const m = MODES[modeState.mode];
+      pill.textContent = `${m.icon} ${m.name}`;
+      pill.className = `hud-mode-pill ${modeState.mode}`;
+    }
+
+    if (nameEl) {
+      if (isMultiplayer()) {
+        const p = currentPlayer();
+        nameEl.textContent = p ? `${p.name}s tur` : "Party";
+      } else if (modeState.mode === "duel") {
+        const p1 = modeState.players[0]?.name || "Spiller 1";
+        const p2 = modeState.players[1]?.name || "Spiller 2";
+        nameEl.textContent = `${p1} vs ${p2}`;
+      } else if (modeState.mode === "hardcore") {
+        nameEl.textContent = "Min 50% · +1 tab";
+      } else if (modeState.mode === "chaos") {
+        nameEl.textContent = "Tilfældigt spil";
+      } else {
+        nameEl.textContent = "Solo pulje";
+      }
+    }
+
+    if (ctxBanner) {
+      if (modeState.mode === "chaos" && modeState.activeModifier) {
+        ctxBanner.className = "context-banner chaos";
+        ctxBanner.innerHTML = `<span>${modeState.activeModifier.label}</span><small style="opacity:.85;font-weight:700">${modeState.activeModifier.desc}</small>`;
+        ctxBanner.classList.remove("hidden");
+      } else if (modeState.mode === "duel") {
+        const p1 = modeState.players[0];
+        const p2 = modeState.players[1];
+        const label = modeState.duelSubMode === "quick"
+          ? `⚔️ Hurtig Duel (${p1.name} vs ${p2.name})`
+          : `⚔️ ${p1.name}: ${p1.balance}  |  ${p2.name}: ${p2.balance}`;
+        ctxBanner.className = "context-banner duel";
+        ctxBanner.innerHTML = `<span>${label}</span>`;
+        ctxBanner.classList.remove("hidden");
+      } else {
+        ctxBanner.classList.add("hidden");
+      }
+    }
+  }
+
+  function startModeSession(config) {
+    modeState.mode = config.mode || "classic";
+    modeState.chaosSubMode = config.chaosSubMode || "solo";
+    modeState.duelSubMode = config.duelSubMode || "pools";
+    modeState.players = (config.players || []).map((p, idx) => ({
+      id: idx + 1,
+      name: p.name.trim() || `Spiller ${idx + 1}`,
+      balance: clamp(parseInt(p.balance || 4, 10), 1, getMaxStartPool()),
+      status: "active"
+    }));
+    modeState.turnIndex = 0;
+    modeState.activeModifier = null;
+
+    if (modeState.mode === "duel") {
+      // Sørg for at spillet er duel-kompatibelt
+      const curDef = registry.get(state.game);
+      if (!curDef || !curDef.duel) {
+        state.game = "rps";
+      }
+      state.balance = modeState.players[0].balance;
+    } else if (isMultiplayer()) {
+      state.balance = modeState.players[0].balance;
+    } else {
+      state.balance = clamp(parseInt(config.soloAmount || 4, 10), 1, getMaxStartPool());
+    }
+
+    state.initialStakeCap = state.balance;
+    state.desiredWager = modeState.mode === "hardcore"
+      ? getMinWager(state.balance)
+      : isMultiplayer()
+        ? Math.min(2, state.balance)
+        : state.balance;
+    state.debtBusted = false;
+    state.roundEnding = false;
+    state.higherStreak = 0;
+    state.history = [];
+
+    if (modeState.mode === "chaos") {
+      rollChaosTurn();
+    }
+
+    $("#zeroTitle").textContent = "Du gik i 0";
+    $("#zeroDesc").textContent = "Din nuværende pulje er væk. Runden er slut.";
+  }
+
+  // ==========================================================
+  // DUEL 1V1 ENGINE (DEDICATED HEAD-TO-HEAD FLOW)
+  // ==========================================================
+  const DUEL_PRIVACY_GAMES = new Set(["rps", "coin", "redblack", "picknumber", "blackjack"]);
+
+  async function requestDuelPrivacy(nextPlayerName, hintText) {
+    return new Promise(resolve => {
+      const overlay = $("#duelPrivacyOverlay");
+      $("#duelPrivacyTitle").textContent = `Giv telefonen til ${nextPlayerName}`;
+      $("#duelPrivacyDesc").textContent = hintText || "Tryk på knappen når du holder telefonen alene.";
+      overlay.classList.add("show");
+      $("#duelPrivacyBtn").onclick = () => {
+        overlay.classList.remove("show");
+        beep(640, 0.05, 0.02);
+        resolve();
+      };
+    });
+  }
+
+  function showDuelOutcomeModal({ winnerIdx, isTie, title, desc, icon }) {
+    const modal = $("#outcomeModal");
+    if (!modal) return;
+    const p1 = modeState.players[0];
+    const p2 = modeState.players[1];
+    const w = getWager();
+
+    let badge = "⚔️ DUEL AFGJORT";
+    let color = "#5ea1ff";
+    let headline = "";
+    let fullDesc = desc;
+
+    if (isTie) {
+      color = "#ffc857";
+      badge = "🤝 UAFGJORT DUEL";
+      headline = "INGEN ÆNDRING";
+    } else {
+      const winner = modeState.players[winnerIdx];
+      const loser = modeState.players[1 - winnerIdx];
+      color = "#45d483";
+      badge = `🏆 ${winner.name.toUpperCase()} VANDT!`;
+
+      if (modeState.duelSubMode === "quick") {
+        headline = `🍻 ${loser.name} tager ${w} ${w === 1 ? "tår" : "tårer"}!`;
+        fullDesc = `${desc} Hurtig Duel: ${loser.name} drikker/tager indsatsen direkte.`;
+      } else {
+        winner.balance = clamp(winner.balance - w, 0, 99);
+        loser.balance = clamp(loser.balance + w, 0, 99);
+        headline = `🛡️ ${winner.name} (-${w}) · 💀 ${loser.name} (+${w})`;
+        fullDesc = `${desc} ${winner.name}: ${winner.balance} tårer · ${loser.name}: ${loser.balance} tårer.`;
+      }
+      pushHistory(`⚔️ Duel (${title}): ${headline}`);
+    }
+
+    const p1Won = modeState.duelSubMode === "pools" && p1.balance === 0;
+    const p2Won = modeState.duelSubMode === "pools" && p2.balance === 0;
+    const p1Bust = modeState.duelSubMode === "pools" && p1.balance >= 11;
+    const p2Bust = modeState.duelSubMode === "pools" && p2.balance >= 11;
+    const duelOver = p1Won || p2Won || p1Bust || p2Bust;
+
+    let finalWinner = null;
+    if (duelOver) {
+      if (p1Won || p2Bust) finalWinner = p1;
+      else finalWinner = p2;
+      badge = `🏆 ${finalWinner.name.toUpperCase()} VANDT HELE DUELLEN!`;
+      confetti();
+    }
+
+    const card = $("#outcomeModalCard");
+    if (card) card.style.setProperty("--outcome-color", color);
+    $("#outcomeBadge").textContent = badge;
+    $("#outcomeIcon").textContent = icon || "⚔️";
+    $("#outcomeTitle").textContent = title;
+    $("#outcomeGameSub").textContent = `DUEL · ${p1.name} vs ${p2.name}`;
+    $("#outcomeHeadline").textContent = headline;
+    $("#outcomeHeadline").style.color = color;
+    $("#outcomeDesc").textContent = fullDesc;
+    $("#outcomeExtraRule").style.display = "none";
+    $("#outcomeTransferBox").classList.add("hidden");
+
+    $("#outcomePoolVal").textContent = modeState.duelSubMode === "quick" ? "Hurtig Duel" : `${p1.name}: ${p1.balance} | ${p2.name}: ${p2.balance}`;
+    $("#outcomeChangeVal").textContent = isTie ? "0 tårer" : `±${w} tårer`;
+    $("#outcomeChangeVal").style.color = isTie ? "#fff" : "var(--gold)";
+
+    const mainBtn = $("#outcomeMainBtn");
+    const switchBtn = $("#outcomeSwitchBtn");
+    if (duelOver) {
+      mainBtn.innerHTML = "🏆 AFSLUT & START NY RUNDE ➔";
+      mainBtn.className = "btn primary outcome-modal-btn";
+      switchBtn.style.display = "none";
+      mainBtn.onclick = () => {
+        modal.classList.remove("show");
+        Arcade.app.resetToStart();
+      };
+    } else {
+      mainBtn.innerHTML = "NY DUEL I DETTE SPIL ↺";
+      mainBtn.className = "btn primary outcome-modal-btn";
+      switchBtn.style.display = "block";
+      switchBtn.innerHTML = "VÆLG ET ANDET DUEL-SPIL ⚔️";
+      mainBtn.onclick = () => {
+        modal.classList.remove("show");
+        setBusy(false);
+        updateDebtUI();
+        Arcade.app.renderActiveGame();
+      };
+      switchBtn.onclick = () => {
+        modal.classList.remove("show");
+        setBusy(false);
+        updateDebtUI();
+        Arcade.app.switchView("games");
+      };
+    }
+
+    if (!isTie) beep(840, 0.12, 0.03);
+    else beep(540, 0.08, 0.025);
+    modal.classList.add("show");
+  }
+
+  function renderDuelGame(gameId, container) {
+    const p1 = modeState.players[0];
+    const p2 = modeState.players[1];
+    const { casinoCard, cardHtml, createCardElement, blackjackValue } = Arcade.cards;
+    const { dieFace } = Arcade.dice;
+
+    if (gameId === "rps") {
+      let c1 = null;
+      const rpsMap = { rock: "✊", paper: "✋", scissors: "✌️" };
+      container.innerHTML = `
+        ${Arcade.titleBlock("⚔️ Sten Saks Papir Duel", "Vælg hemmeligt efter tur, og afslør begge hænder samtidigt!")}
+        <div class="center"><div class="duel-turn-chip" id="duelTurnChip">🎯 ${p1.name}s valg (hemmeligt)</div></div>
+        <div class="rps-stage"><div class="rps-hand" id="duelRps1">❔</div><div style="font-weight:1000">VS</div><div class="rps-hand" id="duelRps2">❔</div></div>
+        <div class="bet-picks">
+          <button class="btn rpsPick" data-rps="rock">✊ STEN</button>
+          <button class="btn rpsPick" data-rps="paper">✋ PAPIR</button>
+          <button class="btn rpsPick" data-rps="scissors">✌️ SAKS</button>
+        </div>`;
+      container.querySelectorAll(".rpsPick").forEach(b => b.onclick = async () => {
+        if (state.busy) return;
+        const pick = b.dataset.rps;
+        if (!c1) {
+          c1 = pick;
+          $("#duelRps1").textContent = "🔒";
+          await requestDuelPrivacy(p2.name, `${p1.name} har valgt! Nu er det ${p2.name}s tur til at vælge hemmeligt.`);
+          $("#duelTurnChip").textContent = `🎯 ${p2.name}s valg (hemmeligt)`;
+        } else {
+          const c2 = pick;
+          setBusy(true);
+          const h1 = $("#duelRps1"), h2 = $("#duelRps2");
+          h1.textContent = "✊"; h2.textContent = "✊";
+          h1.classList.add("shake"); h2.classList.add("shake");
+          await sleep(650);
+          h1.classList.remove("shake"); h2.classList.remove("shake");
+          h1.textContent = rpsMap[c1]; h2.textContent = rpsMap[c2];
+          const tie = c1 === c2;
+          const p1Win = (c1 === "rock" && c2 === "scissors") || (c1 === "paper" && c2 === "rock") || (c1 === "scissors" && c2 === "paper");
+          await sleep(380);
+          showDuelOutcomeModal({
+            isTie: tie,
+            winnerIdx: p1Win ? 0 : 1,
+            icon: "✊",
+            title: tie ? "Uafgjort!" : `${p1Win ? p1.name : p2.name} vandt!`,
+            desc: `${p1.name} (${rpsMap[c1]}) mod ${p2.name} (${rpsMap[c2]}).`
+          });
+        }
+      });
+      return true;
+    }
+
+    if (gameId === "dice") {
+      let r1 = 0;
+      const faces = ["⚀", "⚁", "⚂", "⚃", "⚄", "⚅"];
+      container.innerHTML = `
+        ${Arcade.titleBlock("⚔️ Terning Duel", "Slå højere end din modstander!")}
+        <div class="center"><div class="duel-turn-chip" id="duelTurnChip">🎲 ${p1.name} kaster først</div></div>
+        <div class="dice-pair">
+          <div style="text-align:center"><div class="mini-die" id="duelDie1">❔</div><small style="display:block;margin-top:6px;color:var(--muted)">${p1.name}</small></div>
+          <div style="font-weight:1000">VS</div>
+          <div style="text-align:center"><div class="mini-die" id="duelDie2">❔</div><small style="display:block;margin-top:6px;color:var(--muted)">${p2.name}</small></div>
+        </div>
+        <button class="big-button" id="duelDiceBtn">KAST FOR ${p1.name.toUpperCase()}</button>`;
+      $("#duelDiceBtn").onclick = async () => {
+        if (state.busy) return;
+        setBusy(true);
+        const val = 1 + Math.floor(Math.random() * 6);
+        const el = r1 === 0 ? $("#duelDie1") : $("#duelDie2");
+        el.classList.remove("roll"); void el.offsetWidth; el.classList.add("roll");
+        const id = setInterval(() => { el.textContent = faces[Math.floor(Math.random() * 6)]; beep(360, 0.02, 0.01); }, 85);
+        await sleep(1050); clearInterval(id);
+        el.textContent = faces[val - 1];
+        beep(720, 0.09, 0.03);
+        if (r1 === 0) {
+          r1 = val;
+          $("#duelTurnChip").textContent = `🎲 Nu kaster ${p2.name} (skal slå over ${r1})`;
+          $("#duelDiceBtn").textContent = `KAST FOR ${p2.name.toUpperCase()}`;
+          setBusy(false);
+        } else {
+          await sleep(360);
+          showDuelOutcomeModal({
+            isTie: r1 === val,
+            winnerIdx: r1 > val ? 0 : 1,
+            icon: "🎲",
+            title: r1 === val ? `Uafgjort (${r1}-${val})` : `${r1 > val ? p1.name : p2.name} slog højest!`,
+            desc: `${p1.name} slog ${r1} mod ${p2.name}s ${val}.`
+          });
+        }
+      };
+      return true;
+    }
+
+    if (gameId === "war") {
+      container.innerHTML = `
+        ${Arcade.titleBlock("⚔️ War Duel", "Hver spiller trækker ét kort. Højeste kort vinder duellen!")}
+        <div class="war-stage">
+          <div class="war-side"><div class="hand-label">${p1.name}</div><div id="duelWar1" class="hand"><div class="muted">?</div></div></div>
+          <div class="war-side"><div class="hand-label">${p2.name}</div><div id="duelWar2" class="hand"><div class="muted">?</div></div></div>
+        </div>
+        <button class="big-button" id="duelWarBtn">TRÆK BEGGE KORT</button>`;
+      $("#duelWarBtn").onclick = async () => {
+        if (state.busy) return;
+        setBusy(true);
+        const c1 = casinoCard(), c2 = casinoCard();
+        $("#duelWar1").innerHTML = cardHtml(c1); beep(560, 0.05, 0.02);
+        await sleep(480);
+        $("#duelWar2").innerHTML = cardHtml(c2); beep(630, 0.05, 0.02);
+        const v1 = c1.rank === 1 ? 14 : c1.rank;
+        const v2 = c2.rank === 1 ? 14 : c2.rank;
+        await sleep(450);
+        showDuelOutcomeModal({
+          isTie: v1 === v2,
+          winnerIdx: v1 > v2 ? 0 : 1,
+          icon: "⚔️",
+          title: v1 === v2 ? "Lige kort · Uafgjort!" : `${v1 > v2 ? p1.name : p2.name} vandt War!`,
+          desc: `${p1.name}: ${c1.label}${c1.suit} mod ${p2.name}: ${c2.label}${c2.suit}.`
+        });
+      };
+      return true;
+    }
+
+    if (gameId === "coin") {
+      container.innerHTML = `
+        ${Arcade.titleBlock("⚔️ Møntkast Duel", `${p1.name} vælger Krone eller Plat – ${p2.name} får automatisk den anden side!`)}
+        <div class="coin-stage">
+          <div class="coin3d" id="coin">
+            <div class="coin-face front"><div>👑<small>KRONE</small></div></div>
+            <div class="coin-face back"><div>★<small>PLAT</small></div></div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:center">
+          <button class="btn primary duelCoinPick" data-pick="heads">${p1.name}: Krone</button>
+          <button class="btn primary duelCoinPick" data-pick="tails">${p1.name}: Plat</button>
+        </div>`;
+      container.querySelectorAll(".duelCoinPick").forEach(b => b.onclick = async () => {
+        if (state.busy) return;
+        setBusy(true);
+        const p1Choice = b.dataset.pick;
+        const outcome = Math.random() < 0.5 ? "heads" : "tails";
+        const coin = $("#coin");
+        coin.className = "coin3d"; coin.style.transition = "none"; coin.style.transform = "rotateY(0deg) rotateX(0deg)";
+        void coin.offsetWidth;
+        coin.style.transition = "transform 1.7s cubic-bezier(.16,.78,.2,1)";
+        coin.style.transform = `rotateY(${outcome === "heads" ? 1800 : 1980}deg) rotateX(720deg)`;
+        for (let i = 0; i < 8; i++) { await sleep(150); beep(420 + i * 30, 0.025, 0.014); }
+        await sleep(500);
+        coin.style.transition = "none"; coin.style.transform = "none";
+        coin.className = outcome === "heads" ? "coin3d final-heads" : "coin3d final-tails";
+        const p1Win = outcome === p1Choice;
+        await sleep(360);
+        showDuelOutcomeModal({
+          isTie: false,
+          winnerIdx: p1Win ? 0 : 1,
+          icon: "🪙",
+          title: `${outcome === "heads" ? "👑 KRONE" : "★ PLAT"} · ${p1Win ? p1.name : p2.name} vandt!`,
+          desc: `${p1.name} havde ${p1Choice === "heads" ? "Krone" : "Plat"}, ${p2.name} havde ${p1Choice === "heads" ? "Plat" : "Krone"}.`
+        });
+      });
+      return true;
+    }
+
+    if (gameId === "redblack") {
+      container.innerHTML = `
+        ${Arcade.titleBlock("⚔️ Rød eller Sort Duel", `${p1.name} vælger farve – ${p2.name} får modsatte farve!`)}
+        <div class="quick-card-stage"><div class="quick-card" id="rbCard">?</div></div>
+        <div class="bet-picks">
+          <button class="btn bet-red duelRbPick" data-rb="red">${p1.name}: RØD</button>
+          <button class="btn bet-black duelRbPick" data-rb="black">${p1.name}: SORT</button>
+        </div>`;
+      container.querySelectorAll(".duelRbPick").forEach(b => b.onclick = async () => {
+        if (state.busy) return;
+        setBusy(true);
+        const c = casinoCard(), p1Pick = b.dataset.rb;
+        const el = $("#rbCard"); el.className = "quick-card"; el.textContent = "?";
+        await sleep(160);
+        el.className = `quick-card ${c.red ? "red" : ""} reveal`;
+        el.textContent = `${c.label}${c.suit}`;
+        beep(690, 0.09, 0.03);
+        await sleep(650);
+        const p1Win = (p1Pick === "red") === c.red;
+        showDuelOutcomeModal({
+          isTie: false,
+          winnerIdx: p1Win ? 0 : 1,
+          icon: "♦️",
+          title: `${c.red ? "RØDT KORT" : "SORT KORT"} (${c.label}${c.suit})`,
+          desc: `${p1Win ? p1.name : p2.name} ramte kortets farve!`
+        });
+      });
+      return true;
+    }
+
+    if (gameId === "picknumber") {
+      let n1 = null;
+      container.innerHTML = `
+        ${Arcade.titleBlock("⚔️ Pick a Number Duel", "Begge vælger et tal 1–6 hemmeligt. Tættest på det trukne tal vinder!")}
+        <div class="center"><div class="duel-turn-chip" id="duelTurnChip">🔢 ${p1.name} vælger tal</div></div>
+        <div class="big-number" id="numberReveal">?</div>
+        <div class="number-picks">${[1, 2, 3, 4, 5, 6].map(n => `<button class="number-pick duelNumPick" data-num="${n}">${n}</button>`).join("")}</div>`;
+      container.querySelectorAll(".duelNumPick").forEach(b => b.onclick = async () => {
+        if (state.busy) return;
+        const picked = +b.dataset.num;
+        if (n1 === null) {
+          n1 = picked;
+          await requestDuelPrivacy(p2.name, `${p1.name} har valgt sit hemmelige tal! Nu vælger ${p2.name}.`);
+          $("#duelTurnChip").textContent = `🔢 ${p2.name} vælger tal`;
+        } else {
+          const n2 = picked;
+          setBusy(true);
+          const n = 1 + Math.floor(Math.random() * 6);
+          const el = $("#numberReveal");
+          for (let i = 0; i < 10; i++) { el.textContent = 1 + Math.floor(Math.random() * 6); beep(400 + i * 22, 0.025, 0.01); await sleep(80); }
+          el.textContent = n;
+          const d1 = Math.abs(n - n1), d2 = Math.abs(n - n2);
+          await sleep(420);
+          showDuelOutcomeModal({
+            isTie: d1 === d2,
+            winnerIdx: d1 < d2 ? 0 : 1,
+            icon: "🔢",
+            title: d1 === d2 ? `Lige tæt på ${n}!` : `${d1 < d2 ? p1.name : p2.name} var tættest på ${n}!`,
+            desc: `Tallet blev ${n}. ${p1.name} gættede ${n1}, ${p2.name} gættede ${n2}.`
+          });
+        }
+      });
+      return true;
+    }
+
+    if (gameId === "tridice") {
+      let s1 = 0;
+      container.innerHTML = `
+        ${Arcade.titleBlock("⚔️ Triple Dice Duel", "Kast 3 terninger efter tur – højeste samlede sum vinder!")}
+        <div class="center"><div class="duel-turn-chip" id="duelTurnChip">🎲 ${p1.name} kaster 3 terninger</div></div>
+        <div class="dice-triple"><div class="mini-die" id="td1">⚀</div><div class="mini-die" id="td2">⚁</div><div class="mini-die" id="td3">⚂</div></div>
+        <button class="big-button" id="duelTriBtn">KAST FOR ${p1.name.toUpperCase()}</button>`;
+      $("#duelTriBtn").onclick = async () => {
+        if (state.busy) return;
+        setBusy(true);
+        const ds = [0, 0, 0].map(() => 1 + Math.floor(Math.random() * 6));
+        const sum = ds.reduce((s, x) => s + x, 0);
+        const els = [$("#td1"), $("#td2"), $("#td3")];
+        els.forEach(e => { e.classList.remove("roll"); void e.offsetWidth; e.classList.add("roll"); });
+        const id = setInterval(() => { els.forEach(e => e.textContent = dieFace(1 + Math.floor(Math.random() * 6))); beep(370, 0.02, 0.01); }, 85);
+        await sleep(1050); clearInterval(id);
+        els.forEach((e, i) => e.textContent = dieFace(ds[i]));
+        beep(740, 0.09, 0.03);
+        if (s1 === 0) {
+          s1 = sum;
+          $("#duelTurnChip").textContent = `${p1.name} slog ${s1} · Nu ${p2.name}s tur!`;
+          $("#duelTriBtn").textContent = `KAST FOR ${p2.name.toUpperCase()}`;
+          setBusy(false);
+        } else {
+          await sleep(420);
+          showDuelOutcomeModal({
+            isTie: s1 === sum,
+            winnerIdx: s1 > sum ? 0 : 1,
+            icon: "🎲",
+            title: s1 === sum ? `Uafgjort (${s1}-${sum})` : `${s1 > sum ? p1.name : p2.name} slog højest!`,
+            desc: `${p1.name} slog ${s1} mod ${p2.name}s ${sum}.`
+          });
+        }
+      };
+      return true;
+    }
+
+    if (gameId === "blackjack") {
+      let turn = 0;
+      const hands = [[casinoCard(), casinoCard()], [casinoCard(), casinoCard()]];
+      container.innerHTML = `
+        ${Arcade.titleBlock("⚔️ Blackjack Duel", "Begge spiller mod 21 på skift. Tættest på 21 uden at buste vinder!")}
+        <div class="center"><div class="duel-turn-chip" id="duelTurnChip">🂡 ${p1.name}s hånd</div></div>
+        <div class="casino-table">
+          <div class="hand-label" id="duelBjLabel">${p1.name}s kort</div>
+          <div class="hand" id="duelBjHand"></div>
+          <div style="text-align:center"><span class="score-bubble" id="duelBjScore">0</span></div>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:center" id="duelBjCtrls">
+          <button class="btn primary" id="duelBjHit">HIT</button>
+          <button class="btn" id="duelBjStand">STAND</button>
+        </div>`;
+
+      const paintHand = () => {
+        const h = hands[turn];
+        $("#duelBjLabel").textContent = `${modeState.players[turn].name}s kort`;
+        $("#duelBjHand").innerHTML = h.map(c => cardHtml(c)).join("");
+        $("#duelBjScore").textContent = blackjackValue(h);
+      };
+      paintHand();
+
+      const finishTurn = async () => {
+        if (turn === 0) {
+          turn = 1;
+          await requestDuelPrivacy(p2.name, `${p1.name} er færdig med sin hånd! Giv telefonen til ${p2.name}.`);
+          $("#duelTurnChip").textContent = `🂡 ${p2.name}s hånd`;
+          paintHand();
+        } else {
+          setBusy(true);
+          const v1 = blackjackValue(hands[0]), v2 = blackjackValue(hands[1]);
+          const b1 = v1 > 21, b2 = v2 > 21;
+          let tie = false, winnerIdx = 0;
+          if (b1 && b2) tie = true;
+          else if (b1) winnerIdx = 1;
+          else if (b2) winnerIdx = 0;
+          else if (v1 === v2) tie = true;
+          else winnerIdx = v1 > v2 ? 0 : 1;
+          await sleep(320);
+          showDuelOutcomeModal({
+            isTie: tie,
+            winnerIdx,
+            icon: "🂡",
+            title: tie ? `Uafgjort (${v1} vs ${v2})` : `${modeState.players[winnerIdx].name} vandt!`,
+            desc: `${p1.name}: ${v1}${b1 ? " (Bust)" : ""} · ${p2.name}: ${v2}${b2 ? " (Bust)" : ""}.`
+          });
+        }
+      };
+
+      $("#duelBjHit").onclick = async () => {
+        hands[turn].push(casinoCard());
+        beep(600, 0.05, 0.02);
+        paintHand();
+        if (blackjackValue(hands[turn]) >= 21) {
+          await sleep(420);
+          finishTurn();
+        }
+      };
+      $("#duelBjStand").onclick = finishTurn;
+      return true;
+    }
+
+    return false;
+  }
+
+  window.Arcade.modes = {
+    MODES,
+    CHAOS_MODIFIERS,
+    state: modeState,
+    isMultiplayer,
+    currentPlayer,
+    activePlayers,
+    getBustLimit,
+    getMaxStartPool,
+    getMinWager,
+    transformDelta,
+    syncCurrentPlayerPool,
+    canTransferSips,
+    getTransferTargets,
+    transferPointsToPlayer,
+    getModeOutcomeConfig,
+    handleAfterOutcome,
+    renderHudExtras,
+    startModeSession,
+    renderDuelGame
+  };
+})();
